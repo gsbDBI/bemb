@@ -124,7 +124,7 @@ class LogitDataset(data.Dataset):
         
         # construct session level features.
         (self.all_constants, self.all_obs_user, self.all_prices,
-         self.all_onehot, self.all_month_indicator, self.all_day_indicator,
+         self.all_item_onehot, self.all_month_indicator, self.all_day_indicator,
          self.all_week_indicator, self.all_availabilities) = self.get_all_data()
         _, _ = self.get_X_Y_all()  # test running.
 
@@ -214,7 +214,7 @@ class LogitDataset(data.Dataset):
     def get_X_Y_all(self) -> Tuple[torch.Tensor]:
         complete_concat_x = np.hstack(
             [self.all_obs_user, self.all_prices, self.all_month_indicator, self.all_day_indicator])
-        complete_concat_y = self.all_onehot
+        complete_concat_y = self.all_item_onehot
         assert(complete_concat_x.shape[0] == complete_concat_y.shape[0])
         return complete_concat_x, complete_concat_y
 
@@ -229,14 +229,14 @@ class LogitDataset(data.Dataset):
         item_id = self.curr_training_data['item_id'].values[index]
         # item_month = int(item_date[-4:-2])
         item_month = self.curr_training_data['date'].map(lambda x: int(str(x)[-4:-2])).values[index]
-        if self.all_availabilities[index][np.argmax(self.all_onehot[index])] < 0.5:
+        if self.all_availabilities[index][np.argmax(self.all_item_onehot[index])] < 0.5:
             print('Purchased item not available\n')
             print(index, item_date, item_id, self.data_arr[index])
 
         # TODO(Tianyu): might need to modify what's returned here.
         return (np.hstack([self.all_constants[index], self.all_obs_user[index]]),
                 self.all_prices[index],
-                self.all_onehot[index],
+                self.all_item_onehot[index],
                 # np.float64(self.data_arr[index][4]),
                 self.curr_training_data['category_id'].values,
                 self.all_month_indicator[index],
