@@ -79,16 +79,18 @@ class LogitDataset(data.Dataset):
         # add category into the main training set.
         self.joint_training_data = self.purchase.merge(self.item_group, on='item_id', how='left')
 
-        # filter to get the category of interest.
         self.category_we_care = category_we_care
         if self.category_we_care is not None:
+            # filter to get the category of interest.
             self.curr_training_data = self.joint_training_data.loc[
                 self.joint_training_data['category_id'] == str(self.category_we_care)]
 
             self.availability_data = self.availability_data.loc[
                 self.availability_data['category_id'] == str(self.category_we_care)]
         else:
+            # consider all categories.
             self.curr_training_data = self.joint_training_data
+            self.category_we_care = self.curr_train_data['category_id'].unique().values
 
         # add calendar day information associated with session.
         self.curr_training_data = self.curr_training_data.merge(self.sess_days, on='date', how='left')
@@ -231,6 +233,7 @@ class LogitDataset(data.Dataset):
             print('Purchased item not available\n')
             print(index, item_date, item_id, self.data_arr[index])
 
+        # TODO(Tianyu): might need to modify what's returned here.
         return (np.hstack([self.all_constants[index], self.all_obs_user[index]]),
                 self.all_prices[index],
                 self.all_onehot[index],
