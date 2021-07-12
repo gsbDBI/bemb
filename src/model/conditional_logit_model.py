@@ -1,3 +1,9 @@
+"""
+Conditional Logit Model, the generalized version of the `cmclogit' command in Stata.
+
+Author: Tianyu Du
+Date: Jul. 11, 2021
+"""
 import torch
 import torch.nn as nn
 import math
@@ -76,10 +82,6 @@ class ConditionalLogitModel(nn.Module):
                  user_price_feature_dim: int,
                  num_items: int,
                  num_users: int,
-                 user_feature_depth: int=1,
-                 item_feature_depth: int=1,
-                 price_feature_depth: int=1,
-                 user_price_feature_depth: int=1,
                  intercept_variation: str='constant',
                  user_variation: str='item',
                  item_variation: str='constant',
@@ -94,11 +96,6 @@ class ConditionalLogitModel(nn.Module):
 
         self.num_items = num_items
         self.num_users = num_users
-
-        self.user_feature_depth = user_feature_depth
-        self.item_feature_depth = item_feature_depth
-        self.price_feature_depth = price_feature_depth
-        self.user_pricefeature_depth = user_price_feature_depth
         
         self.intercept_variation = intercept_variation
         self.user_variation = user_variation
@@ -149,9 +146,16 @@ class ConditionalLogitModel(nn.Module):
                 + f" + {symbol('beta', self.user_variation)} x_user[i]" \
                 + f" + {symbol('gamma', self.item_variation)} x_item[j]" \
                 + f" + {symbol('eta', self.price_variation)} x_price[j,t]" \
-                + f" + {symbol('delta', self.user_price_variation)} x_price[i,j,t]" \
-                + f" + epsilon[i,j,t]"
+                + f" + {symbol('delta', self.user_price_variation)} x_user_price[i,j,t]" \
+                + f" + epsilon[i,j,t]" \
+                + f"\n Number of parameters = {self.num_params()}."
         return model
+
+    def num_params(self) -> int:
+        total_params = 0
+        for weight in self.parameters():
+            total_params += weight.numel()
+        return total_params
 
     def forward(self,
                 x_user: torch.Tensor=None,
