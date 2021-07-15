@@ -51,11 +51,22 @@ class Coefficient(nn.Module):
             # (num_trips, num_features) @ (num_params, num_items)
             return x @ self.coef.expand(-1, self.num_items)  # (batch_size, num_items)
         elif self.variation == 'item':
+            # NOTE: the same as (coef * feat).sum(axis=-1).
+            # TODO(Tianyu): sanity check for consistency.
+            # coef: (num_items, num_params) --> (num_trips, num_items, num_params)
+            coef = self.coef.expand(num_trips, -1, -1)
+            item_utility = (coef * x).sum(axis=-1)
+            
+            # Alternative implementation.
             # coef: (num_trips, num_items, 1, num_params)
             coef = self.coef.view(num_items, 1, num_params).expand(num_trips, -1, -1, -1)
             assert coef.shape == (num_trips, num_items, 1, num_params)
             feat = x.view(num_trips, num_items, num_params, 1)
-            item_utility = coef.view(-1, 1, num_params).bmm(feat.view(-1, num_params, 1)).view(num_trips, num_items)
+            # (num_trips*num_items, 1, num_params) .bmm (num_trips*num_items, num_params, 1)
+            item_utility_2 = coef.view(-1, 1, num_params).bmm(feat.view(-1, num_params, 1)).view(num_trips, num_items)
+            
+            assert torch.all(item_utility_2 == item_utility)
+            
             return item_utility
         elif self.variation == 'user':
             coef_user = user_onehot @ self.coef  # (num_trips, num_params)
@@ -172,7 +183,7 @@ class ConditionalLogitModel(nn.Module):
         user_onehot: num_obs x num_users
         x_item: num_item x item_feature_dim
         x_price: num_obs x num_item x price_feature_dim
-        x_user_specific_price: num_obs x user_price_feature_dim
+        x_user_specific_price: num_obs x num_items x user_price_feature_dim
         availability: num_obs x num_item, binary.
         """
         device = x_user.device()
