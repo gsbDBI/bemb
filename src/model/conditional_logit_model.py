@@ -17,8 +17,18 @@ class Coefficient(nn.Module):
                  num_items: int,
                  num_users: Optional[int]=None,
                  num_params: Optional[int]=None) -> None:
-        super().__init__()
+        """A generic coefficient object storing trainable parameters.
 
+        Args:
+            variation (str): [description]
+            num_items (int): [description]
+            num_users (Optional[int], optional): [description]. Defaults to None.
+            num_params (Optional[int], optional): [description]. Defaults to None.
+
+        Raises:
+            ValueError: [description]
+        """
+        super().__init__()
         self.variation = variation
         self.num_items = num_items
         self.num_users = num_users
@@ -55,7 +65,7 @@ class Coefficient(nn.Module):
             # TODO(Tianyu): sanity check for consistency.
             # coef: (num_items, num_params) --> (num_trips, num_items, num_params)
             coef = self.coef.expand(num_trips, -1, -1)
-            item_utility = (coef * x).sum(axis=-1)
+            item_utility = (coef * x).sum(dim=-1)
             
             # Alternative implementation.
             # coef: (num_trips, num_items, 1, num_params)
@@ -72,7 +82,16 @@ class Coefficient(nn.Module):
             coef_user = user_onehot @ self.coef  # (num_trips, num_params)
             coef_user = coef_user.view(num_trips, num_params, 1)  # (num_trips, num_params, 1)
             # (num_trips, (num_items, num_params)) @ (num_trips, (num_params, 1))
-            return x.bmm(coef_user).view(num_trips, num_items)
+            u1 = x.bmm(coef_user).view(num_trips, num_items)
+            # Alternative way
+            # TODO(Tianyu): this might be abstracted out.
+            coef_user = user_onehot @ self.coef  # (num_trips, num_params)
+            coef_user = coef_user.expand(-1, num_items, -1)  # (num_trips, num_items, num_params)
+            user_utility = (coef_user * x).sum(dim=-1)
+
+            assert torch.all(user_utility == u1)
+
+            return user_utility
         elif self.variation == 'user-item':
             # look up the coef corresponding to current user.
             user_idx = torch.nonzero(user_onehot, as_tuple=True)[1]
