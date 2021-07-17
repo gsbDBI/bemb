@@ -7,7 +7,7 @@ Date: Jul. 11, 2021
 import torch
 import torch.nn as nn
 import math
-from typing import Union, Optional
+from typing import Union, Optional, Dict
 from torch.nn import functional as F
 
 
@@ -225,6 +225,84 @@ class ConditionalLogitModel(nn.Module):
         total_utility = utility_intercept + utility_user + utility_item + utility_price + utility_user_price
         assert total_utility.shape == (batch_size, self.num_items)
         
+        # mask out unavilable items
+        total_utility[~availability] = -1.0e20
+        return total_utility
+
+
+class ConditionalLogitModel_v2(nn.Module):
+    """The more generalized version of conditional logit model.
+
+    Args:
+        nn ([type]): [description]
+    """
+    def __init__(self,
+                 num_items: int,
+                 num_users: int,
+                 variation_dict: Dict[str, str],
+                 var_num_params_dict: Dict[str, int]
+                 ):
+        # var_num_params_dict: num of features in each kind of variable.
+        # variable types are in ['u', 'i', 'ui', 't', 'ut', 'it', 'uit'].
+        # the order of letters matters, u=user, i=item, t=time.
+        # e.g. 'u' variables are those vary by users only, 'i' variables are those vary by items only.
+        super().__init__()
+        self.var_num_params_dict = var_num_params_dict
+        for k, v in self.var_num_params_dict.items():
+            assert k in ['u', 'i', 'ui', 't', 'ut', 'it', 'uit'], f'variable type {k} is now allowed.'
+            assert v > 0 or v is None
+        self.var_num_params_dict['intercept'] = 1
+
+        self.variation_dict = variation_dict
+        for k, v in self.variation_dict.items():
+            assert k in ['intercept', 'u', 'i', 'ui', 't', 'ut', 'it', 'uit'], f'variable type {k} is now allowed.'
+            assert v in [None, 'zero', 'constant', 'user', 'item', 'user-item'], f'variation type {v} is not allowed.'
+
+        self.num_items = num_items
+        self.num_users = num_users
+        
+        # construct trainable parameters.
+        self.coef = dict()
+        for var_type, variation in self.variation_dict.items():
+            if variation is None:
+                self.coef[k] = None
+            else:
+                num_params = self.var_num_params_dict[var_type]
+                self.coef[k] = Coefficient(variation, self.num_items, self.num_users, num_params)
+
+    def __repr__(self) -> str:
+        out_str_lst = list()
+        for var_type, num_params in self.var_num_params_dict.items():
+            try:
+                out_str_lst.append(f'X[{var_type}] with {num_params} parameters')
+            except AttributeError:
+                out_str_lst.append(f'X[{var_type}] is None')
+        return '\n'.join(out_str_lst)
+
+    def num_params(self) -> int:
+        total_params = 0
+        for weight in self.parameters():
+            total_params += weight.numel()
+        return total_params
+
+    def forward(self,
+                x_dict: Dict[str, torch.Tensor],
+                availability: torch.Tensor,
+                user_onehot: torch.Tensor=None,
+                ) -> torch.Tensor:
+        for x in x_dict.values():
+            if x is not None:
+                device = x.device()
+                batch_size = x.shape[0]
+                break
+        
+        total_utility = torch.zeros(batch_size, self.num_items).to(device)
+        x_dict['intercept'] = torch.ones(batch_size, self.num_items, 1)
+        for var_type, coef in self.coef.items():
+            if x_dict[var_type] is not None:
+                total_utility += coef(x_dict[var_type], user_onehot)
+    
+        assert total_utility.shape == (batch_size, self.num_items)
         # mask out unavilable items
         total_utility[~availability] = -1.0e20
         return total_utility
