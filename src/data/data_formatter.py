@@ -24,7 +24,7 @@ def stata_to_tensors(df: pd.DataFrame,
                      choice: str='choice',
                      category_id: Optional[str]=None,
                      user_id: Optional[str]=None
-                     ) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor]:
+                     ) -> Tuple[Dict[str, torch.Tensor], torch.LongTensor, torch.BoolTensor, torch.LongTensor, torch.LongTensor]:
     """Converts Stata format of data to a dictionary of feature tensors and aviliability.
 
     Args:
@@ -49,10 +49,12 @@ def stata_to_tensors(df: pd.DataFrame,
         x_dict (Dict[str, torch.Tensor]): dictionary with keys from ['u', 'i', 'ui', 't', 'ut', 'it', 'uit'] and 'aviliability'.
             For variation keys like 'u' and 'i', out['u'] has shape (num_trips, num_items, num_params)
             as values.
-        aviliability (torch.Tensor): a tensor with 0/1 values and has shape (num_trips, num_items)
+        user_onehot (torch.LongTensor): the onehot of users in each session, with shape (num_trips, num_users).
+        aviliability (torch.BoolTensor): a tensor with 0/1 values and has shape (num_trips, num_items)
             indicating the aviliability of each item during each shopping session.
-        y (torch.Tensor): a tensor with shape (num_trips) indicating which one among all possible values
+        y (torch.LongTensor): a tensor with shape (num_trips) indicating which one among all possible values
             in df[item_id] is chosen in that session.
+        catetory (torch.LongTensor): a tensor with shape (num_trips) indicating the category of the current trip session.
     """
     all_items = sorted(df[item_id].unique())  # NOTE: the order here is important.
     num_items = len(all_items)
@@ -94,6 +96,17 @@ def stata_to_tensors(df: pd.DataFrame,
         
         x_dict[var_type] = x_reshaped
 
+    # construct user-onehot.
+    if user_id is None:
+        user_onehot = torch.ones(num_sessions, 1)  # all the same user.
+    else:
+        all_users = sorted(df[user_id].unique())
+        num_users = len(all_users)
+        user2int = dict(zip(all_users, range(num_users)))
+        user_onehot = torch.zeros(num_sessions, num_users)
+        for idx, user in enumerate(df[user_id].values):
+            user_onehot[idx, user2int[user]] = 1
+
     a_lst = list()  # aviliability info in each session.
     y_lst = list()  # choice info in each session.
             
@@ -116,14 +129,33 @@ def stata_to_tensors(df: pd.DataFrame,
     assert y.shape == (num_sessions,)
 
     # report tensors loaded.
-    print('Features X loaded, u=user, i=item, t=time/session.')
-    for var_type, x in x_dict.items():
-        try:
-            print(f'X[{var_type}] with shape {x.shape}')
-        except AttributeError:
-            print(f'X[{var_type}] is None')
-            
-    return x_dict, a, y
+    # print('Features X loaded, u=user, i=item, t=time/session.')
+    # for var_type, x in x_dict.items():
+    #     try:
+    #         print(f'X[{var_type}] with shape {x.shape}')
+    #     except AttributeError:
+    #         print(f'X[{var_type}] is None')
+    
+    # construct user-onehot.
+    if user_id is None:
+        user_onehot = torch.ones(num_sessions, 1)  # all the same user.
+    else:
+        all_users = sorted(df[user_id].unique())
+        num_users = len(all_users)
+        user2int = dict(zip(all_users, range(num_users)))
+        user_onehot = torch.zeros(num_sessions, num_users)
+        for idx, user in enumerate(df[user_id].values):
+            user_onehot[idx, user2int[user]] = 1
+
+    if category_id is None:
+        category = torch.zeros(num_sessions)
+    else:
+        all_categories = sorted(df[category_id].unique())
+        num_categories = len(all_categories)
+        cate2int = dict(zip(all_categories, range(num_categories)))
+        category = torch.Tensor(df[category_id].apply(lambda x: cate2int[x]).values.squeeze())
+
+    return x_dict, user_onehot.long(), a.bool(), y.long(), category.long()
 
 
 def stata_to_X_Y_all(df: pd.DataFrame) -> Tuple[torch.Tensor]:
@@ -152,10 +184,10 @@ if __name__ == '__main__':
         'uit': None
     }
     
-    X, A, Y = stata_to_tensors(df=travel,
-                               var_cols_dict=var_cols_dict,
-                               session_id='id',
-                               item_id='mode',
-                               choice='choice',
-                               category_id=None,
-                               user_id=None)
+    X, user_onehot, A, Y, C = stata_to_tensors(df=travel,
+                                               var_cols_dict=var_cols_dict,
+                                               session_id='id',
+                                               item_id='mode',
+                                               choice='choice',
+                                               category_id=None,
+                                               user_id=None)
