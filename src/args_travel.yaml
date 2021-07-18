@@ -1,0 +1,38 @@
+device: 'cuda'
+tb_out: './tb_out'
+# file system
+base_path: '/oak/stanford/groups/athey/MoreSupermarkets/csv/new_data/nf_runs'
+# stores: '3014_availability'
+# stores: '3014-3098-3089-3168'
+stores: '1904-1887/20180101-20191231_8/tsv'
+# stores: '3014'
+# data structure
+user_feature_dim: 10
+item_feature_dim: 10
+price_feature_dim: 10
+user_price_feature_dim: 10
+num_items: 4
+num_users: 1
+# model specification
+var_variation_dict:  # put empty line to indicate None.
+  u: 
+  i: 
+  ui:
+  t: 'item'
+  ut:
+  it: 'item'
+  uit:
+  intercept: 'constant'
+var_num_params_dict:
+  u: 
+  i: 
+  ui:
+  t: 2
+  ut:
+  it: 4
+  uit:
+  intercept: 1
+# training
+num_epochs: 10000
+learning_rate: 0.000001
+batch_size: 210
