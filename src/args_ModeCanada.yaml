@@ -1,0 +1,43 @@
+out_dir: './out_mode_canada_test'
+device: 'cuda'
+tb_out: './out'
+# file system
+base_path: '/oak/stanford/groups/athey/MoreSupermarkets/csv/new_data/nf_runs'
+# stores: '3014_availability'
+# stores: '3014-3098-3089-3168'
+stores: '1904-1887/20180101-20191231_8/tsv'
+# stores: '3014'
+# data structure
+user_feature_dim: 10
+item_feature_dim: 10
+price_feature_dim: 10
+user_price_feature_dim: 10
+num_items: 4
+num_users: 1
+# model specification
+var_variation_dict:  # put empty line to indicate None.
+  u: 
+  i: 'constant'  # alternative specific.
+  ui:
+  t: 'item'  # situation specific.
+  ut:
+  it: 'item2'  # alternative and situation specific.
+  uit:
+  intercept: 'item'
+var_num_params_dict:
+  u: 
+  i: 3
+  ui:
+  t: 1
+  ut:
+  it: 1
+  uit:
+  intercept: 1
+# training
+max_epochs: 100000
+param_norm_eps: 0.00001  # for assessing the convergence of parameter.
+learning_rate: 0.0001
+lr_decay: 0.9999  # exponential learning rate decay, put 1.0 for not decaying.
+eval_epoch: 1000
+# learning_rate: 0.3
+batch_size: -1  # set to -1 to use full-batch.
