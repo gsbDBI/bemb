@@ -15,17 +15,28 @@ from typing import List
 import argparse
 
 
-def train(datasets: List[torch.utils.data.Dataset],
+def train(datasets: List[dict],
           model: torch.nn.Module,
           args: argparse.Namespace):
-    assert len(datasets) == 3
-    # should have three datasets, 
-    data_train, data_val, data_test = datasets
+    """The training procedure.
 
+    Args:
+        datasets (List[dict]): a list of 3 dictionaries, which contains required information for
+            model training/validating/testing. Each dictionary should have at least 'X', 'user_onehot',
+            'A', 'Y', and 'C' as keys.
+        The first dictionary is the training dataset, the second is the validation dataset,
+            the last one is the testing dataset. Put None there to disable validation or testing.
+        model (torch.nn.Module): a pytorch model.
+        args (argparse.Namespace): a collection of args.
+    """
+    assert len(datasets) == 3
+    assert datasets[0] is not None, 'Training dataset is required.'
+    data_train, data_val, data_test = datasets
     do_validation = data_val is not None
     do_test = data_test is not None
     
-    X, user_onehot, A, Y, C = data_train['X'], data_train['user_onehot'], data_train['A'], data_train['Y'], data_train['C']
+    X, user_onehot, A, Y, C = (data_train['X'], data_train['user_onehot'],
+                               data_train['A'], data_train['Y'], data_train['C'])
 
     optimizer = optim.SGD(model.parameters(), lr=args.learning_rate)
     scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=args.lr_decay)
@@ -35,15 +46,16 @@ def train(datasets: List[torch.utils.data.Dataset],
     param_norm_change = 1E10
     epoch = 0
 
+    # record training progress.
     loss_list, acc_list, ll_list = [], [], []
 
     if args.batch_size == -1:
         args.batch_size = len(Y)
 
-    # Run till convergence in terms of parameter.
+    # run until convergence in terms of parameter.
     while (param_norm_change > args.param_norm_eps) and (epoch <= args.max_epochs):
         epoch += 1
-        # record metrics across mini-batches.
+        # record metrics across batches.
         epoch_loss, epoch_acc = list(), list()
         log_likelihood = 0.0
 
@@ -88,6 +100,9 @@ def train(datasets: List[torch.utils.data.Dataset],
         if epoch % args.eval_epoch == 0:
             print(f'[Epoch={epoch} Train] LL={log_likelihood:5f}, ACC={np.mean(epoch_acc):5f}%, LOSS={np.mean(epoch_loss):5f}, NORM DELTA={param_norm_change:5f}')
 
+    torch.save(model, f'{args.out_dir}/model.pt')
+    print(prob.mean(dim=0))
+
     # summary plot.
     fig, axes = plt.subplots(ncols=3, figsize=(24, 8))
     axes[0].plot(loss_list, label='loss')
@@ -95,4 +110,4 @@ def train(datasets: List[torch.utils.data.Dataset],
     axes[2].plot(ll_list, label='log-likelihood')
     for ax in axes:
         ax.legend()
-    fig.savefig(f'out_{args.experiment}.png')
+    fig.savefig(f'{args.out_dir}/curve.png')
