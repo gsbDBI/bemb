@@ -1,18 +1,17 @@
 """
 The basic training loop.
 """
+import argparse
 import copy
-import numpy as np
-
-import torch
-from torch import nn
-from torch import optim
-import train.utils as utils
+import os
+from typing import List
 
 import matplotlib.pyplot as plt
+import numpy as np
+import torch
+from torch import nn, optim
 
-from typing import List
-import argparse
+import train.utils as utils
 
 
 def train(datasets: List[dict],
@@ -100,7 +99,8 @@ def train(datasets: List[dict],
         if epoch % args.eval_epoch == 0:
             print(f'[Epoch={epoch} Train] LL={log_likelihood:5f}, ACC={np.mean(epoch_acc):5f}%, LOSS={np.mean(epoch_loss):5f}, NORM DELTA={param_norm_change:5f}')
 
-    torch.save(model, f'{args.out_dir}/model.pt')
+    torch.save(model, os.path.join(args.out_dir, 'model.pt'))
+    torch.save(prob, os.path.join(args.out_dir, 'prob.pt'))
     print(prob.mean(dim=0))
 
     # summary plot.
@@ -110,4 +110,4 @@ def train(datasets: List[dict],
     axes[2].plot(ll_list, label='log-likelihood')
     for ax in axes:
         ax.legend()
-    fig.savefig(f'{args.out_dir}/curve.png')
+    fig.savefig(os.path.join(args.out_dir, 'curve.png'))
