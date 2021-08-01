@@ -1,5 +1,5 @@
 import os
-from typing import Tuple, Union, Optional, Dict
+from typing import List, Union, Optional, Dict
 
 import numpy as np
 import pandas as pd
@@ -38,7 +38,8 @@ class CMDataset(torch.utils.data.Dataset):
                  user_onehot: Optional[torch.LongTensor] = None,
                  A: Optional[torch.BoolTensor] = None,
                  Y: Optional[torch.LongTensor] = None,
-                 C: Optional[torch.LongTensor] = None
+                 C: Optional[torch.LongTensor] = None,
+                 device: str = 'cpu'
                  ) -> None:
         """Constructs the dataloader, reads dataset from disk directly if `path` is provided.
         Otherwise, the provided X, user_onehot, etc, tensors will be used.
@@ -81,10 +82,14 @@ class CMDataset(torch.utils.data.Dataset):
             self._load_from_path(path)
         else:
             self.X = X
-            self.user_onehot = user_onehot
-            self.A = A
-            self.Y = Y
-            self.C = C
+            for k, v in self.X.items():
+                if v is not None:
+                    self.X[k] = v.to(device)
+            
+            self.user_onehot = user_onehot.to(device)
+            self.A = A.to(device)
+            self.Y = Y.to(device)
+            self.C = C.to(device)
 
             self.num_sessions = len(self.Y)
             self.num_users = self.user_onehot.shape[1]
@@ -92,23 +97,24 @@ class CMDataset(torch.utils.data.Dataset):
             assert torch.max(self.Y) + 1 == self.num_items
             self.num_categories = torch.max(self.C) + 1
 
-    def __getitem__(self, idx: int):
+    def __getitem__(self, idx: Union[int, List[int]]):
         """Get the idx-th entry of the dataset, returns a (predictors, label) tuple."""
+        batch_size = 1 if isinstance(idx, int) else len(idx)
         x_row = dict()
         for key, val in self.X.items():
             # iterating through different types of variables.
             if val is None:
                 x_row[key] = None
             else:
-                x_row[key] = torch.unsqueeze(val[idx, :, :], dim=0)  # (1, num_items, num_params)
-                assert x_row[key].shape[:-1] == (1, self.num_items)
+                x_row[key] = val[idx, :, :].view(batch_size, self.num_items, -1)  # (batch_size, num_items, num_params)
+                assert x_row[key].shape[:-1] == (batch_size, self.num_items)
 
-        U = self.user_onehot[idx, :].view(1, self.num_users)
-        A = self.A[idx, :].view(1, self.num_items)
+        U = self.user_onehot[idx, :].view(batch_size, self.num_users)
+        A = self.A[idx, :].view(batch_size, self.num_items)
         C = self.C[idx]
         Y = self.Y[idx]
         
-        return (x_row, U, A, C), self.Y[idx]
+        return (x_row, U, A, C), Y
 
     def __len__(self) -> int:
         return self.num_sessions
