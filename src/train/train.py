@@ -14,6 +14,11 @@ import train.utils as utils
 
 
 def accuracy(outputs: torch.Tensor, labels: torch.Tensor) -> float:
+    """A helper function for computing accuracy of prediction.
+    Args:
+        outputs: float tensor with hshape(N, num_classes)
+        labels: long tensor with shape (N,)
+    """
     _, preds = torch.max(outputs, dim=1)
     acc = torch.tensor(torch.sum(preds == labels).item() / len(preds)) * 100
     return float(acc)
@@ -40,8 +45,10 @@ def train(datasets: List[dict],
     do_test = data_test is not None
 
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
-    scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=args.lr_decay)
+    # scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=args.lr_decay)
+    scheduler = optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=2000, gamma=0.5)
 
+    # model's state_dict from last epoch.
     last_model = None
     param_norm_change = 1E10
     epoch = 0
@@ -50,9 +57,10 @@ def train(datasets: List[dict],
     loss_list, acc_list, ll_list = [], [], []
 
     # run until convergence in terms of parameter.
+    # TODO(Tianyu): optionally assess convergence using change in loss.
     while (param_norm_change > args.param_norm_eps) and (epoch <= args.max_epochs):
         epoch += 1
-        # record metrics across batches.
+        # running average across mini-batches.
         epoch_loss, epoch_acc = list(), list()
         log_likelihood = 0.0
         model.train()
@@ -63,7 +71,7 @@ def train(datasets: List[dict],
             for k, v in X_batch.items():
                 if v is not None:
                     X_batch[k] = v.to(args.device)
-            
+
             y_pred = model(X_batch, availability=A_batch, user_onehot=user_onehot_batch)
             loss = F.cross_entropy(y_pred, y_batch, reduction='mean')
             log_likelihood -= float(loss.item()) * len(y_batch)
@@ -83,6 +91,7 @@ def train(datasets: List[dict],
             param_norm_change = 1E10
         else:
             param_norm_change = utils.diff_in_norm(last_model, model.state_dict())
+        # record the current model.
         last_model = copy.deepcopy(model.state_dict())
 
         # average across mini-batches get training loss for the current epoch.
@@ -90,6 +99,7 @@ def train(datasets: List[dict],
         acc_list.append(np.mean(epoch_acc))
         ll_list.append(log_likelihood)
 
+        # report training progress
         if epoch % args.eval_epoch == 0:
             out = f'[Epoch={epoch} Train] LL={log_likelihood:6f}, ACC={np.mean(epoch_acc):5f}%, LOSS={np.mean(epoch_loss):5f}, NORM DELTA={param_norm_change:5f}'
             if do_validation:
