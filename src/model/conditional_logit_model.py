@@ -29,7 +29,7 @@ class Coefficient(nn.Module):
             ValueError: [description]
         """
         super(Coefficient, self).__init__()
-        assert variation in ['zero', 'constant', 'item', 'user', 'user-item']
+        # assert variation in ['zero', 'constant', 'item', 'user', 'user-item']
         self.variation = variation
         self.num_items = num_items
         self.num_users = num_users
@@ -40,11 +40,15 @@ class Coefficient(nn.Module):
             self.coef = nn.Parameter(torch.randn(num_params), requires_grad=True)
         elif self.variation == 'item':
             # coef_j depends on item j but not on user i.
-            self.coef = nn.Parameter(torch.randn(num_items, num_params), requires_grad=True)
+            # force coefficeints for the first item class to be zero.
+            self.coef = nn.Parameter(torch.zeros(num_items - 1, num_params), requires_grad=True)
+        elif self.variation == 'item_full':
+            # coef_j depends on item j but not on user i.
+            self.coef = nn.Parameter(torch.zeros(num_items, num_params), requires_grad=True)
         elif self.variation == 'user':
-            self.coef = nn.Parameter(torch.randn(num_users, num_params), requires_grad=True)
+            self.coef = nn.Parameter(torch.zeros(num_users, num_params), requires_grad=True)
         elif self.variation == 'user-item':
-            self.coef = nn.Parameter(torch.randn(num_users, num_items, num_params), requires_grad=True)
+            self.coef = nn.Parameter(torch.zeros(num_users, num_items, num_params), requires_grad=True)
         else:
             raise ValueError(f'Unsupported type of variation: {self.variation}.')
 
@@ -58,8 +62,15 @@ class Coefficient(nn.Module):
             coef = self.coef.expand(num_trips, num_items, -1)
             return (x * coef).sum(dim=-1)
         elif self.variation == 'item':
+            # TODO(Tianyu): drop dummies.
+            coef2 = torch.cat([torch.zeros(1, self.num_params).to(self.coef.device), self.coef], dim=0)
+            coef = coef2.expand(num_trips, -1, -1)
+            # coef = self.coef.expand(num_trips, -1, -1)
+            return (x * coef).sum(dim=-1)
+        elif self.variation == 'item_full':
             coef = self.coef.expand(num_trips, -1, -1)
             return (x * coef).sum(dim=-1)
+
         elif self.variation == 'user':
             coef_user = user_onehot @ self.coef  # (num_trips, num_params)
             coef_user = coef_user.expand(-1, num_items, -1)  # (num_trips, num_items, num_params)
@@ -112,8 +123,8 @@ class ConditionalLogitModel(nn.Module):
                 Put None if there is no this kind of variable in the model.
         """
         super(ConditionalLogitModel, self).__init__()
-        ALLOWED_VARIABLES = ['intercept', 'u', 'i', 'ui', 't', 'ut', 'it', 'uit'] 
-        ALLOWED_VARIATION_LEVELS = [None, 'constant', 'user', 'item', 'user-item']
+        ALLOWED_VARIABLES = ['intercept', 'u', 'i', 'ui', 't', 'ut', 'it', 'uit']
+        ALLOWED_VARIATION_LEVELS = [None, 'constant', 'user', 'item', 'user-item', 'item2']
         
         self.var_num_params_dict = deepcopy(var_num_params_dict)
         # check number of parameters specified are all positive.
@@ -160,7 +171,7 @@ class ConditionalLogitModel(nn.Module):
     def summary(self):
         for var_type, coefficient in self.coef_dict.items():
             if coefficient is not None:
-                print(var_type)
+                print('Variable Type: ', var_type)
                 print(coefficient.coef)
 
     def forward(self,
@@ -184,10 +195,12 @@ class ConditionalLogitModel(nn.Module):
 
         # for each type of variables, apply the corresponding coefficient to input x.
         for var_type, coef in self.coef_dict.items():
-            if x_dict[var_type] is not None:
+            # if x_dict[var_type] is not None:
+            if coef is not None:
                 total_utility += coef(x_dict[var_type], user_onehot)
     
         assert total_utility.shape == (batch_size, self.num_items)
         # mask out unavilable items.
         total_utility[~availability] = -1.0e20
+        # breakpoint()
         return total_utility
