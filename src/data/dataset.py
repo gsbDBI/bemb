@@ -1,33 +1,31 @@
-import os
+"""
+Default data structure for a consumer choice problem dataset.
+"""
 from typing import List, Union, Optional, Dict
 
-import numpy as np
-import pandas as pd
 import torch
-from torch.utils import data
+
+# VAR_TYPES = ['u', 'i', 'ui', 't', 'ut', 'it', 'uit']
 
 
-VAR_TYPES = ['u', 'i', 'ui', 't', 'ut', 'it', 'uit']
-
-
-def collate_fn(sample_list):
-    """Collate function for the special (X, y) tuple returned by CMDataset.__getitem__()
-    Expected input format:
-    [... ((X_dict, user_onehot, A, C), Y) ...]
-    """
-    x_cat = dict()
-    for key in VAR_TYPES:
-        if sample_list[0][0][0][key] is None:
-            x_cat[key] = None
-        else:
-            x_cat[key] = torch.cat([sample[0][0][key] for sample in sample_list], dim=0)
+# def collate_fn(sample_list):
+#     """Collate function for the special (X, y) tuple returned by CMDataset.__getitem__()
+#     Expected input format:
+#     [... ((X_dict, user_onehot, A, C), Y) ...]
+#     """
+#     x_cat = dict()
+#     for key in VAR_TYPES:
+#         if sample_list[0][0][0][key] is None:
+#             x_cat[key] = None
+#         else:
+#             x_cat[key] = torch.cat([sample[0][0][key] for sample in sample_list], dim=0)
     
-    user_onehot_cat = torch.cat([sample[0][1] for sample in sample_list], dim=0)
-    A_cat = torch.cat([sample[0][2] for sample in sample_list], dim=0)
-    # list of 0 dimensional tensors.
-    C_cat = torch.stack([sample[0][3] for sample in sample_list])
-    Y_cat = torch.stack([sample[1] for sample in sample_list])
-    return (x_cat, user_onehot_cat, A_cat, C_cat), Y_cat
+#     user_onehot_cat = torch.cat([sample[0][1] for sample in sample_list], dim=0)
+#     A_cat = torch.cat([sample[0][2] for sample in sample_list], dim=0)
+#     # list of 0 dimensional tensors.
+#     C_cat = torch.stack([sample[0][3] for sample in sample_list])
+#     Y_cat = torch.stack([sample[1] for sample in sample_list])
+#     return (x_cat, user_onehot_cat, A_cat, C_cat), Y_cat
 
 
 class CMDataset(torch.utils.data.Dataset):
@@ -77,19 +75,22 @@ class CMDataset(torch.utils.data.Dataset):
                 takes values from {0, 1, ..., num_categories-1} indicating which category the item
                 bought in that session belongs to.
                 Defaults to None.
+            
+            device (str): location to store the entire dataset. Defaults to 'cpu'.
         """
+        self.device = device
         if path is not None:
             self._load_from_path(path)
         else:
             self.X = X
             for k, v in self.X.items():
                 if v is not None:
-                    self.X[k] = v.to(device)
+                    self.X[k] = v.to(self.device)
             
-            self.user_onehot = user_onehot.to(device)
-            self.A = A.to(device)
-            self.Y = Y.to(device)
-            self.C = C.to(device)
+            self.user_onehot = user_onehot.to(self.device)
+            self.A = A.to(self.device)
+            self.Y = Y.to(self.device)
+            self.C = C.to(self.device)
 
             self.num_sessions = len(self.Y)
             self.num_users = self.user_onehot.shape[1]
@@ -98,7 +99,6 @@ class CMDataset(torch.utils.data.Dataset):
             self.num_categories = torch.max(self.C) + 1
 
     def __getitem__(self, idx: Union[int, List[int]]):
-        """Get the idx-th entry of the dataset, returns a (predictors, label) tuple."""
         batch_size = 1 if isinstance(idx, int) else len(idx)
         x_row = dict()
         for key, val in self.X.items():
@@ -107,11 +107,13 @@ class CMDataset(torch.utils.data.Dataset):
                 x_row[key] = None
             else:
                 x_row[key] = val[idx, :, :].view(batch_size, self.num_items, -1)  # (batch_size, num_items, num_params)
-                assert x_row[key].shape[:-1] == (batch_size, self.num_items)
-
+        # user onehot, raw show (num_sessions, num_users)
         U = self.user_onehot[idx, :].view(batch_size, self.num_users)
+        # item aviliability, raw shape (num_sessions, num_items)
         A = self.A[idx, :].view(batch_size, self.num_items)
+        # item category, raw shape (num_sessions,)
         C = self.C[idx]
+        # purchase choice, raw shape (num_sessions,)
         Y = self.Y[idx]
         
         return (x_row, U, A, C), Y
