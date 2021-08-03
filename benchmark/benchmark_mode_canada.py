@@ -9,10 +9,12 @@ from typing import Optional
 
 import pandas as pd
 import torch
+import torch.nn.functional as F
 from torch.utils.data.sampler import BatchSampler, SequentialSampler, RandomSampler
 import yaml
 
 sys.path.append('./src')
+sys.path.append('../src')
 sys.path.append('./')
 from data.data_formatter import stata_to_tensors
 from data.dataset import CMDataset
@@ -21,17 +23,22 @@ from train.train import train
 
 
 def main(modifier: Optional[dict]=None):
-    arg_path = sys.argv[1]
-    # arg_path = './args.yaml'
+    # arg_path = sys.argv[1]
+    arg_path = './args_mode_canada.yaml'
     with open(arg_path) as file:
         args = argparse.Namespace(**yaml.load(file, Loader=yaml.FullLoader))  # unwrap dictionary loaded.
-    
+
     if modifier is not None:
         for k, v in modifier.items():
             setattr(args, k, v)
 
     if not os.path.exists(args.out_dir):
         os.mkdir(args.out_dir)
+
+    if args.device != 'cpu':
+        print(f'Running on device: {torch.cuda.get_device_name(args.device)}')
+    else:
+        print(f'Running on CPU.')
 
     project_path = '~/Development/deepchoice'
     mode_canada = pd.read_csv(os.path.join(project_path, 'data/ModeCanada.csv'), index_col=0)
@@ -47,6 +54,7 @@ def main(modifier: Optional[dict]=None):
         'it': ['ivt'],
         'uit': None
     }
+    print('Preparing Dataset...')
     # X, user_onehot, A, Y, C = stata_to_tensors(df=mode_canada,
     #                                            var_cols_dict=var_cols_dict,
     #                                            session_id='case',
@@ -54,10 +62,10 @@ def main(modifier: Optional[dict]=None):
     #                                            choice='choice',
     #                                            category_id=None,
     #                                            user_id=None)
-    
-    # torch.save((X, user_onehot, A, Y, C), './ModeCanada.pt')
-    X, user_onehot, A, Y, C = torch.load('./ModeCanada.pt')
+    # torch.save((X, user_onehot, A, Y, C), './mode_canada.pt')
+    X, user_onehot, A, Y, C = torch.load('./mode_canada.pt')
 
+    print('Building the model...')
     model = ConditionalLogitModel(num_items=args.num_items,
                                   num_users=args.num_users,
                                   var_variation_dict=args.var_variation_dict,
@@ -93,6 +101,38 @@ def main(modifier: Optional[dict]=None):
     print(model.coef_dict['t'].coef)
     print('ivt')
     print(model.coef_dict['it'].coef)
+
+    print('=' * 10 + 'computing Hessian' + '=' * 10)
+
+    # concat all coefficients together.
+    fitted_theta = torch.cat(list(model.coef_dict[typ].coef.squeeze() for typ in model.variable_types))
+    # theta = fitted_theta
+    
+    def compute_loss(theta: torch.Tensor) -> float:
+        last = 0
+        for typ in model.variable_types:
+            shape = model.coef_dict[typ].coef.shape
+            num_elem = model.coef_dict[typ].coef.numel()
+            del model.coef_dict[typ].coef
+            model.coef_dict[typ].coef = theta[last:last + num_elem].reshape(*shape)
+            last += num_elem
+        y_pred = model(X, availability=A.to(args.device), user_onehot=user_onehot.to(args.device))
+        loss = F.cross_entropy(y_pred, Y.to(args.device), reduction='sum')
+        return loss
+
+    H = torch.autograd.functional.hessian(compute_loss, fitted_theta)
+
+    print('Order:')
+    print(model.variable_types)
+
+    print('coef:')
+    print(fitted_theta)
+
+    print('std from Hessian:')
+    std = torch.sqrt(torch.diag(torch.inverse(H)))
+    
+    for c, s in zip(fitted_theta, std):
+        print(f'{c.item():.4f}, {s.item():.4f}')
 
 
 if __name__ == '__main__':
