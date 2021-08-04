@@ -230,7 +230,7 @@ class ConditionalLogitModel(nn.Module):
         return super().__repr__() + '\n' + '\n'.join(out_str_lst)
 
     @property
-    def total_params(self) -> int:
+    def num_params(self) -> int:
         return sum(w.numel() for w in self.parameters())
 
     def summary(self):
@@ -313,7 +313,7 @@ class ConditionalLogitModel(nn.Module):
             # use reshape instead of view to make a copy.
             param_list.append(coef_dict[var_type].coef.clone().reshape(-1,))
 
-        all_param = torch.cat(param_list)  # (self.total_params(), )
+        all_param = torch.cat(param_list)  # (self.num_params(), )
         return all_param, type2idx
 
     @staticmethod
@@ -335,7 +335,7 @@ class ConditionalLogitModel(nn.Module):
             y (torch.LongTensor): a tensor with shape (num_trips,) of IDs of items actually purchased.
 
         Returns:
-            torch.Tensor: a (self.total_params, self.total_params) tensor of the Hessian matrix.
+            torch.Tensor: a (self.num_params, self.num_params) tensor of the Hessian matrix.
         """
         all_coefs, type2idx = self.flatten_coef_dict(self.coef_dict)
         
@@ -350,7 +350,7 @@ class ConditionalLogitModel(nn.Module):
             return loss
 
         H = torch.autograd.functional.hessian(compute_nll, all_coefs)
-        assert H.shape == (self.total_params, self.total_params)
+        assert H.shape == (self.num_params, self.num_params)
         return H
 
     # def compute_approx_hessian(self, x_dict, availability, user_onehot, y):
