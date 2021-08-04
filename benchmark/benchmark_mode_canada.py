@@ -6,6 +6,7 @@ import os
 import pdb
 import sys
 from typing import Optional
+from datetime import datetime
 
 import pandas as pd
 import torch
@@ -72,8 +73,8 @@ def main(modifier: Optional[dict]=None):
                                   var_num_params_dict=args.var_num_params_dict)
 
     model = model.to(args.device)
-    print(f'Number of parameters: {model.total_params}')
-    dataset = CMDataset(X=X, user_onehot=user_onehot, A=A, Y=Y, C=C, device='cuda')
+    print(f'Number of parameters: {model.num_params}')
+    dataset = CMDataset(X=X, user_onehot=user_onehot, A=A, Y=Y, C=C, device=args.device)
     if args.batch_size == -1:
         # use full-batch.
         args.batch_size = len(dataset)
@@ -86,10 +87,10 @@ def main(modifier: Optional[dict]=None):
     # cannot use multiple workers if the entire dataset is already on GPU.
     data_train = torch.utils.data.DataLoader(dataset,
                                              sampler=sampler,
-                                             num_workers=0 if dataset.device == 'cuda' else os.cpu_count(),
+                                             num_workers=0,  # 0 if dataset.device == 'cuda' else os.cpu_count(),
                                              collate_fn=lambda x: x[0],
                                              pin_memory=(dataset.device == 'cpu'))
-    
+    start = datetime.now() 
     train([data_train, None, None], model, args)
 
     # print final estimation.
@@ -103,37 +104,21 @@ def main(modifier: Optional[dict]=None):
     print(model.coef_dict['it'].coef)
 
     print('=' * 10 + 'computing Hessian' + '=' * 10)
+    std_dict = model.compute_std(x_dict=X,
+                                 availability=A.to(args.device),
+                                 user_onehot=user_onehot.to(args.device),
+                                 y=Y.to(args.device))
 
-    # concat all coefficients together.
-    fitted_theta = torch.cat(list(model.coef_dict[typ].coef.squeeze() for typ in model.variable_types))
-    # theta = fitted_theta
-    
-    def compute_loss(theta: torch.Tensor) -> float:
-        last = 0
-        for typ in model.variable_types:
-            shape = model.coef_dict[typ].coef.shape
-            num_elem = model.coef_dict[typ].coef.numel()
-            del model.coef_dict[typ].coef
-            model.coef_dict[typ].coef = theta[last:last + num_elem].reshape(*shape)
-            last += num_elem
-        y_pred = model(X, availability=A.to(args.device), user_onehot=user_onehot.to(args.device))
-        loss = F.cross_entropy(y_pred, Y.to(args.device), reduction='sum')
-        return loss
+    for var_type in std_dict.keys():
+        if var_type == 'intercept':
+            print(f'Variable Type: {var_type}')
+        else:
+            print(f'Variable Type: {var_type}, variables: {var_cols_dict[var_type]}')
+        for i, s in enumerate(std_dict[var_type]):
+            c = model.coef_dict[var_type].coef.view(-1,)[i]
+            print(f'{c.item():.4f}, {s.item():.4f}')
 
-    H = torch.autograd.functional.hessian(compute_loss, fitted_theta)
-
-    print('Order:')
-    print(model.variable_types)
-
-    print('coef:')
-    print(fitted_theta)
-
-    print('std from Hessian:')
-    std = torch.sqrt(torch.diag(torch.inverse(H)))
-    
-    for c, s in zip(fitted_theta, std):
-        print(f'{c.item():.4f}, {s.item():.4f}')
-
+    print(f'Total time taken: {datetime.now() - start}')
 
 if __name__ == '__main__':
     main()

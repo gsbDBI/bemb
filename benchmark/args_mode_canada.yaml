@@ -16,28 +16,20 @@ num_items: 4
 num_users: 1
 # model specification
 var_variation_dict:  # put empty line to indicate None.
-  u: 
   i: 'constant'  # alternative specific.
-  ui:
   t: 'item'  # situation specific.
-  ut:
-  it: 'item2'  # alternative and situation specific.
-  uit:
+  it: 'item-full'  # alternative and situation specific.
   intercept: 'item'
 var_num_params_dict:
-  u: 
   i: 3
-  ui:
   t: 1
-  ut:
   it: 1
-  uit:
   intercept: 1
 # training
-max_epochs: 15000
+max_epochs: 25000
 param_norm_eps: 0.001  # for assessing the convergence of parameter.
 learning_rate: 0.01
-lr_decay: 1  # exponential learning rate decay, put 1.0 for not decaying.
+lr_decay: 0.9999  # exponential learning rate decay, put 1.0 for not decaying.
 eval_epoch: 1000
 shuffle: True  # weather to shuffle dataset.
 # learning_rate: 0.3
