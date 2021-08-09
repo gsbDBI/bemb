@@ -17,7 +17,27 @@ class NestedLogitModel(nn.Module):
                  item_num_param_dict: Dict[str, int],
                  num_users: Optional[int]=None
                  ) -> None:
-        """"""
+        """Initialization method of the nested logit model.
+
+        Args:
+            category_to_item (Dict[object, List[int]]): a dictionary maps a category ID to a list
+                of items IDs of the queried category.
+            
+            category_coef_variation_dict (Dict[str, str]): a dictionary maps a variable type
+                (i.e., variable group) to the level of variation for the coefficient of this type
+                of variables.
+            category_num_param_dict (Dict[str, int]): a dictoinary maps a variable type name to
+                the number of parameters in this variable group.
+
+            item_coef_variation_dict (Dict[str, str]): the same as category_coef_variation_dict but
+                for item features.
+            item_num_param_dict (Dict[str, int]): the same as category_num_param_dict but for item
+                features.
+
+            num_users (Optional[int], optional): number of users to be modelled, this is only
+                required if any of variable type requires user-specific variations.
+                Defaults to None.
+        """
         super(NestedLogitModel, self).__init__()
         self.category_to_item = category_to_item
         self.category_coef_variation_dict = category_coef_variation_dict
@@ -60,10 +80,10 @@ class NestedLogitModel(nn.Module):
                                               num_params=num_params)
         return nn.ModuleDict(coef_dict)
 
-    def _check_input_shapes(self, category, item_x_dict, user_onehot, item_avilability) -> None:
+    def _check_input_shapes(self, category_x_dict, item_x_dict, user_onehot, item_avilability) -> None:
         T = list(category_x_dict.values())[0].shape[0]  # batch size.
-        for (var_type, x_category), (var_type, x_item) in zip(category_x_dict.items(), item_x_dict.items()):
-            # shape (T, *, *)
+        for var_type, x_category in category_x_dict.items():
+            x_item = item_x_dict[var_type]
             assert len(x_item.shape) == len(x_item.shape) == 3
             assert x_category.shape[0] == x_item.shape[0]
             assert x_category.shape == (T, self.num_categories, self.category_num_param_dict[var_type])
@@ -103,19 +123,21 @@ class NestedLogitModel(nn.Module):
         
         if not self._clamp_called_flag:
             warnings.UserWarning('Did you forget to call clamp_lambdas() after optimizer.step()?')
-        # check shapes.
-        # TODO(Tianyu) change here.
+        # check input shapes.
         self._check_shapes(category_x_dict, item_x_dict)
 
         # The overall utility of item can be decomposed into V[item] = W[category] + Y[item] + eps.
         T = list(item_x_dict.values())[0].shape[0]
+        device = list(item_x_dict.values())[0].device
         # compute category-specific utility with shape (T, num_categories).
+        W = torch.zeros(T, self.num_categories).to(device)
         for var_type, coef in self.category_coef_dict.items():
-            W = coef(category_x_dict[var_type], user_onehot)
+            W += coef(category_x_dict[var_type], user_onehot)
 
         # compute item-specific utility (T, num_items).
+        Y = torch.zeros(T, self.num_items).to(device)
         for var_type, coef in self.item_coef_dict.items():
-            Y = coef(item_x_dict[var_type], user_onehot)
+            Y += coef(item_x_dict[var_type], user_onehot)
 
         # mask out unavilable items. TODO(Tianyu): is this correct?
         if item_avilability is not None:
@@ -157,13 +179,18 @@ class NestedLogitModel(nn.Module):
         self._clamp_called_flag = False
         return logP
 
-    def evaluate(self, dataset, is_train: bool=True):
-        # compute the negative log-likelihood directly.
+    def negative_log_likelihood(self,
+                                y: torch.LongTensor,
+                                category_x_dict, item_x_dict, user_onehot, item_avilability,
+                                is_train: bool=True) -> torch.Tensor:
+        # compute the negative log-likelihood loss directly.
         if is_train:
             self.train()
         else:
             self.eval()
-        nll = torch.scalar_tensor(None)
+        # (num_trips, num_items)
+        logP = self.forward(category_x_dict, item_x_dict, user_onehot, item_avilability)
+        nll = - logP[torch.arange(len(y)), y].sum()
         return nll
 
     def clamp_lambdas(self):
