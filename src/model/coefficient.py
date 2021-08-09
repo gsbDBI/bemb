@@ -10,19 +10,20 @@ import torch.nn as nn
 class Coefficient(nn.Module):
     def __init__(self,
                  variation: str,
+                 num_params: int,
                  num_items: Optional[int]=None,
-                 num_users: Optional[int]=None,
-                 num_params: Optional[int]=None) -> None:
+                 num_users: Optional[int]=None
+                 ) -> None:
         """A generic coefficient object storing trainable parameters.
 
         Args:
             variation (str): the degree of variation of this coefficient. For example, the
                 coefficient can vary by users or items.
+            num_params (int): number of parameters.
             num_items (int): number of items.
             num_users (Optional[int], optional): number of users, this is only necessary if
                 the coefficient varies by users.
                 Defaults to None.
-            num_params (Optional[int], optional): number of parameters. Defaults to None.
         """
         super(Coefficient, self).__init__()
         self.variation = variation
