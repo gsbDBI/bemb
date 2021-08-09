@@ -1,56 +1,85 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import torch
 import torch.nn as nn
 import warnings
 
+from coefficient import Coefficient
+
 
 class NestedLogitModel(nn.Module):
     # The nested logit model.
     def __init__(self,
-                 category_feature_dim: int,
-                 item_feature_dim: int,
-                 category_to_item: Dict[object, List[int]]
+                 category_to_item: Dict[object, List[int]],
+                 category_coef_variation_dict: Dict[str, str],
+                 category_num_param_dict: Dict[str, int],
+                 item_coef_variation_dict: Dict[str, str],
+                 item_num_param_dict: Dict[str, int],
+                 num_users: Optional[int]=None
                  ) -> None:
         """"""
         super(NestedLogitModel, self).__init__()
-        
-        self.category_feature_dim = category_feature_dim
-        self.item_feature_dim = item_feature_dim
-        
         self.category_to_item = category_to_item
-        self.num_categories = len(category_to_item)
+        self.category_coef_variation_dict = category_coef_variation_dict
+        self.category_num_param_dict = category_num_param_dict
+        self.item_coef_variation_dict = item_coef_variation_dict
+        self.item_num_param_dict = item_num_param_dict
+        self.num_users = num_users
+        
         self.categories = list(category_to_item.keys())
-        self.num_items = sum(len(items) for items in category_to_item.values()) 
+        self.num_categories = len(self.categories)
+        self.num_items = sum(len(items) for items in category_to_item.values())
 
         # category coefficients.
-        self.category_coef = nn.Parameter(
-            torch.zeros(self.num_categories, self.category_feature_dim),
-            requires_grad=True)
+        self.category_coef_dict = self._build_coef_dict(self.category_coef_variation_dict,
+                                                        self.category_num_param_dict,
+                                                        self.num_categories)
         
         # item coefficients.
-        self.item_coef = nn.Parameter(
-            torch.zeros(self.num_items, self.item_feature_dim),
-            requires_grad=True)
+        self.item_coef_dict = self._build_coef_dict(self.item_coef_variation_dict,
+                                                    self.item_num_param_dict,
+                                                    self.num_items)
         
         # needs to be (0, 1), all lambda_k init to 0.5
         self.lambdas = nn.Parameter(torch.ones(self.num_categories) / 2, requires_grad=True)
         # used to warn users if forgot to call clamp.
         self._clamp_called_flag = True
 
-    def _check_input_shapes(self, x_category: torch.Tensor, x_item: torch.Tensor,
-                            item_avilability: torch.BoolTensor) -> None:
-        assert len(x_item.shape) == len(x_item.shape) == 3
-        assert x_category.shape[0] == x_item.shape[0]
-        T = x_category.shape[0]
-        assert x_category.shape == (T, self.num_categories, self.category_feature_dim)
-        assert x_item.shape == (T, self.num_items, self.item_feature_dim)
-        assert item_avilability.shape == (T, self.num_items)
+    def _build_coef_dict(self,
+                         coef_variation_dict: Dict[str, str],
+                         num_param_dict: Dict[str, int],
+                         num_items: int):
+        # build coefficient dictionary, mapping variable groups to the corresponding Coefficient
+        # Module. num_items could be the actual number of items or the number of categories.
+        coef_dict = dict()
+        for var_type, variation in coef_variation_dict.items():
+            num_params = num_param_dict[var_type]
+            coef_dict[var_type] = Coefficient(variation=variation,
+                                              num_items=num_items,
+                                              num_users=self.num_users,
+                                              num_params=num_params)
+        return nn.ModuleDict(coef_dict)
+
+    def _check_input_shapes(self, category, item_x_dict, user_onehot, item_avilability) -> None:
+        T = list(category_x_dict.values())[0].shape[0]  # batch size.
+        for (var_type, x_category), (var_type, x_item) in zip(category_x_dict.items(), item_x_dict.items()):
+            # shape (T, *, *)
+            assert len(x_item.shape) == len(x_item.shape) == 3
+            assert x_category.shape[0] == x_item.shape[0]
+            assert x_category.shape == (T, self.num_categories, self.category_num_param_dict[var_type])
+            assert x_item.shape == (T, self.num_items, self.item_num_param_dict[var_type])
+  
+        if (user_onehot is not None) and (self.num_users is not None):
+            assert user_onehot == (T, self.num_users)
+ 
+        if item_avilability is not None:
+            assert item_avilability.shape == (T, self.num_items)
         
     def forwad(self,
-               x_category: torch.Tensor,
-               x_item: torch.Tensor,
-               item_avilability: torch.BoolTensor
+               category_x_dict: Dict[str, torch.Tensor],
+               item_x_dict: Dict[str, torch.Tensor],
+               user_onehot: Optional[torch.LongTensor]=None,
+               item_avilability: Optional[torch.BoolTensor]=None
                ) -> torch.Tensor:
         """"Computes log P[t, i] = the log probability for the user involved in trip t to choose item i.
         Let n denote the ID of the user involved in trip t, then P[t, i] = P_{ni} on page 86 of the
@@ -75,18 +104,22 @@ class NestedLogitModel(nn.Module):
         if not self._clamp_called_flag:
             warnings.UserWarning('Did you forget to call clamp_lambdas() after optimizer.step()?')
         # check shapes.
-        self._check_shapes(x_category, x_item)
+        # TODO(Tianyu) change here.
+        self._check_shapes(category_x_dict, item_x_dict)
 
         # The overall utility of item can be decomposed into V[item] = W[category] + Y[item] + eps.
-        T = x_category.shape[0]
-        # compute category-specific utility.
-        category_coef = self.category_coef.view(1, self.num_categories, self.category_feature_dim).expand(T, -1, -1)
-        W = (x_category * category_coef).sum(dim=-1)  # (T, num_categories)
-        # compute item-specific utility.
-        item_coef = self.item_coef.view(1, self.num_items, self.item_feature_dim).expand(T, -1, -1)
-        Y = (x_item * item_coef).sum(dim=-1)  # (T, num_items)
+        T = list(item_x_dict.values())[0].shape[0]
+        # compute category-specific utility with shape (T, num_categories).
+        for var_type, coef in self.category_coef_dict.items():
+            W = coef(category_x_dict[var_type], user_onehot)
+
+        # compute item-specific utility (T, num_items).
+        for var_type, coef in self.item_coef_dict.items():
+            Y = coef(item_x_dict[var_type], user_onehot)
+
         # mask out unavilable items. TODO(Tianyu): is this correct?
-        Y[~item_avilability] = -1.0e20
+        if item_avilability is not None:
+            Y[~item_avilability] = -1.0e20
 
         # =============================================================================
         # compute the inclusive value of each category.
