@@ -95,12 +95,12 @@ class NestedLogitModel(nn.Module):
         if item_avilability is not None:
             assert item_avilability.shape == (T, self.num_items)
         
-    def forwad(self,
-               category_x_dict: Dict[str, torch.Tensor],
-               item_x_dict: Dict[str, torch.Tensor],
-               user_onehot: Optional[torch.LongTensor]=None,
-               item_avilability: Optional[torch.BoolTensor]=None
-               ) -> torch.Tensor:
+    def forward(self,
+                category_x_dict: Dict[str, torch.Tensor],
+                item_x_dict: Dict[str, torch.Tensor],
+                user_onehot: Optional[torch.LongTensor]=None,
+                item_avilability: Optional[torch.BoolTensor]=None
+                ) -> torch.Tensor:
         """"Computes log P[t, i] = the log probability for the user involved in trip t to choose item i.
         Let n denote the ID of the user involved in trip t, then P[t, i] = P_{ni} on page 86 of the
         book "discrete choice methods with simulation" by Train.
