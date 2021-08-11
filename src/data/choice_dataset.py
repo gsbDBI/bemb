@@ -41,8 +41,8 @@ class ChoiceDataset(torch.utils.data.Dataset):
     #     # might cause performance issue
 
     def __getitem__(self, indices: Union[int, torch.LongTensor]):
-        # TODO(Tianyu): should we inplace modify self and return self or construct a new ChoiceDataset object?
-        new_dict = dict() 
+        # TODO: Do we really need to initialize a new ChoiceDataset object?
+        new_dict = dict()
 
         new_dict['label'] = self.label[indices]
 
@@ -114,7 +114,13 @@ class ChoiceDataset(torch.utils.data.Dataset):
 
     def _check_device_consistency(self):
         # assert all tensors are on the same device.
-        raise NotImplementedError()
+        devices = list()
+        for val in self.__dict__.values():
+            if torch.is_tensor(val):
+                devices.append(val.device)
+        if len(set(devices)) > 1:
+            raise Exception(f'Found tensors on different devices: {set(devices)}.',
+                            'Use dataset.to() method to align devices.')
 
     def clone(self):
         dictionary = {}
