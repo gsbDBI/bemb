@@ -38,6 +38,7 @@ class ConditionalLogitModel(nn.Module):
         for all users are forced to be zero.
     - user-item-full: parameters that are specific to both user and item, explicitly model for all items.
     """
+
     def __init__(self,
                  coef_variation_dict: Dict[str, str],
                  num_param_dict: Dict[str, int],
@@ -50,7 +51,7 @@ class ConditionalLogitModel(nn.Module):
             num_users (int): number of users in the dataset.
             coef_variation_dict (Dict[str, str]): variable type to variation level dictionary.
                 Put None or 'zero' if there is no this kind of variable in the model.
-            num_params_dict (Dict[str, int]): variable type to number of parameters dictionary,
+            num_param_dict (Dict[str, int]): variable type to number of parameters dictionary,
                 records number of features in each kind of variable.
                 Put None if there is no this kind of variable in the model.
         """
@@ -61,7 +62,7 @@ class ConditionalLogitModel(nn.Module):
         self.variable_types = list(deepcopy(num_param_dict).keys())
 
         self.coef_variation_dict = deepcopy(coef_variation_dict)
-        self.num_params_dict = deepcopy(num_param_dict)
+        self.num_param_dict = deepcopy(num_param_dict)
 
         self.num_items = num_items
         self.num_users = num_users
@@ -102,13 +103,32 @@ class ConditionalLogitModel(nn.Module):
                 print('Variable Type: ', var_type)
                 print(coefficient.coef)
 
-    def forward(self,
-                x_dict: Dict[str, torch.Tensor],
-                availability: torch.BoolTensor=None,
-                user_onehot: torch.Tensor=None,
-                manual_coef_value_dict: Optional[Dict[str, torch.Tensor]]=None
-                ) -> torch.Tensor:
+    def forward(self, batch) -> torch.Tensor:
         """
+        The forward function calls self._forward to make prediction, see docstring of self._forward for
+            more information.
+
+        Args:
+            batch ([type]): A choice dataset object.
+
+        Returns:
+            torch.Tensor: a tensor of shape (len(batch), batch.num_items), see docstring of self._forward
+                for more details.
+        """
+        return self._forward(x_dict=batch.x_dict,
+                             availability=batch.item_availability,
+                             user_onehot=batch.user_onehot)
+
+    def _forward(self,
+                 x_dict: Dict[str, torch.Tensor],
+                 availability: torch.BoolTensor = None,
+                 user_onehot: torch.Tensor = None,
+                 manual_coef_value_dict: Optional[Dict[str, torch.Tensor]] = None
+                 ) -> torch.Tensor:
+        """
+        The forward function with explicit arguments, this forward function is for internal usages
+        only, reserachers should use the forward() function insetad.
+
         Args:
             x_dict (Dict[str, torch.Tensor]): a dictionary where keys are in {'u', 'i'} etc, and
                 values are tensors with shape (num_trips, num_items, num_params), where num_trips
@@ -153,7 +173,7 @@ class ConditionalLogitModel(nn.Module):
                 total_utility += coef(x_dict[var_type], user_onehot, manual_coef_value_dict[var_type])
             else:
                 total_utility += coef(x_dict[var_type], user_onehot)
-    
+
         assert total_utility.shape == (batch_size, self.num_items)
 
         if availability is not None:
@@ -194,20 +214,20 @@ class ConditionalLogitModel(nn.Module):
         to all parameters in this model.
 
         Args:
-            x_dict ,availability, user_onehot: see definitions in self.forward.
+            x_dict ,availability, user_onehot: see definitions in self._forward.
             y (torch.LongTensor): a tensor with shape (num_trips,) of IDs of items actually purchased.
 
         Returns:
             torch.Tensor: a (self.num_params, self.num_params) tensor of the Hessian matrix.
         """
         all_coefs, type2idx = self.flatten_coef_dict(self.coef_dict)
-        
+
         def compute_nll(P: torch.Tensor) -> float:
             coef_dict = self.unwrap_coef_dict(P, type2idx)
-            y_pred = self.forward(x_dict=x_dict,
-                                  availability=availability,
-                                  user_onehot=user_onehot,
-                                  manual_coef_value_dict=coef_dict)
+            y_pred = self._forward(x_dict=x_dict,
+                                   availability=availability,
+                                   user_onehot=user_onehot,
+                                   manual_coef_value_dict=coef_dict)
             # the reduction needs to be 'sum' to obtain NLL.
             loss = F.cross_entropy(y_pred, y, reduction='sum')
             return loss
