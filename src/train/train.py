@@ -24,29 +24,29 @@ def accuracy(outputs: torch.Tensor, labels: torch.Tensor) -> float:
     return float(acc)
 
 
-def train(datasets: List[dict],
+def train(data_loaders: List[dict],
           model: torch.nn.Module,
           args: argparse.Namespace):
     """The training procedure.
 
     Args:
-        datasets (List[dict]): a list of 3 dictionaries, which contains required information for
+        data_loaders (List[dict]): a list of 3 dictionaries, which contains required information for
             model training/validating/testing. Each dictionary should have at least 'X', 'user_onehot',
             'A', 'Y', and 'C' as keys.
-        The first dictionary is the training dataset, the second is the validation dataset,
-            the last one is the testing dataset. Put None there to disable validation or testing.
+        The first dictionary is the training data_loader, the second is the validation data_loader,
+            the last one is the testing data_loader. Put None there to disable validation or testing.
         model (torch.nn.Module): a pytorch model.
         args (argparse.Namespace): a collection of args.
     """
-    assert len(datasets) == 3
-    assert datasets[0] is not None, 'Training dataset is required.'
-    data_train, data_val, data_test = datasets
+    assert len(data_loaders) == 3
+    assert data_loaders[0] is not None, 'Training data_loader is required.'
+    data_train, data_val, data_test = data_loaders
     do_validation = data_val is not None
     do_test = data_test is not None
 
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
-    # scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=args.lr_decay)
-    scheduler = optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=2000, gamma=0.5)
+    scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=args.lr_decay)
+    # scheduler = optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=5000, gamma=0.1)
 
     # model's state_dict from last epoch.
     last_model = None
@@ -64,24 +64,17 @@ def train(datasets: List[dict],
         epoch_loss, epoch_acc = list(), list()
         log_likelihood = 0.0
         model.train()
-        for features, y_batch in data_train:
-            X_batch, user_onehot_batch, A_batch, C_batch = features
-
-            y_batch = y_batch.to(args.device)
-            for k, v in X_batch.items():
-                if v is not None:
-                    X_batch[k] = v.to(args.device)
-
-            y_pred = model(X_batch, availability=A_batch, user_onehot=user_onehot_batch)
-            loss = F.cross_entropy(y_pred, y_batch, reduction='mean')
-            log_likelihood -= float(loss.item()) * len(y_batch)
+        for batch in data_train:
+            y_pred = model(batch)
+            loss = F.cross_entropy(y_pred, batch.label, reduction='mean')
+            log_likelihood -= float(loss.item()) * len(batch)
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
             epoch_loss.append(loss.item())
-            epoch_acc.append(accuracy(outputs=y_pred, labels=y_batch))
+            epoch_acc.append(accuracy(outputs=y_pred, labels=batch.label))
         # change learning rate after processing all batches, which should leads to faster convergence.
         # see https://discuss.pytorch.org/t/scheduler-step-after-each-epoch-or-after-each-minibatch/111249
         # for scheduling after each epoch or each mini-batch.
@@ -112,24 +105,17 @@ def train(datasets: List[dict],
 
 
 @torch.no_grad()
-def eval_step(model, dataset, args) -> dict:
+def eval_step(model, data_loader, args) -> dict:
     """Evaluate the model on either the validation or testing set, returns a dictionary of
     evaluation metrics.
     """
     model.eval()
     log_likelihood = 0.0
-    # average across batches, but in most cases, validation and test datasets should only have 1 batch.
+    # average across batches, but in most cases, validation and test data_loaders should only have 1 batch.
     loss_list, acc_list = list(), list()
-    for features, y_batch in dataset:
-        X_batch, user_onehot_batch, A_batch, C_batch = features
-
-        y_batch = y_batch.to(args.device)
-        for k, v in X_batch.items():
-            if v is not None:
-                X_batch[k] = v.to(args.device)        
-
-        y_pred = model(X_batch, availability=A_batch, user_onehot=user_onehot_batch)
-
+    for batch in data_loader:
+        y_pred = model(batch)
+        y_batch = batch.label
         loss = F.cross_entropy(y_pred, y_batch, reduction='mean')
         loss_list.append(float(loss.item()))
         log_likelihood -= float(loss.item()) * len(y_batch)
