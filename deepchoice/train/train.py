@@ -10,7 +10,7 @@ import torch
 import torch.nn.functional as F
 from torch import optim
 
-import train.utils as utils
+import deepchoice.train.utils as utils
 
 
 def accuracy(outputs: torch.Tensor, labels: torch.Tensor) -> float:
