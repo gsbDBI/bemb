@@ -113,10 +113,10 @@ def stata_to_tensors(df: pd.DataFrame,
     for sess, sess_indices in df.groupby(session_id).indices.items():
         df_sess = df.loc[sess_indices]
         
-        item_avilability = torch.zeros(num_items)
+        item_availability = torch.zeros(num_items)
         for i, item in enumerate(all_items):
-            item_avilability[i] = 1 if item in df_sess[item_id].values else 0
-        a_lst.append(item_avilability)
+            item_availability[i] = 1 if item in df_sess[item_id].values else 0
+        a_lst.append(item_availability)
         
         c = df_sess[df_sess[choice] == 1][item_id]
         assert len(c) == 1  # only 1 item should be chosen.

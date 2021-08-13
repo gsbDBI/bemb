@@ -1,3 +1,6 @@
+"""
+The dataset class for consumer choice datasets.
+"""
 import copy
 from typing import List, Dict, Optional, Union
 import torch

@@ -120,5 +120,6 @@ def main(modifier: Optional[dict]=None):
 
     print(f'Total time taken: {datetime.now() - start}')
 
+
 if __name__ == '__main__':
     main()

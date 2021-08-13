@@ -80,7 +80,7 @@ class NestedLogitModel(nn.Module):
                                               num_params=num_params)
         return nn.ModuleDict(coef_dict)
 
-    def _check_input_shapes(self, category_x_dict, item_x_dict, user_onehot, item_avilability) -> None:
+    def _check_input_shapes(self, category_x_dict, item_x_dict, user_onehot, item_availability) -> None:
         T = list(category_x_dict.values())[0].shape[0]  # batch size.
         for var_type, x_category in category_x_dict.items():
             x_item = item_x_dict[var_type]
@@ -92,14 +92,14 @@ class NestedLogitModel(nn.Module):
         if (user_onehot is not None) and (self.num_users is not None):
             assert user_onehot == (T, self.num_users)
  
-        if item_avilability is not None:
-            assert item_avilability.shape == (T, self.num_items)
+        if item_availability is not None:
+            assert item_availability.shape == (T, self.num_items)
         
     def forward(self,
                 category_x_dict: Dict[str, torch.Tensor],
                 item_x_dict: Dict[str, torch.Tensor],
                 user_onehot: Optional[torch.LongTensor]=None,
-                item_avilability: Optional[torch.BoolTensor]=None
+                item_availability: Optional[torch.BoolTensor]=None
                 ) -> torch.Tensor:
         """"Computes log P[t, i] = the log probability for the user involved in trip t to choose item i.
         Let n denote the ID of the user involved in trip t, then P[t, i] = P_{ni} on page 86 of the
@@ -110,8 +110,8 @@ class NestedLogitModel(nn.Module):
                 features of all categories in each trip.
             x_item (torch.Tensor): a tensor with shape (num_trips, num_items, *) including features
                 of all items in each trip.
-            item_avilability (torch.BoolTensor): a boolean tensor with shape (num_trips, num_items)
-                indicating the aviliability of items in each trip. If item_avilability[t, i] = False,
+            item_availability (torch.BoolTensor): a boolean tensor with shape (num_trips, num_items)
+                indicating the aviliability of items in each trip. If item_availability[t, i] = False,
                 the utility of choosing item i in trip t, V[t, i], will be set to -inf.
                 Given the decomposition V[t, i] = W[t, k(i)] + Y[t, i] + eps, V[t, i] is set to -inf
                 by setting Y[t, i] = -inf for unavilable items.
@@ -140,8 +140,8 @@ class NestedLogitModel(nn.Module):
             Y += coef(item_x_dict[var_type], user_onehot)
 
         # mask out unavilable items. TODO(Tianyu): is this correct?
-        if item_avilability is not None:
-            Y[~item_avilability] = -1.0e20
+        if item_availability is not None:
+            Y[~item_availability] = -1.0e20
 
         # =============================================================================
         # compute the inclusive value of each category.
@@ -150,13 +150,14 @@ class NestedLogitModel(nn.Module):
             # for nest k, divide the Y of all items in Bk by lambda_k.
             Y[:, Bk] /= self.lambdas[k]
             # compute inclusive value for category k.
+            # mask out unavilable items.
+            # TODO(Tianyu): mask out unavilable items.
             inclusive_value[k] = torch.logsumexp(Y[:, Bk], dim=1, keepdim=False)  # (T,)
         
         # boardcast inclusive value from (T, num_categories) to (T, num_items).
         # for trip t, I[t, i] is the inclusive value of the category item i belongs to.
         I = torch.empty(T, self.num_items)
-        # TODO(Tianyu): may need to optimize performance if num_categories is large.
-        # TODO(Tianyu): check if backprop works in slice assignment.
+        # ENHANCEMENT(Tianyu): parallelize this for loop.
         for k, Bk in self.category_to_item.items():
             I[:, Bk] = inclusive_value[k]  # (T,)
 
@@ -181,7 +182,7 @@ class NestedLogitModel(nn.Module):
 
     def negative_log_likelihood(self,
                                 y: torch.LongTensor,
-                                category_x_dict, item_x_dict, user_onehot, item_avilability,
+                                category_x_dict, item_x_dict, user_onehot, item_availability,
                                 is_train: bool=True) -> torch.Tensor:
         # compute the negative log-likelihood loss directly.
         if is_train:
@@ -189,7 +190,7 @@ class NestedLogitModel(nn.Module):
         else:
             self.eval()
         # (num_trips, num_items)
-        logP = self.forward(category_x_dict, item_x_dict, user_onehot, item_avilability)
+        logP = self.forward(category_x_dict, item_x_dict, user_onehot, item_availability)
         nll = - logP[torch.arange(len(y)), y].sum()
         return nll
 
