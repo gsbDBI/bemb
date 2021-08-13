@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import warnings
 
-from coefficient import Coefficient
+from deepchoice.model.coefficient import Coefficient
 
 
 class NestedLogitModel(nn.Module):
