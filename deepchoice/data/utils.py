@@ -2,6 +2,7 @@ from typing import Union, List
 
 import pandas as pd
 import torch
+from torch.utils.data.sampler import BatchSampler, SequentialSampler, RandomSampler
 
 
 def pivot3d(df: pd.DataFrame, dim0: str, dim1: str, values: Union[str, List[str]]) -> torch.Tensor:
@@ -27,3 +28,22 @@ def pivot3d(df: pd.DataFrame, dim0: str, dim1: str, values: Union[str, List[str]
     tensor = torch.stack(tensor_slice, dim=-1)
     assert tensor.shape == (df[dim0].nunique(), df[dim1].nunique(), len(values))
     return tensor
+
+
+def create_data_loader(dataset, args):
+    if args.batch_size == -1:
+        # use full-batch.
+        args.batch_size = len(dataset)
+
+    sampler = BatchSampler(
+        RandomSampler(dataset) if args.shuffle else SequentialSampler(dataset),
+        batch_size=args.batch_size,
+        drop_last=False)
+    # feed a batch_sampler as sampler so that dataset.__getitem__ is called with a list of indices.
+    # cannot use multiple workers if the entire dataset is already on GPU.
+    dataloader = torch.utils.data.DataLoader(dataset,
+                                             sampler=sampler,
+                                             num_workers=0,  # 0 if dataset.device == 'cuda' else os.cpu_count(),
+                                             collate_fn=lambda x: x[0],
+                                             pin_memory=(dataset.device == 'cpu'))
+    return dataloader
