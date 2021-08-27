@@ -37,6 +37,15 @@ class NestedLogitModel(nn.Module):
             num_users (Optional[int], optional): number of users to be modelled, this is only
                 required if any of variable type requires user-specific variations.
                 Defaults to None.
+                
+            shared_lambda (bool): a boolean indicating whether to enforce the elasticity lambda, which
+                is the coefficient for inclusive values, to be constant for all categories.
+                The lambda enters the category-level selection as the following
+                Utility of choosing category k = lambda * inclusive value of category k
+                                               + linear combination of some other category level features
+                If set to True, a single lambda will be learned for all categories, otherwise, the
+                model learns an individual lambda for each category.
+                Defaults to False.
         """
         super(NestedLogitModel, self).__init__()
         self.category_to_item = category_to_item
@@ -60,8 +69,13 @@ class NestedLogitModel(nn.Module):
                                                     self.item_num_param_dict,
                                                     self.num_items)
         
-        # needs to be (0, 1), all lambda_k init to 0.5
-        self.lambdas = nn.Parameter(torch.ones(self.num_categories) / 2, requires_grad=True)
+        self.shared_lambda = shared_lambda
+        if self.shared_lambda:
+            self.lambda_weight = nn.Parameter(torch.ones(1), requires_grad=True)
+        else:
+            self.lambda_weight = nn.Parameter(torch.ones(self.num_categories) / 2, requires_grad=True)
+        # breakpoint()
+        # self.iv_weights = nn.Parameter(torch.ones(1), requires_grad=True)
         # used to warn users if forgot to call clamp.
         self._clamp_called_flag = True
 
@@ -124,6 +138,10 @@ class NestedLogitModel(nn.Module):
             torch.Tensor: a tensor of shape (num_trips, num_items) including the log probabilty
             of choosing item i in trip t.
         """
+        if self.shared_lambda:
+            self.lambdas = self.lambda_weight.expand(self.num_categories)
+        else:
+            self.lambdas = self.lambda_weight
         
         if not self._clamp_called_flag:
             warnings.UserWarning('Did you forget to call clamp_lambdas() after optimizer.step()?')
