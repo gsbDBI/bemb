@@ -15,7 +15,8 @@ class NestedLogitModel(nn.Module):
                  category_num_param_dict: Dict[str, int],
                  item_coef_variation_dict: Dict[str, str],
                  item_num_param_dict: Dict[str, int],
-                 num_users: Optional[int]=None
+                 num_users: Optional[int]=None,
+                 shared_lambda: bool=False
                  ) -> None:
         """Initialization method of the nested logit model.
 
