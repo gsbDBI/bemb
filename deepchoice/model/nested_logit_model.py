@@ -65,6 +65,10 @@ class NestedLogitModel(nn.Module):
         # used to warn users if forgot to call clamp.
         self._clamp_called_flag = True
 
+    @property
+    def num_params(self) -> int:
+        return sum(w.numel() for w in self.parameters())
+
     def _build_coef_dict(self,
                          coef_variation_dict: Dict[str, str],
                          num_param_dict: Dict[str, int],
