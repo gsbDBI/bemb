@@ -116,13 +116,19 @@ class NestedLogitModel(nn.Module):
  
         if item_availability is not None:
             assert item_availability.shape == (T, self.num_items)
-        
-    def forward(self,
-                category_x_dict: Dict[str, torch.Tensor],
-                item_x_dict: Dict[str, torch.Tensor],
-                user_onehot: Optional[torch.LongTensor]=None,
-                item_availability: Optional[torch.BoolTensor]=None
-                ) -> torch.Tensor:
+
+    def forward(self, batch):
+        return self._forward(batch['category'].x_dict,
+                             batch['item'].x_dict,
+                             batch['item'].user_onehot,
+                             batch['item'].item_availability)
+
+    def _forward(self,
+                 category_x_dict: Dict[str, torch.Tensor],
+                 item_x_dict: Dict[str, torch.Tensor],
+                 user_onehot: Optional[torch.LongTensor] = None,
+                 item_availability: Optional[torch.BoolTensor] = None
+                 ) -> torch.Tensor:
         """"Computes log P[t, i] = the log probability for the user involved in trip t to choose item i.
         Let n denote the ID of the user involved in trip t, then P[t, i] = P_{ni} on page 86 of the
         book "discrete choice methods with simulation" by Train.
@@ -207,8 +213,8 @@ class NestedLogitModel(nn.Module):
         return logP
 
     def negative_log_likelihood(self,
+                                batch,
                                 y: torch.LongTensor,
-                                category_x_dict, item_x_dict, user_onehot, item_availability,
                                 is_train: bool=True) -> torch.Tensor:
         # compute the negative log-likelihood loss directly.
         if is_train:
@@ -216,7 +222,7 @@ class NestedLogitModel(nn.Module):
         else:
             self.eval()
         # (num_trips, num_items)
-        logP = self.forward(category_x_dict, item_x_dict, user_onehot, item_availability)
+        logP = self.forward(batch)
         nll = - logP[torch.arange(len(y)), y].sum()
         return nll
 
