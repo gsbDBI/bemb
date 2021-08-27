@@ -1,9 +1,12 @@
+"""
+Implementation of the nested logit model, see page 86 of the book
+"discrete choice methods with simulation" by Train. for more details.
+"""
+import warnings
 from typing import Dict, List, Optional
 
 import torch
 import torch.nn as nn
-import warnings
-
 from deepchoice.model.coefficient import Coefficient
 
 
@@ -143,17 +146,19 @@ class NestedLogitModel(nn.Module):
             self.lambdas = self.lambda_weight.expand(self.num_categories)
         else:
             self.lambdas = self.lambda_weight
-        
-        if not self._clamp_called_flag:
-            warnings.UserWarning('Did you forget to call clamp_lambdas() after optimizer.step()?')
-        # check input shapes.
-        self._check_shapes(category_x_dict, item_x_dict)
+
+        # if not self._clamp_called_flag:
+        #     warnings.warn('Did you forget to call clamp_lambdas() after optimizer.step()?')
 
         # The overall utility of item can be decomposed into V[item] = W[category] + Y[item] + eps.
         T = list(item_x_dict.values())[0].shape[0]
         device = list(item_x_dict.values())[0].device
         # compute category-specific utility with shape (T, num_categories).
         W = torch.zeros(T, self.num_categories).to(device)
+
+        if 'intercept' in self.category_coef_variation_dict.keys():
+            category_x_dict['intercept'] = torch.ones((T, self.num_categories, 1)).to(device)
+
         for var_type, coef in self.category_coef_dict.items():
             W += coef(category_x_dict[var_type], user_onehot)
 
@@ -162,7 +167,6 @@ class NestedLogitModel(nn.Module):
         for var_type, coef in self.item_coef_dict.items():
             Y += coef(item_x_dict[var_type], user_onehot)
 
-        # mask out unavilable items. TODO(Tianyu): is this correct?
         if item_availability is not None:
             Y[~item_availability] = -1.0e20
 
@@ -174,15 +178,12 @@ class NestedLogitModel(nn.Module):
             Y[:, Bk] /= self.lambdas[k]
             # compute inclusive value for category k.
             # mask out unavilable items.
-            # TODO(Tianyu): mask out unavilable items.
             inclusive_value[k] = torch.logsumexp(Y[:, Bk], dim=1, keepdim=False)  # (T,)
-        
         # boardcast inclusive value from (T, num_categories) to (T, num_items).
         # for trip t, I[t, i] is the inclusive value of the category item i belongs to.
-        I = torch.empty(T, self.num_items)
-        # ENHANCEMENT(Tianyu): parallelize this for loop.
+        I = torch.zeros(T, self.num_items).to(device)
         for k, Bk in self.category_to_item.items():
-            I[:, Bk] = inclusive_value[k]  # (T,)
+            I[:, Bk] = inclusive_value[k].view(-1, 1)  # (T, |Bk|)
 
         # logP_item[t, i] = log P(ni|Bk), where Bk is the category item i is in, n is the user in trip t.
         logP_item = Y - I  # (T, num_items)
@@ -192,11 +193,13 @@ class NestedLogitModel(nn.Module):
         # item i belongs to. logP_category has shape (T, num_items)
         # logit[t, i] = W[n, k] + lambda[k] I[n, k], where n is the user involved in trip t, k is
         # the category item i belongs to.
-        logit = torch.empty(T, self.num_items)
+        logit = torch.zeros(T, self.num_items).to(device)
         for k, Bk in self.category_to_item.items():
-            logit[:, Bk] = W[:, k] + self.lambdas[k] * inclusive_value[k]  # (T,)
-        logP_category = logit - torch.logsumexp(logit, dim=1, keepdim=True)
-        
+            logit[:, Bk] = (W[:, k] + self.lambdas[k] * inclusive_value[k]).view(-1, 1)  # (T, |Bk|)
+        # only count each category once in the logsumexp within the category level model.
+        cols = [x[0] for x in self.category_to_item.values()]
+        logP_category = logit - torch.logsumexp(logit[:, cols], dim=1, keepdim=True)
+ 
         # =============================================================================
         # compute the joint log P_{ni} as in the textbook.
         logP = logP_item + logP_category
