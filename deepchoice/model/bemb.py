@@ -1,6 +1,6 @@
 """Draft for the BEMB model"""
 import os
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional
 
 import numpy as np
 import pandas as pd
@@ -11,63 +11,9 @@ from torch.nn.functional import log_softmax
 from torch_scatter import scatter_max
 from torch_scatter.composite import scatter_log_softmax
 
+from gaussian import batch_factorized_gaussian_log_prob
+
 # TODO(Tianyu): change attribute names like log_p --> log_prob, likelihood etc.
-
-
-# class FactorizedGaussian(nn.Module):
-#     def __init__(self, dim_in: int, dim_out: int):
-#         # dim_in: number of items/users.
-#         # dim_out: embedding dimension.
-#         super(FactorizedGaussian, self).__init__()
-#         self.dim_in = dim_in
-#         self.dim_out = dim_out
-#         # dim_in should be num_users or num_items, this module expects user_onehot / item_onehot as input.
-#         self.mean = nn.Linear(dim_in, dim_out, bias=False)
-#         # self.mean = nn.parameter(torch.randn(dim_in, dim_out), requires_grad=True)
-#         # fully factorized Gaussian for now.
-#         self.logstd = nn.Linear(dim_in, dim_out, bias=False)
-#         # self.logstd = nn.parameter(torch.randn(dim_in, dim_out), requires_grad=True)
-
-#     @property
-#     def device(self):
-#         return self.mean.weight.device
-#         # return self.mean.device
-
-#     def log_prob(self, value: torch.Tensor) -> torch.Tensor:
-#         # is this efficient?
-#         # input shape (num_seeds, *, dim_out)
-#         dummy_input = torch.eye(self.dim_in).to(self.device)
-#         raise NotImplementedError
-#         dist = MultivariateNormal(loc=self.mean(dummy_input),
-#                                   covariance_matrix=torch.diag(torch.exp(self.logstd(dummy_input))))
-#         return dist.log_prob(value)
-#         if len(value.shape) == 1:
-#             assert value.shape == (self.dim_out,)
-#             return dist.log_prob(value)
-#         batch_shape, dim = value.shape[-1], value.shape[-1]
-#         return dist.log_prob(value.view(-1, dim)).view(*batch_shape)
-
-#     def reparameterize_sample(self, num_seeds: int=1) -> torch.Tensor:
-#         """Samples from the multivariate Gaussian distribution using the reparameterization trick.
-
-#         Args:
-#             num_seeds (int): number of samples generated.
-
-#         Returns:
-#             torch.Tensor: [description]
-#         """
-#         # Gaussian seed.
-#         eps = torch.randn(num_seeds, self.dim_in, self.dim_out).to(self.device)
-#         dummy_input = torch.eye(self.dim_in).to(self.device)
-#         mean = self.mean(dummy_input)  # (num_{users, items}, dim)
-#         std = torch.exp(self.logstd(dummy_input))  # (num_{users, items}, dim)
-#         # double check this.
-#         mean = mean.view(1, self.dim_in, self.dim_out)
-#         std = std.view(1, self.dim_in, self.dim_out)
-#         # eps = eps.view(num_seeds, 1, 1)
-#         out = mean + std * eps
-#         assert out.shape == (num_seeds, self.dim_in, self.dim_out)
-#         return out
 
 
 class FactorizedGaussian(nn.Module):
@@ -85,16 +31,9 @@ class FactorizedGaussian(nn.Module):
         return self.mean.device
 
     def log_prob(self, value: torch.Tensor) -> torch.Tensor:
-        # is this efficient?
         # input shape (batch_size, num_classes, dim_out)
-        raise NotImplemented
-        # native implementation, not tested.
-        log_prob = torch.scalar_tensor(0.0).to(self.device)
-        for i in range(self.num_classes):
-            dist = MultivariateNormal(loc=self.mean[i],
-                                      covariance_matrix=torch.diag(torch.exp(self.logstd[i]))**2)
-            log_prob += dist.log_prob(value[:, i, :]).sum()
-        return log_prob
+        # output shape (batch_size, num_classes)
+        return batch_factorized_gaussian_log_prob(self.mean, self.logstd, value)
 
     def reparameterize_sample(self, num_seeds: int=1) -> torch.Tensor:
         """Samples from the multivariate Gaussian distribution using the reparameterization trick.
@@ -117,7 +56,7 @@ class FactorizedGaussian(nn.Module):
 
 
 class LearnableGaussian(nn.Module):
-    def __init__(self, dim_in: int, dim_out: int, std: Union[str, float]='learnable_scalar'):
+    def __init__(self, dim_in: int, dim_out: int, std: Union[str, float]=0.1):
         """Construct a Gaussian distribution for prior of embeddings.
         p(alpha_ik | H_k, obsItem_i) = Gaussian( mean=H_k*obsItem_i, variance=s2obsPrior )
         p(beta_ik | H'_k, obsItem_i) = Gaussian( mean=H'_k*obsItem_i, variance=s2obsPrior )
@@ -137,36 +76,14 @@ class LearnableGaussian(nn.Module):
         else:
             raise NotImplementedError
 
-    def log_prob(self, x_obs: torch.Tensor, values: torch.Tensor) -> torch.Tensor:
+    def log_prob(self, x_obs: torch.Tensor, value: torch.Tensor) -> torch.Tensor:
         # x_obs: (num_classes, dim_in)
-        # values: (*, num_classes, dim_out)
-        # builds Gaussian for different
+        # value: (batch_size, num_classes, dim_out)
         mu = self.H(x_obs)  # (num_classes, self.dim_out)
-        std = torch.exp(self.logstd).expand(self.dim_out)  # (num_classes, self.dim_out)
-        # dist = MultivariateNormal(loc=mu, covariance_matrix=torch.diagonal(std))
-        # need to do it in parallel.
-
-    def sample(self):
-        raise NotImplementedError
-
-
-def batch_factorized_gaussian_log_prob(mu, std, values):
-    # constructs `num_classes` factorized Gaussian distribution from provided means and standard deviations.
-    # parallel version of the following code:
-    # ll_list = []
-    # for i in range(num_classes):
-    #   G = Gaussian(mu[i, :], diag(std[i, :]))
-    #   v = values[:, i, :]
-    #   ll = 0.0
-    #   for j in range(batch_size):
-    #       ll += G.log_prob(v[j, i, :])
-    #   ll_list.append(ll)
-    # mu: (num_classes, dim)
-    # std: (num_classes, dim), only the diagonal of covariance matrix is needed.
-    # values: (batch_size, num_classes, dim)
-    # output: (num_classes,)
-    raise NotImplementedError
-    return None
+        # TODO(Tianyu): check here.
+        logstd = self.logstd.expand(x_obs.shape[0], self.dim_out).to(x_obs.device)  # (num_classes, self.dim_out)
+        # output shape (batch_size, num_classes)
+        return batch_factorized_gaussian_log_prob(mu, logstd, value)
 
 
 class BEMB(nn.Module):
@@ -177,7 +94,11 @@ class BEMB(nn.Module):
                  trace_log_q: bool=False,
                  category_to_item: Dict[str, List[int]]=None,
                  likelihood_method: str='within_category',
-                 learnable_prior: bool=False):
+                 learnable_user_prior: bool=False,
+                 num_user_features: Optional[int]=None,
+                 learnable_item_prior: bool=False,
+                 num_item_features: Optional[int]=None
+                 ):
         super(BEMB, self).__init__()
         self.num_users = num_users
         self.num_items = num_items
@@ -186,7 +107,6 @@ class BEMB(nn.Module):
         # maps from category IDs to IDs of items belonging to this category.
         self.likelihood_method = likelihood_method
 
-        self.learnable_prior = learnable_prior
 
         assert self.likelihood_method in ['all', 'within_category']
         if self.likelihood_method == 'within_category':
@@ -201,12 +121,15 @@ class BEMB(nn.Module):
         # Q: build learnable variational distributions.
         self.user_latent_q = FactorizedGaussian(num_users, latent_dim)
         self.item_latent_q = FactorizedGaussian(num_items, latent_dim)
-        # P: construct learnable priors for latents.
-        # TODO:
-        # self.user_latent_prior = ...
-        # self.item_latent_prior = ...
 
-        # construct ...
+        # P: construct learnable priors for latents, if observables enter prior of latent.
+        self.learnable_user_prior = learnable_user_prior
+        if self.learnable_user_prior:
+            self.user_latent_prior = LearnableGaussian(dim_in=num_user_features, dim_out=latent_dim)
+
+        self.learnable_item_prior = learnable_item_prior
+        if self.learnable_item_prior:
+            self.item_latent_prior = LearnableGaussian(dim_in=num_item_features, dim_out=latent_dim)
 
         # an internal tracker for for tracking performance across batches.
         self.running_performance_dict = {'accuracy': [],
@@ -255,30 +178,38 @@ class BEMB(nn.Module):
             self.running_performance_dict[k] = []
         return report
 
-    def log_latent_prior(self, user_latent_sample, item_latent_sample):
-        # TODO: plugin learnable priors.
-        # input shape (num_seeds, num_*, emb_dim)
+    def log_prior_latent(self, user_latent_sample, item_latent_sample, user_features=None, item_features=None):
+        # input shape (num_seeds, num_{users, items}, emb_dim)
         # output shape (num_seeds,)
-        if self.learnable_prior:
-            raise NotImplementedError
+        if self.learnable_user_prior:
+            # use the learnt prior distribution.
+            log_prob_user = self.user_latent_prior.log_prob(user_features, user_latent_sample)
         else:
-            # no learnable prior, use N(0, 1) as the prior.
+            # otherwise, use N(0, 1) prior.
             standard_gaussian = MultivariateNormal(loc=torch.zeros(self.latent_dim).to(self.device),
                                                    covariance_matrix=torch.eye(self.latent_dim).to(self.device))
             log_prob_user = standard_gaussian.log_prob(user_latent_sample)  # (num_seeds, num_users)
+
+        if self.learnable_item_prior:
+            # use the learnt prior distribution.
+            log_prob_item = self.item_latent_prior.log_prob(item_features, item_latent_sample)
+        else:
+            # otherwise, use N(0, 1) prior.
+            standard_gaussian = MultivariateNormal(loc=torch.zeros(self.latent_dim).to(self.device),
+                                                   covariance_matrix=torch.eye(self.latent_dim).to(self.device))
             log_prob_item = standard_gaussian.log_prob(item_latent_sample)  # (num_seeds, num_items)
-            # sum across different users and items.
-            # output shape (num_seeds,)
-            return log_prob_user.sum(dim=-1) + log_prob_item.sum(dim=-1)
+
+        # sum across different users and items.
+        # output shape (num_seeds,)
+        return log_prob_user.sum(dim=-1) + log_prob_item.sum(dim=-1)
 
     def log_q_latent(self, user_latent_sample, item_latent_sample):
-        # TODO: rename to log_q_latent
+        # log q(latent) from the variational family.
         # input shape: (num_seeds, num_*, dim)
-        log_q_user = self.user_latent_q.log_prob(user_latent_sample)  # (num_seeds,)
-        log_q_item = self.item_latent_q.log_prob(item_latent_sample)  # (num_seeds,)
-        # fully factorized priors.
+        log_q_user = self.user_latent_q.log_prob(user_latent_sample)  # (num_seeds, num_users)
+        log_q_item = self.item_latent_q.log_prob(item_latent_sample)  # (num_seeds, num_items)
         # output shape (num_seeds,)
-        return log_q_user + log_q_item
+        return log_q_user.sum(dim=-1) + log_q_item.sum(dim=-1)
 
     def forward(self, batch) -> torch.Tensor:
         raise NotImplementedError
@@ -339,8 +270,20 @@ class BEMB(nn.Module):
 
         # log p(latent) prior.
         # (num_seeds,)
-        log_latent_prior = self.log_latent_prior(user_latent_sample_q, item_latent_sample_q)
-        elbo = log_latent_prior.mean()  # average over Monte Carlo samples for expectation.
+        if self.learnable_item_prior:
+            item_features = batch.item_features
+        else:
+            item_features = None
+
+        if self.learnable_user_prior:
+            user_features = batch.user_features
+        else:
+            user_features = None
+
+        log_prior_latent = self.log_prior_latent(user_latent_sample_q, item_latent_sample_q,
+                                                 user_features=user_features,
+                                                 item_features=item_features)
+        elbo = log_prior_latent.mean()  # average over Monte Carlo samples for expectation.
 
         # log p(obs|latent)
         # TODO(Tianyu): add user_latent_sample_q to batch.
