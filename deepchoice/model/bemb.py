@@ -236,13 +236,27 @@ class BEMB(nn.Module):
     @torch.no_grad()
     def get_within_category_accuracy(self, log_p_all_items: torch.Tensor, label: torch.LongTensor) -> float:
         """A helper function for computing prediction accuracy within category.
+        This method has the same functionality as the following peusodcode:
+        for C in categories:
+            # get sessions in which item in category C was purchased.
+            T <- (t for t in {0,1,..., len(label)-1} if label[t] is in C)
+            Y <- label[T]
+
+            predictions = list()
+            for t in T:
+                # get the prediction within category for this session.
+                y_pred = argmax_{items in C} log prob computed before.
+                predictions.append(y_pred)
+
+            accuracy = mean(Y == predictions)
 
         Args:
-            log_p_all_items (torch.Tensor): (num_sessions, num_items)
-            label (torch.LongTensor): (num_sessions,)
+            log_p_all_items (torch.Tensor): shape (num_sessions, num_items) the log probability of
+                choosing each item in each session.
+            label (torch.LongTensor): shape (num_sessions,), the IDs of items purchased in each session.
 
         Returns:
-            [float]: [description]
+            [float]: A float of within category accuracy computed from the above pesudo-code.
         """
         # argmax: (num_sessions, num_categories), within category argmax.
         # item IDs are consecutive, thus argmax is the same as IDs of the item with highest P.
