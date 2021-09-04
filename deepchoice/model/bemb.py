@@ -16,23 +16,42 @@ from gaussian import batch_factorized_gaussian_log_prob
 # TODO(Tianyu): change attribute names like log_p --> log_prob, likelihood etc.
 
 
-class FactorizedGaussian(nn.Module):
-    def __init__(self, num_classes: int, dim_out: int):
-        # num_classes: number of items/users.
-        # dim_out: embedding dimension.
-        super(FactorizedGaussian, self).__init__()
+class VariationalFactorizedGaussian(nn.Module):
+    """A helper class initializes a batch of factorized (i.e., Gaussian distribution with diagional
+    standard covariance matrix) Gaussian distributions.
+    This class is used as the variational family for real-valued latent variables.
+    """
+    def __init__(self, num_classes: int, dim: int) -> None:
+        """
+
+        Args:
+            num_classes (int): the number of Gaussian distributions to create. For example, if we
+                want the variational distribution of each user's latent to be a 10-dimensional Gaussian,
+                then num_classes is set to the number of users. The same holds while we are creating
+                variational distribution for item latent variables.
+            dim (int): the dimension of each Gaussian distribution. In above example, dim is set to 10.
+        """
+        super(VariationalFactorizedGaussian, self).__init__()
         self.num_classes = num_classes
-        self.dim_out = dim_out
-        self.mean = nn.Parameter(torch.zeros(num_classes, dim_out), requires_grad=True)
-        self.logstd = nn.Parameter(torch.ones(num_classes, dim_out), requires_grad=True)
+        self.dim = dim
+        self.mean = nn.Parameter(torch.zeros(num_classes, dim), requires_grad=True)
+        self.logstd = nn.Parameter(torch.ones(num_classes, dim), requires_grad=True)
 
     @property
     def device(self):
         return self.mean.device
 
     def log_prob(self, value: torch.Tensor) -> torch.Tensor:
-        # input shape (batch_size, num_classes, dim_out)
-        # output shape (batch_size, num_classes)
+        """For each batch B and class C, computes the log probability of value[B, C, :] under the
+            C-th Gaussian distribution. See the doc string for `batch_factorized_gaussian_log_prob`
+            for more details.
+
+        Args:
+            value (torch.Tensor): a tensor with shape (batch_size, num_classes, dim_out).
+
+        Returns:
+            torch.Tensor: a tensor with shape (batch_size, num_classes).
+        """
         return batch_factorized_gaussian_log_prob(self.mean, self.logstd, value)
 
     def reparameterize_sample(self, num_seeds: int=1) -> torch.Tensor:
@@ -42,16 +61,16 @@ class FactorizedGaussian(nn.Module):
             num_seeds (int): number of samples generated.
 
         Returns:
-            torch.Tensor: [description]
+            torch.Tensor: a tensor of shape (num_seeds, num_classes, dim), where out[:, C, :] follows
+                the C-th Gaussian distribution.
         """
-        # TODO(Tianyu): think about this, can we use the same epsilon?
-        #  using different epsilons should be more robust.
-        eps = torch.randn(num_seeds, self.num_classes, self.dim_out).to(self.device)
-        # parameters for each Gaussian distribution.
-        mu = self.mean.view(1, self.num_classes, self.dim_out)
-        std = torch.exp(self.logstd).view(1, self.num_classes, self.dim_out)
+        # create random seeds from N(0, 1).
+        eps = torch.randn(num_seeds, self.num_classes, self.dim).to(self.device)
+        # parameters for each Gaussian distribution, boardcast across random seeds.
+        mu = self.mean.view(1, self.num_classes, self.dim)
+        std = torch.exp(self.logstd).view(1, self.num_classes, self.dim)
         out = mu + std * eps
-        assert out.shape == (num_seeds, self.num_classes, self.dim_out)
+        assert out.shape == (num_seeds, self.num_classes, self.dim)
         return out
 
 
