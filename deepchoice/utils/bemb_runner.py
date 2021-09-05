@@ -1,9 +1,10 @@
 """
 A helper script to run PyTorch BEMB model using input files from previous BEMB in C++.
+We make the argument names as close to the original C++ implementation as possible.
 """
 import argparse
-import time
 import os
+import time
 
 import deepchoice
 import matplotlib.pyplot as plt
@@ -14,19 +15,51 @@ import torch
 from deepchoice.data import ChoiceDataset
 from deepchoice.data.utils import create_data_loader
 from deepchoice.model import BEMB
+from sklearn.preprocessing import LabelEncoder
 from termcolor import cprint
+from torch._C import parse_schema
 from torch.utils.data import DataLoader
 
-from sklearn.preprocessing import LabelEncoder
 
-DEVICE = 'cuda'
-NUM_EPOCHS = 500
-K = 5
+def make_arg_parser():
+    parser = argparse.ArgumentParser()
+    # args from C++ implementation.
+    parser.add_argument('--dir', type=str, help='path to the data folder')
+    parser.add_argument('--outdir', type=str, help='path to the output folder', default='./')
+    parser.add_argument('--K', type=int, help='number of latent factors', default=10)
+    parser.add_argument('--max_iterations ', type=int, helper='maximum number of iterations', default=100)
+    parser.add_argument('--rfreq', type=int, help='the test log-lik will be computed every `rfreq` iterations',
+                        default=5)
+    parser.add_argument('--eta', type=float, help='stepsize parameter', default=0.03)
+    parser.add_argument('--batchsize', type=int, help='number of datapoints per batch', default=-1)
 
-args = argparse.Namespace(shuffle=False, batch_size=100000)
+    parser.add_argument('--UC', type=int, help='incorporate user observables? (0=no, integer=number of observables)',
+                        default=0)
+    parser.add_argument('--IC', type=int, help='incorporate item observables? (0=no, integer=number of observables)',
+                        default=0)
+
+    parser.add_argument('--obs2prior_user', type=bool, default=False)
+    parser.add_argument('--obs2prior_item', type=bool, default=False)
+
+    parser.add_argument('--obs2utility_user', type=bool, default=False)
+    parser.add_argument('--obs2utility_item', type=bool, default=False)
+    parser.add_argument('--obs2utility_session', type=bool, default=False)
+    parser.add_argument('--obs2utility_taste', type=bool, default=False)
+    parser.add_argument('--obs2utility_price', type=bool, default=False)
+
+    parser.add_argument('--shuffle', type=bool, default=True)
+    parser.add_argument('--likelihood', type=str, default='within_category')
+
+    parser.add_argument('--device', type=str, default='cpu')
+    return parser
+
 
 if __name__ == '__main__':
     cprint('Your are running a debugging script!', 'red')
+
+    parser = make_arg_parser()
+    args = parser.parse_args()
+
     # for debugging.
     data_dir = '/home/tianyudu/Data/MoreSupermarket/tsv'
 
