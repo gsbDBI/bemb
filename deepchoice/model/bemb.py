@@ -75,7 +75,7 @@ class VariationalFactorizedGaussian(nn.Module):
         return out
 
 
-class LearnableGaussian(nn.Module):
+class LearnableGaussianPrior(nn.Module):
     def __init__(self, dim_in: int, dim_out: int, std: Union[str, float, torch.Tensor]=1.0) -> None:
         """Construct a Gaussian distribution for prior of user/item embeddigns, whose mean and
         standard deviation depends on user/item observables.
@@ -97,7 +97,7 @@ class LearnableGaussian(nn.Module):
                 2. 'learnable_scalar': a learnable standard deviation shared across all dimensions of Gaussian.
                 3. 'learnable_vector': use a separate learnable standard deviation for each dimension of Gaussian.
         """
-        super(LearnableGaussian, self).__init__()
+        super(LearnableGaussianPrior, self).__init__()
         self.dim_in = dim_in
         self.dim_out = dim_out
         self.H = nn.Linear(dim_in, dim_out, bias=False)
@@ -218,10 +218,10 @@ class BEMB(nn.Module):
 
         # P: construct learnable priors for latents, if observables enter prior of latent.
         if self.obs2prior_user:
-            self.user_latent_prior = LearnableGaussian(dim_in=num_user_features, dim_out=latent_dim)
+            self.user_latent_prior = LearnableGaussianPrior(dim_in=num_user_features, dim_out=latent_dim)
 
         if self.obs2prior_item:
-            self.item_latent_prior = LearnableGaussian(dim_in=num_item_features, dim_out=latent_dim)
+            self.item_latent_prior = LearnableGaussianPrior(dim_in=num_item_features, dim_out=latent_dim)
 
         if self.item_intercept:
             self.item_intercept_layer = nn.Parameter(torch.zeros(self.num_items), requires_grad=True)
