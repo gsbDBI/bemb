@@ -133,6 +133,25 @@ class LearnableGaussianPrior(nn.Module):
         return batch_factorized_gaussian_log_prob(mu, logstd, value)
 
 
+class StandardGaussianPrior(nn.Module):
+    """A helper class for evaluating the log_prob of Monte Carlo samples for latent variables on
+    a N(0, 1) prior.
+    """
+    def __init__(self, dim_in: int, dim_out: int) -> None:
+        super(StandardGaussianPrior, self).__init__()
+        self.dim_in = dim_in
+        self.dim_out = dim_out
+
+    def log_prob(self, x_obs: torch.Tensor, value: torch.Tensor) -> torch.Tensor:
+        batch_size, num_classes, dim_out = value.shape
+        assert dim_out == self.dim_out
+        mu = torch.zeros(num_classes, self.dim_out)
+        logstd = torch.zeros(num_classes, self.dim_out).to(x_obs.device)  # (num_classes, self.dim_out)
+        out = batch_factorized_gaussian_log_prob(mu, logstd, value)
+        assert out.shape == (batch_size, num_classes)
+        return out
+
+
 class BEMB(nn.Module):
     def __init__(self,
                  num_users: int,
