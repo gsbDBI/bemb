@@ -158,24 +158,27 @@ if __name__ == '__main__':
             total_loss += loss.detach().item()
 
         scheduler.step()
-        if i % (NUM_EPOCHS // 100) == 0:
+        if i % (NUM_EPOCHS // 10) == 0:
             # report training progress, report 100 times in total.
             with torch.no_grad():
-                performance = {'Epoch': i}
+                performance = {'iteration': i,
+                               'duration_seconds': time.time() - start_time}
                 # compute performance for each data partition.
                 for partition in ('train', 'validation', 'test'):
-                    performance[partition + '_ACC'] = []
-                    performance[partition + '_LL'] = []
+                    metrics = ['log_likelihood', 'accuracy', 'precision', 'recall', 'f1score']
+                    for m in metrics:
+                        performance[partition + '_' + m] = list()
                     # compute performance for each batch.
                     for batch in dataloaders[partition]:
                         pred = model(batch)  # (num_sessions, num_items) log-likelihood.
-                        ACC = model.get_within_category_accuracy(pred, batch.label)
-                        performance[partition + '_ACC'].append(ACC)
                         LL = pred[torch.arange(len(batch)), batch.label].mean().detach().cpu().item()
-                        performance[partition + '_LL'].append(LL)
+                        performance[partition + '_log_likelihood'].append(LL)
+                        accuracy_metrics = model.get_within_category_accuracy(pred, batch.label)
+                        for key, val in accuracy_metrics.items():
+                            performance[partition + '_' + key].append(val)
 
-                for k, v in performance.items():
-                    performance[k] = np.mean(v)
+                for key, val in performance.items():
+                    performance[key] = np.mean(val)
 
                 performance_by_epoch.append(performance)
                 print(performance)
