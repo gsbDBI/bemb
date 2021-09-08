@@ -34,6 +34,9 @@ class VariationalFactorizedGaussian(nn.Module):
         self.mean = nn.Parameter(torch.zeros(num_classes, dim), requires_grad=True)
         self.logstd = nn.Parameter(torch.ones(num_classes, dim), requires_grad=True)
 
+    def __repr__(self) -> str:
+        return f'VariationalFactorizedGaussian(num_classes={self.num_classes}, dim_out={self.dim})'
+
     @property
     def device(self) -> torch.device:
         return self.mean.device
@@ -110,6 +113,9 @@ class LearnableGaussianPrior(nn.Module):
         else:
             raise ValueError(f'Unsupported standard deviation option {std}')
 
+    def __repr__(self) -> str:
+        return f'LearnableGaussianPrior(dim_in={self.dim_in}, dim_out={self.dim_out})'
+
     def log_prob(self, x_obs: torch.Tensor, value: torch.Tensor) -> torch.Tensor:
         """Compute the log likelihood of `value` given observables `x_obs`.
 
@@ -137,6 +143,9 @@ class StandardGaussianPrior(nn.Module):
         super(StandardGaussianPrior, self).__init__()
         self.dim_in = dim_in
         self.dim_out = dim_out
+
+    def __repr__(self) -> str:
+        return f'StandardGaussianPrior(dim_out={self.dim_out})'
 
     def log_prob(self, x_obs: object, value: torch.Tensor) -> torch.Tensor:
         """Compute the log-likelihood of `value` under N(0, 1)
