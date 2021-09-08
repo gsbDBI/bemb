@@ -309,13 +309,12 @@ class BEMB(nn.Module):
                 that each item is chosen in each session.
         """
         # TODO: need some testing.
-        raise NotImplementedError
-        user_latent = self.user_latent_q.mean.unsqueeze(dim=0)  # (1, num_users, latent_dim)
-        item_latent = self.item_latent_q.mean.unsqueeze(dim=0)  # (1, num_items, latent_dim)
+        sample_dict = dict()
+        for coef_name, variational in self.variational_dict.items():
+            sample_dict[coef_name] = variational.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+
         # there is 1 random seed in this case.
-        out = self.log_likelihood(batch,
-                                  user_latnet_value=user_latent,
-                                  item_latent_value=item_latent)  # (num_seeds=1, num_sessions, num_items)
+        out = self.log_likelihood(batch, sample_dict)  # (num_seeds=1, num_sessions, num_items)
         return out.squeeze()  # (num_sessions, num_items)
 
     # def _validate_args(self):
