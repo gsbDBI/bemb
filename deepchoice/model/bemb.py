@@ -301,10 +301,6 @@ class BEMB(nn.Module):
 
         self.variational_dict = nn.ModuleDict(variational_dict)
 
-        # an internal tracker for for tracking performance across batches.
-        self.running_performance_dict = {'accuracy': [],
-                                         'log_likelihood': []}
-
         # self._validate_args()
 
     def forward(self, batch) -> torch.Tensor:
@@ -351,15 +347,6 @@ class BEMB(nn.Module):
     # ==============================================================================================
     # Helper functions.
     # ==============================================================================================
-
-    def report_performance(self) -> dict:
-        """Reports content in the internal performance tracker, this method empties trackers after reporting."""
-        report = dict()
-        for k, v in self.running_performance_dict.items():
-            report[k] = np.mean(v)
-            # reset tracker.
-            self.running_performance_dict[k] = []
-        return report
 
     @torch.no_grad()
     def get_within_category_accuracy(self, log_p_all_items: torch.Tensor, label: torch.LongTensor) -> float:
@@ -598,9 +585,5 @@ class BEMB(nn.Module):
         if self.trace_log_q:
             log_q = self.log_variational(sample_dict)  # (num_seeds,)
             elbo -= log_q.mean()  # scalar.
-
-        # log performance metrics.
-        self.running_performance_dict['log_likelihood'].append(log_p_chosen_items.mean().detach().cpu().item())
-        self.running_performance_dict['accuracy'].append(self.get_within_category_accuracy(log_p_all_items, batch.label))
 
         return elbo
