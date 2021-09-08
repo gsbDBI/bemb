@@ -1,0 +1,194 @@
+import argparse
+import time
+import os
+
+import deepchoice
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import torch
+from deepchoice.data import ChoiceDataset
+from deepchoice.data.utils import create_data_loader
+from deepchoice.model import BEMB
+from termcolor import cprint
+
+from sklearn.preprocessing import LabelEncoder
+
+DEVICE = 'cuda'
+NUM_EPOCHS = 1000
+K = 20
+
+args = argparse.Namespace(shuffle=False, batch_size=100000)
+
+if __name__ == '__main__':
+    cprint('Your are running a debugging script!', 'red')
+    # for debugging.
+    data_dir = '/home/tianyudu/Data/MoreSupermarket/tsv'
+
+    def is_sorted(x):
+        return all(x == np.sort(x))
+
+    def load_tsv(file_name):
+        return pd.read_csv(os.path.join(data_dir, file_name),
+                           sep='\t',
+                           index_col=None,
+                           names=['user_id', 'item_id', 'session_id', 'quantity'])
+
+    train = load_tsv('train.tsv')
+    validation = load_tsv('validation.tsv')
+    test = load_tsv('test.tsv')
+
+    data_all = pd.concat([train, validation, test], axis=0)
+    num_sessions = len(data_all)
+
+    # TODO: improve efficiency.
+    # num_users = data_all['user_id'].nunique()
+    # num_items = data_all['item_id'].nunique()
+
+    # ordinal encoding users and items.
+    user_encoder = LabelEncoder().fit(data_all['user_id'].values)
+    num_users = len(user_encoder.classes_)
+    assert is_sorted(user_encoder.classes_)
+    item_encoder = LabelEncoder().fit(data_all['item_id'].values)
+    num_items = len(item_encoder.classes_)
+    assert is_sorted(item_encoder.classes_)
+
+    # load observables.
+    user_obs = pd.read_csv(os.path.join(data_dir, 'obsUser.tsv'), sep='\t', index_col=0, header=None)
+    user_obs = user_obs.groupby(user_obs.index).first().sort_index()
+    num_user_obs = user_obs.shape[1]
+    user_obs = torch.Tensor(user_obs.values)
+
+    item_obs = pd.read_csv(os.path.join(data_dir, 'obsItem.tsv'), sep='\t', index_col=0, header=None)
+    item_obs = item_obs.groupby(item_obs.index).first().sort_index()
+    num_item_obs = item_obs.shape[1]
+    item_obs = torch.Tensor(item_obs.values)
+
+    dataset_list = list()
+    for d in (train, validation, test):
+        user_idx = user_encoder.transform(d['user_id'].values)
+
+        user_onehot = torch.zeros(len(d), num_users)
+        user_onehot[torch.arange(len(d)), user_idx] = 1
+        user_onehot = user_onehot.long()
+
+        label = torch.LongTensor(item_encoder.transform(d['item_id'].values))
+
+        choice_dataset = ChoiceDataset(label=label, user_onehot=user_onehot,
+                                       item_availability=None,
+                                       user_obs=user_obs,
+                                       item_obs=item_obs)
+        dataset_list.append(choice_dataset)
+
+    # ... Load obs...
+    item_groups = pd.read_csv(os.path.join(data_dir, 'itemGroup.tsv'),
+                              sep='\t',
+                              index_col=None,
+                              names=['item_id', 'category_id'])
+
+    # TODO: fix.
+    item_groups = item_groups.groupby('item_id').first().reset_index()
+    # filter out items not in any dataset above.
+    mask = item_groups['item_id'].isin(item_encoder.classes_)
+    item_groups = item_groups[mask].reset_index(drop=True)
+    item_groups = item_groups.sort_values(by='item_id')
+
+    category_encoder = LabelEncoder().fit(item_groups['category_id'])
+    num_categories = len(category_encoder.classes_)
+
+    item_groups['item_id'] = item_encoder.transform(
+        item_groups['item_id'].values)
+    item_groups['category_id'] = category_encoder.transform(
+        item_groups['category_id'].values)
+
+    item_groups = item_groups.groupby('category_id')['item_id'].apply(list)
+    category_to_item = dict(zip(item_groups.index, item_groups.values))
+
+    # dataloaders = [create_data_loader(dataset, args) for dataset in dataset_list]
+    # only care the training set for now.
+    dataloaders = dict()
+    for dataset, partition in zip(dataset_list, ('train', 'validation', 'test')):
+        dataset = dataset.to(DEVICE)
+        dataloader = create_data_loader(dataset, args)
+        dataloaders[partition] = dataloader
+
+    # create model.
+    obs2prior_dict = {
+        # 'lambda_item': False,
+        'theta_user': False,
+        'alpha_item': False,
+        # 'zeta_user': False,
+        # 'lota_item': False,
+        # 'gamma_user': True,
+        # 'beta_item': True
+    }
+
+    model = BEMB(num_users=num_users,
+                 num_items=num_items,
+                 obs2prior_dict=obs2prior_dict,
+                 latent_dim=K,
+                 trace_log_q=False,
+                 category_to_item=category_to_item,
+                 num_user_obs=num_user_obs,
+                 num_item_obs=num_item_obs
+                 ).to(DEVICE)
+
+    start_time = time.time()
+    optimizer = torch.optim.RMSprop(model.parameters(), lr=0.03)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=1)
+
+    print(80 * '=')
+    print(model)
+    print(80 * '=')
+
+    performance_by_epoch = list()
+
+    for i in range(NUM_EPOCHS):
+        total_loss = torch.scalar_tensor(0.0).to(DEVICE)
+
+        for batch in dataloaders['train']:
+            # maximize the ELBO.
+            loss = - model.elbo(batch, num_seeds=1)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            total_loss += loss.detach().item()
+
+        scheduler.step()
+        if i % (NUM_EPOCHS // 100) == 0:
+            # report training progress, report 100 times in total.
+            with torch.no_grad():
+                performance = {'Epoch': i}
+                # compute performance for each data partition.
+                for partition in ('train', 'validation', 'test'):
+                    performance[partition + '_ACC'] = []
+                    performance[partition + '_LL'] = []
+                    # compute performance for each batch.
+                    for batch in dataloaders[partition]:
+                        pred = model(batch)  # (num_sessions, num_items) log-likelihood.
+                        ACC = model.get_within_category_accuracy(pred, batch.label)
+                        performance[partition + '_ACC'].append(ACC)
+                        LL = pred[torch.arange(len(batch)), batch.label].mean().detach().cpu().item()
+                        performance[partition + '_LL'].append(LL)
+
+                for k, v in performance.items():
+                    performance[k] = np.mean(v)
+
+                performance_by_epoch.append(performance)
+                print(performance)
+                print(f'Epoch [{i}] negative elbo (the lower the better)={total_loss}')
+    print(f'Time taken: {time.time() - start_time: 0.1f} seconds.')
+    log = pd.DataFrame(performance_by_epoch)
+    log.to_csv('./training_log.csv')
+
+    # visualize the training performance.
+
+    # same fitted parameters for latter comparison.
+    theta = model.variational_dict['theta_user'].mean
+    alpha = model.variational_dict['alpha_item'].mean
+    torch.save(theta, './output/theta.pt')
+    torch.save(alpha, './output/alpha.pt')
+    cprint('Done.', 'green')
