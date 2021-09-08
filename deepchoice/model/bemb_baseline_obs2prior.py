@@ -21,6 +21,26 @@ K = 20
 
 args = argparse.Namespace(shuffle=False, batch_size=100000)
 
+
+def load_params_to_model(model, path) -> None:
+    def load_cpp_tsv(file):
+        df = pd.read_csv(os.path.join(path, file), sep='\t', index_col=0, header=None)
+        return torch.Tensor(df.values[:, 1:])
+
+    cpp_theta_mean = load_cpp_tsv('param_theta_mean.tsv')
+    cpp_theta_std = load_cpp_tsv('param_theta_std.tsv')
+
+    cpp_alpha_mean = load_cpp_tsv('param_alpha_mean.tsv')
+    cpp_alpha_std = load_cpp_tsv('param_alpha_std.tsv')
+
+    # theta user
+    model.variational_dict['theta_user'].mean.data = cpp_theta_mean.to(model.device)
+    model.variational_dict['theta_user'].logstd.data = torch.log(cpp_theta_std).to(model.device)
+    # alpha item
+    model.variational_dict['alpha_item'].mean.data = cpp_alpha_mean.to(model.device)
+    model.variational_dict['alpha_item'].logstd.data = torch.log(cpp_alpha_std).to(model.device)
+
+
 if __name__ == '__main__':
     cprint('Your are running a debugging script!', 'red')
     # for debugging.
@@ -133,6 +153,11 @@ if __name__ == '__main__':
                  num_user_obs=num_user_obs,
                  num_item_obs=num_item_obs
                  ).to(DEVICE)
+
+    # print(model.variational_dict['theta_user'].mean)
+    # breakpoint()
+    # load_params_to_model(model, '/home/tianyudu/Data/MoreSupermarket/t79338-n2123-m1109-k20-users3-lik3-shuffle0-eta0.005-zF0.1-nS10-batch100000-run_K20_1000_rmsprop_bs100000')
+    # print(model.variational_dict['theta_user'].mean)
 
     start_time = time.time()
     optimizer = torch.optim.RMSprop(model.parameters(), lr=0.03)
