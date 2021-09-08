@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
 import torch
+from torch._C import Value
 import torch.nn as nn
 from deepchoice.data import ChoiceDataset
 from torch.distributions.multivariate_normal import MultivariateNormal
@@ -126,7 +127,7 @@ class LearnableGaussianPrior(nn.Module):
         Returns:
             torch.Tensor: output shape (batch_size, num_classes)
         """
-        # compute
+        # compute mean vector for each class.
         mu = self.H(x_obs)  # (num_classes, self.dim_out)
         # expand standard deviations shared across all classes.
         logstd = self.logstd.unsqueeze(dim=0).expand(x_obs.shape[0], -1).to(x_obs.device)  # (num_classes, self.dim_out)
@@ -143,10 +144,11 @@ class StandardGaussianPrior(nn.Module):
         self.dim_out = dim_out
 
     def log_prob(self, x_obs: torch.Tensor, value: torch.Tensor) -> torch.Tensor:
+        """x_obs does NOT matter here, it's just for consistency with factorized Gaussian."""
         batch_size, num_classes, dim_out = value.shape
         assert dim_out == self.dim_out
-        mu = torch.zeros(num_classes, self.dim_out)
-        logstd = torch.zeros(num_classes, self.dim_out).to(x_obs.device)  # (num_classes, self.dim_out)
+        mu = torch.zeros(num_classes, self.dim_out).to(value.device)
+        logstd = torch.zeros(num_classes, self.dim_out).to(value.device)  # (num_classes, self.dim_out)
         out = batch_factorized_gaussian_log_prob(mu, logstd, value)
         assert out.shape == (batch_size, num_classes)
         return out
@@ -156,18 +158,17 @@ class BEMB(nn.Module):
     def __init__(self,
                  num_users: int,
                  num_items: int,
+                 obs2prior_dict: Dict[str, bool],
                  latent_dim: int,
+                 latent_dim_price: Optional[int]=None,
                  trace_log_q: bool=False,
                  category_to_item: Dict[str, List[int]]=None,
                  likelihood: str='within_category',
-                 obs2prior_user: bool=False,
-                 num_user_features: Optional[int]=None,
-                 obs2prior_item: bool=False,
-                 num_item_features: Optional[int]=None,
-                 item_intercept: bool=False,
-                 obs2utility_item: bool=False,
-                 obs2utility_session: bool=False,
-                 num_session_features: Optional[int]=None,
+                 num_user_obs: Optional[int]=None,
+                 num_item_obs: Optional[int]=None,
+                 num_session_obs: Optional[int]=None,
+                 num_price_obs: Optional[int]=None,
+                 num_taste_obs: Optional[int]=None  # Not used for now.
                  ) -> None:
         """
 
@@ -175,6 +176,7 @@ class BEMB(nn.Module):
             num_users (int): number of users.
             num_items (int): number of items.
             latent_dim (int): dimension of user and item latents.
+            latent_dim_price (int, optional): the dimension of latents for the price coefficient.
             trace_log_q (bool, optional): whether to trace the derivative of varitional likelihood logQ
                 with respect to variational parameters in the ELBO while conducting gradient update.
                 Defaults to False.
@@ -189,12 +191,12 @@ class BEMB(nn.Module):
                 Defaults to 'within_category'.
             obs2prior_user (bool, optional): whether user observables enter the prior of user latent or not.
                 Defaults to False.
-            num_user_features (Optional[int], optional): number of user observables, required only if
+            num_user_obs (Optional[int], optional): number of user observables, required only if
                 obs2prior_user is True.
                 Defaults to None.
             obs2prior_item (bool, optional): whether item observables enter the prior of item latent or not.
                 Defaults to False.
-            num_item_features (Optional[int], optional): number of item observables, required only if
+            num_item_obs (Optional[int], optional): number of item observables, required only if
                 obs2prior_item or obs2utility_item is True.
                 Defaults to None.
             item_intercept (bool, optional): whether to add item-specifc intercept (lambda term) to utlity or not.
@@ -203,24 +205,23 @@ class BEMB(nn.Module):
                 Defaults to False.
             obs2utility_session (bool, optional): whether to allow direct effect from session observables to utility or not.
                 Defaults to False.
-            num_session_features (Optional[int], optional): number of session observables, required only if
+            num_session_obs (Optional[int], optional): number of session observables, required only if
                 obs2utility_session is True. Defaults to None.
         """
         super(BEMB, self).__init__()
         self.num_users = num_users
         self.num_items = num_items
         self.latent_dim = latent_dim
+        self.latent_dim_price = latent_dim_price
         self.trace_log_q = trace_log_q
         self.category_to_item = category_to_item
         self.likelihood = likelihood
-        self.obs2prior_user = obs2prior_user
-        self.num_user_features = num_user_features
-        self.obs2prior_item = obs2prior_item
-        self.num_item_features = num_item_features
-        self.item_intercept = item_intercept
-        self.obs2utility_item = obs2utility_item
-        self.obs2utility_session = obs2utility_session
-        self.num_session_features = num_session_features
+
+        self.num_user_obs = num_user_obs
+        self.num_item_obs = num_item_obs
+        self.num_session_obs = num_session_obs
+        self.num_price_obs = num_price_obs
+        self.num_taste_obs = num_taste_obs
 
         # create a category idx tensor for faster indexing.
         if self.likelihood == 'within_category':
@@ -231,33 +232,68 @@ class BEMB(nn.Module):
                 category_idx[items_in_c] = c
             self.category_idx = category_idx.long()
 
-        # Q: build variational distributions for user and item latents.
-        self.user_latent_q = VariationalFactorizedGaussian(num_users, latent_dim)
-        self.item_latent_q = VariationalFactorizedGaussian(num_items, latent_dim)
+        # ==========================================================================================
+        # Create Prior Distributions.
+        # ==========================================================================================
+        # model configuration.
+        self.obs2prior_dict = obs2prior_dict
 
-        # P: construct learnable priors for latents, if observables enter prior of latent.
-        if self.obs2prior_user:
-            self.user_latent_prior = LearnableGaussianPrior(dim_in=num_user_features, dim_out=latent_dim)
+        # dimension of each observable.
+        self.num_obs_dict = {
+            'user': num_user_obs,
+            'item': num_item_obs,
+            'session': num_session_obs,
+            'price': num_price_obs,
+            'taste': num_taste_obs
+        }
 
-        if self.obs2prior_item:
-            self.item_latent_prior = LearnableGaussianPrior(dim_in=num_item_features, dim_out=latent_dim)
+        # dimension of each latent variable.
+        has_price = (self.latent_dim_price is not None) and (self.num_price_obs is not None)
+        self.coef_dim_dict = {
+            'lambda_item': 1,
+            'theta_user': self.latent_dim,
+            'alpha_item': self.latent_dim,
+            'zeta_user': self.num_item_obs,
+            'iota_item': self.num_user_obs,
+            'delta_item': None,  # TODO: update this.
+            'gamma_user': self.latent_dim_price * self.num_price_obs if has_price else None,
+            'beta_item': self.latent_dim_price * self.num_price_obs if has_price else None
+        }
 
-        if self.item_intercept:
-            self.item_intercept_layer = nn.Parameter(torch.zeros(self.num_items), requires_grad=True)
+        prior_dict = dict()
+        for coef_name, obs2prior in self.obs2prior_dict.items():
+            subject = coef_name.split('_')[-1]  # {user, item, session, price, taste}
+            if obs2prior:
+                prior_dict[coef_name] = LearnableGaussianPrior(dim_in=self.num_obs_dict[subject],
+                                                               dim_out=self.coef_dim_dict[coef_name])
+            else:
+                prior_dict[coef_name] = StandardGaussianPrior(dim_in=self.num_obs_dict[subject],
+                                                              dim_out=self.coef_dim_dict[coef_name])
+        self.prior_dict = nn.ModuleDict(prior_dict)
 
-        # TODO(Tianyu): do we allow for user obs to affect utility as well?
+        # ==========================================================================================
+        # Create Variational Distributions.
+        # ==========================================================================================
+        variational_dict = dict()
+        # for now, assume all variational distributions are factorized Gaussians.
+        for coef_name in self.obs2prior_dict.keys():
+            if coef_name.endswith('_user'):
+                num_classes = self.num_users
+            elif coef_name.endswith('_item'):
+                num_classes = self.num_items
+            else:
+                num_classes = 1  # learnable constant.
 
-        if self.obs2utility_item:
-            self.obs2utility_item_layer = nn.Linear(num_item_features, 1, bias=False)
+            variational_dict[coef_name] = VariationalFactorizedGaussian(num_classes,
+                                                                        self.coef_dim_dict[coef_name])
 
-        if self.obs2utility_session:
-            self.obs2utility_session_layer = nn.Linear(num_session_features, 1, bias=False)
+        self.variational_dict = nn.ModuleDict(variational_dict)
 
         # an internal tracker for for tracking performance across batches.
         self.running_performance_dict = {'accuracy': [],
                                          'log_likelihood': []}
 
-        self._validate_args()
+        # self._validate_args()
 
     def forward(self, batch) -> torch.Tensor:
         """Computes the log likelihood of choosing each item in each session.
@@ -270,6 +306,7 @@ class BEMB(nn.Module):
                 that each item is chosen in each session.
         """
         # TODO: need some testing.
+        raise NotImplementedError
         user_latent = self.user_latent_q.mean.unsqueeze(dim=0)  # (1, num_users, latent_dim)
         item_latent = self.item_latent_q.mean.unsqueeze(dim=0)  # (1, num_items, latent_dim)
         # there is 1 random seed in this case.
@@ -278,18 +315,18 @@ class BEMB(nn.Module):
                                   item_latent_value=item_latent)  # (num_seeds=1, num_sessions, num_items)
         return out.squeeze()  # (num_sessions, num_items)
 
-    def _validate_args(self):
-        # TODO: add more meaningful error message.
-        assert self.likelihood in ['all', 'within_category']
+    # def _validate_args(self):
+    #     # TODO: add more meaningful error message.
+    #     assert self.likelihood in ['all', 'within_category']
 
-        if self.obs2prior_user:
-            assert self.num_user_features is not None
+    #     if self.obs2prior_user:
+    #         assert self.num_user_obs is not None
 
-        if self.obs2prior_item or self.obs2utility_item:
-            assert self.num_item_features is not None
+    #     if self.obs2prior_item or self.obs2utility_item:
+    #         assert self.num_item_obs is not None
 
-        if self.obs2utility_session:
-            assert self.num_session_features is not None
+    #     if self.obs2utility_session:
+    #         assert self.num_session_obs is not None
 
     @property
     def num_params(self) -> int:
@@ -297,7 +334,8 @@ class BEMB(nn.Module):
 
     @property
     def device(self) -> torch.device:
-        return self.user_latent_q.device
+        for prior in self.variational_dict.values():
+            return prior.device
 
     # ==============================================================================================
     # Helper functions.
@@ -384,26 +422,26 @@ class BEMB(nn.Module):
     # All functions named with additive_* should return a tensor of shape (num_sessions, num_items).
     # ==============================================================================================
 
-    def additive_intercept(self, batch) -> torch.Tensor:
-        if self.item_intercept:
-            return self.item_intercept_layer.view(1, batch.num_items).expand(batch.num_sessions, -1)
-        else:
-            return torch.zeros(batch.num_sessions, batch.num_items).to(self.device)
+    # def additive_intercept(self, batch) -> torch.Tensor:
+    #     if self.item_intercept:
+    #         return self.item_intercept_layer.view(1, batch.num_items).expand(batch.num_sessions, -1)
+    #     else:
+    #         return torch.zeros(batch.num_sessions, batch.num_items).to(self.device)
 
-    def additive_obs2utility_item(self, batch) -> torch.Tensor:
-        if self.obs2utility_item:
-            # Add obs2utility_item here.
-            item_feat = batch.item_features  # (num_items, num_item_features)
-            o2u = self.obs2utility_item_layer(item_feat)   # (num_items, 1)
-            return o2u.view(1, batch.num_items).expand(batch.num_sessions, -1)
-        else:
-            return torch.zeros(batch.num_sessions, batch.num_items).to(self.device)
+    # def additive_obs2utility_item(self, batch) -> torch.Tensor:
+    #     if self.obs2utility_item:
+    #         # Add obs2utility_item here.
+    #         item_feat = batch.item_features  # (num_items, num_item_obs)
+    #         o2u = self.obs2utility_item_layer(item_feat)   # (num_items, 1)
+    #         return o2u.view(1, batch.num_items).expand(batch.num_sessions, -1)
+    #     else:
+    #         return torch.zeros(batch.num_sessions, batch.num_items).to(self.device)
 
-    def additive_obs2utility_session(self, batch) -> torch.Tensor:
-        if self.obs2utility_session:
-            raise NotImplementedError
-        else:
-            return torch.zeros(batch.num_sessions, batch.num_items).to(self.device)
+    # def additive_obs2utility_session(self, batch) -> torch.Tensor:
+    #     if self.obs2utility_session:
+    #         raise NotImplementedError
+    #     else:
+    #         return torch.zeros(batch.num_sessions, batch.num_items).to(self.device)
 
     # ==============================================================================================
     # Methods for terms in the ELBO: prior, likelihood, and variational.
@@ -411,8 +449,7 @@ class BEMB(nn.Module):
 
     def log_likelihood(self,
                        batch,
-                       user_latent_value: torch.Tensor,
-                       item_latent_value: torch.Tensor
+                       sample_dict,
                        ) -> torch.Tensor:
         """Computes the log probability of choosing each item in each session based on current model
         parameters.
@@ -422,12 +459,13 @@ class BEMB(nn.Module):
 
         Args:
             batch (ChoiceDataset): a ChoiceDataset object containing relevant information.
-            user_latent_value (torch.Tensor): a tensor of shape (num_seeds, num_users, latent_dim),
-                where the first dimension denotes Monte Carlo samples from the variational distribution
-                of user latent.
-            item_latent_value (torch.Tesnor): a tensor of shape (num_seeds, num_items, latent_dim)
-                where the first dimension denotes Monte Carlo samples from the variational distribution
-                of item latent.
+            sample_dict(Dict[str, torch.Tensor]): Monte Carlo samples for model coefficients
+                (i.e., those Greek letters).
+                sample_dict.keys() should be the same as keys of self.obs2prior_dict, i.e., those
+                greek letters actually enter the functional form of utility.
+                The value of sample_dict should be tensors of shape (num_seeds, num_classes, dim)
+                where num_classes in {num_users, num_items, 1}
+                and dim in {latent_dim(K), num_item_obs, num_user_obs, 1}.
 
         Returns:
             torch.Tensor: a tensor of shape (num_seeds, num_sessions, self.num_items), where
@@ -435,24 +473,94 @@ class BEMB(nn.Module):
                 and item latents to be the x-th Monte Carlo sample.
         """
         assert hasattr(batch, 'user_onehot') and hasattr(batch, 'label')
+        assert sample_dict.keys() == self.obs2prior_dict.keys()
+
+        # get the base utility of each item for each user with shape (num_seeds, num_users, num_items).
+
+        for v in sample_dict.values():
+            num_seeds = v.shape[0]
+            break
+
+        utility = torch.zeros(num_seeds, self.num_users, self.num_items).to(self.device)
+
+        # ==========================================================================================
+        # 1. Time-invariant part of utility.
+        # ==========================================================================================
+
+        # 1.a. intercept term, lambda_item.
+        if 'lambda_item' in sample_dict.keys():
+            assert sample_dict['lambda_item'].shape == (num_seeds, self.num_items, 1)
+            utility += torch.transpose(sample_dict['lambda_item'], 1, 2)  # boardcast across users.
+
+        # 1.b. theta_user and alpha_item interaction term.
+        if 'theta_user' in sample_dict.keys() and 'alpha_item' in sample_dict.keys():
+            assert sample_dict['theta_user'].shape == (num_seeds, self.num_users, self.latent_dim)
+            assert sample_dict['alpha_item'].shape == (num_seeds, self.num_items, self.latent_dim)
+            # (num_seeds, num_users, latent_dim) bmm (num_seeds, latent_dim, num_items) -> (num_seeds, num_users, num_items)
+            utility += torch.bmm(sample_dict['theta_user'], torch.transpose(sample_dict['alpha_item'], 1, 2))
+
+        # 1.c. zeta_user * x_item_obs
+        if 'zeta_user' in sample_dict.keys():
+            assert sample_dict['zeta_user'].shape == (num_seeds, self.num_users, self.num_item_obs)
+            assert batch.item_obs.shape == (self.num_items, self.num_item_obs)
+
+            # TODO: double check this.
+            item_obs = batch.item_obs.view(1, 1, self.items, self.num_item_obs)
+            zeta = sample_dict['zeta_user'].view(num_seeds, self.num_users, 1, self.num_item_obs)
+            out = (item_obs * zeta).sum(dim=1)
+            assert out.shape == (num_seeds, self.num_users, self.num_items)
+            utility += out
+
+        # 1.d. iota_item * x_user_obs
+        if 'iota_item' in sample_dict.keys():
+            assert sample_dict['iota_item'].shape == (num_seeds, self.num_items, self.num_user_obs)
+            assert batch.user_obs.shape == (self.num_users, self.num_user_obs)
+
+            user_obs = batch.user_obs.view(1, self.num_users, 1, self.num_user_obs)
+            iota = sample_dict['iota_item'].view(num_seeds, 1, self.num_items, self.num_user_obs)
+            out = (user_obs * iota).sum(dim=-1)
+            assert out.shape == (num_seeds, self.num_users, self.num_user)
+            utility += out
+
+        # ==========================================================================================
+        # 2. Time-variant part of utility.
+        # ==========================================================================================
+        # convert to utility by session now.
+        # get the utility for choosing each items by the user corresponding to that session.
         # get the index of the user who was making decision in each session.
         user_idx = torch.nonzero(batch.user_onehot, as_tuple=True)[1].to(self.device)
-        # get the base utility of each item for each user.
-        # transpose item_latent_value (num_seeds, num_items, latent_dim) -> (num_seeds, latent_dim, num_items).
-        # (num_seeds, num_users, latent_dim) bmm (num_seeds, latent_dim, num_items) -> (num_seeds, num_users, num_items)
-        utility = torch.bmm(user_latent_value, torch.transpose(item_latent_value, 1, 2))
-        # get the utility for choosing each items by the user corresponding to that session.
+        num_sessions = user_idx.shape[0]
         utility_by_session = utility[:, user_idx, :]  # (num_seeds, num_sessions, num_items)
 
-        # add additive terms to the utility function.
-        # all additive_* functions returns (num_sessions, num_items) tensor,
-        # unsqueeze them to (1, num_sessions, num_items) to for boardcasting across multiple random seeds.
-        # item-specific intercept term.
-        utility_by_session += self.additive_intercept(batch).unsqueeze(dim=0)
-        # direct impact of item observables to utility function.
-        utility_by_session += self.additive_obs2utility_item(batch).unsqueeze(dim=0)
-        # direct impact of session observables to utility function.
-        utility_by_session += self.additive_obs2utility_session(batch).unsqueeze(dim=0)
+        # 2.a. mu_i * delta_w
+        if 'mu_item' in sample_dict.keys():
+            raise NotImplementedError
+
+        # 2.b. weekday_id.
+        # TODO:
+
+        # 2.c. price variable.
+        if 'gamma_user' in sample_dict.keys() and 'beta_item' in sample_dict.keys():
+            # change dim to self.latent_dim * self.num_price_obs.
+            assert sample_dict['gamma_user'].shape == (num_seeds, self.num_users, self.latent_dim_price * self.num_price_obs)
+            assert sample_dict['beta_item'].shape == (num_seeds, self.num_items, self.latent_dim_price * self.num_price_obs)
+            # support single price for now.
+            assert batch.price_obs.shape == (num_sessions, self.num_items, self.num_price_obs)
+
+            gamma_user = sample_dict['gamma_user'].view(num_seeds, self.num_users, 1, self.num_price_obs, self.latent_dim_price)
+            beta_item = sample_dict['beta_item'].view(num_seeds, 1, self.num_items, self.num_price_obs, self.latent_dim_price)
+
+            coef = (gamma_user * beta_item).sum(dim=-1)
+            assert coef.shape(num_seeds, self.num_users, self.num_items, self.num_price_obs)
+            coef = coef[:, user_idx, :, :]
+            assert coef.shape == (num_seeds, num_sessions, self.num_items, self.num_price_obs)
+            price_obs = batch.price_obs.view(1, num_sessions, self.num_items, self.num_price_obs)
+            out = (coef * price_obs).sum(dim=-1)
+            assert out.shape == (num_seeds, num_sessions, self.num_items)
+            utility_by_session += out
+            # TODO: warn reseachers to create -log(price) in the dataloader!
+
+        assert utility_by_session.shape == (num_seeds, num_sessions, self.num_items)
 
         # compute log likelihood log p(choosing item i | user, item latents)
         if self.likelihood == 'all':
@@ -464,72 +572,32 @@ class BEMB(nn.Module):
         # output shape: (num_seeds, num_sessions, self.num_items)
         return log_p
 
-    def log_prior(self,
-                  user_latent_sample: torch.Tensor,
-                  item_latent_sample: torch.Tensor,
-                  user_features: Optional[torch.Tensor]=None,
-                  item_features: Optional[torch.Tensor]=None
-                  ) -> torch.Tensor:
-        """Computes the log probability of Monte Carlo samples of user/item latents under their prior
-            distributions. This method assumes the first dimension of {user, item}_latent_sample
-            to be the index of Monte Carlo samples.
+    def log_prior(self, batch, sample_dict):
+        for sample in sample_dict.values():
+            num_seeds = sample.shape[0]
+            break
 
-        Args:
-            user_latent_sample (torch.Tensor): a tensor with shape (num_seeds, num_users, emb_dim)
-                oof Monte Carlo samples for user latent variables.
-            item_latent_sample (torch.Tensor): a tensor with shape (num_seeds, num_items, emb_dim)
-                of Monte Carlo samples for item latent variables.
-            user_features (Optional[torch.Tensor], optional): a tensor with shape (num_users, num_user_features)
-                of user features, which may enter the prior of user latent.
-                Defaults to None.
-            item_features (Optional[torch.Tensor], optional): a tensor with shape (num_items, num_item_features)
-                of item features, which may enter the prior of item latent.
-                Defaults to None.
+        total = torch.zeros(num_seeds).to(self.device)
+        for coef_name, prior in self.prior_dict.items():
+            # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
+            if self.obs2prior_dict[coef_name]:
+                if coef_name.endswith('_item'):
+                    x_obs = batch.item_obs
+                elif coef_name.endswith('_user'):
+                    x_obs = batch.user_obs
+                else:
+                    raise ValueError
+            else:
+                x_obs = None
+            total += prior.log_prob(x_obs, sample_dict[coef_name]).sum(dim=-1)
+        return total
 
-        Returns:
-            torch.Tensor: a tensor of shape (num_seeds,), where out[i] is the (joint) log prior of
-                the i-th Monte Carlo sample of user and item sample.
-        """
-        if self.obs2prior_user:
-            log_prob_user = self.user_latent_prior.log_prob(x_obs=user_features, value=user_latent_sample)
-        else:
-            standard_gaussian = MultivariateNormal(loc=torch.zeros(self.latent_dim).to(self.device),
-                                                   covariance_matrix=torch.eye(self.latent_dim).to(self.device))
-            log_prob_user = standard_gaussian.log_prob(user_latent_sample)
-        # (num_seeds, num_users)
-
-        if self.obs2prior_item:
-            log_prob_item = self.item_latent_prior.log_prob(x_obs=item_features, value=item_latent_sample)
-        else:
-            standard_gaussian = MultivariateNormal(loc=torch.zeros(self.latent_dim).to(self.device),
-                                                   covariance_matrix=torch.eye(self.latent_dim).to(self.device))
-            log_prob_item = standard_gaussian.log_prob(item_latent_sample)
-        # (num_seeds, num_items)
-
-        # sum across different users and items, prior of latent assumes latent of different user/item
-        # are independent.
-        return log_prob_user.sum(dim=-1) + log_prob_item.sum(dim=-1)
-
-    def log_variational(self,
-                        user_latent_sample: torch.Tensor,
-                        item_latent_sample: torch.Tensor
-                        ) -> torch.Tensor:
-        """Compute the log likelihood of Monte Carlo samples of user and item latents under the
-            current variational distributions for them.
-
-        Args:
-            user_latent_sample (torch.Tensor): A tesor of shape (num_seeds, num_users, latent_dim) of
-                Monte Carlo samples of user latents.
-            item_latent_sample (torch.Tensor): A tesor of shape (num_seeds, num_item, latent_dim) of
-                Monte Carlo samples of item latents.
-
-        Returns:
-            torch.Tensor: a tensor of shape (num_seeds,), where out[i] is the (joint) log likelihood of
-                the i-th Monte Carlo sample of user and item sample under current variational distributions.
-        """
-        log_q_user = self.user_latent_q.log_prob(user_latent_sample)  # (num_seeds, num_users)
-        log_q_item = self.item_latent_q.log_prob(item_latent_sample)  # (num_seeds, num_items)
-        return log_q_user.sum(dim=-1) + log_q_item.sum(dim=-1)
+    def log_variational(self, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
+        total = torch.scalar_tensor(0.0).to(self.device)
+        for coef_name, variational in self.variation_dict.items():
+            # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
+            total += variational.log_prob(sample_dict[coef_name]).sum(dim=-1)
+        return total
 
     def elbo(self, batch, num_seeds: int=1) -> torch.Tensor:
         """Computes the current ELBO.
@@ -543,43 +611,34 @@ class BEMB(nn.Module):
         Returns:
             torch.Tensor: a scalar tensor of the ELBO estimated from num_seeds Monte Carlo samples.
         """
-        # 1. sample latent from variational distribution Q.
-        # (num_seeds, num_{users, items}, emb_dim)
-        user_latent_sample_q = self.user_latent_q.reparameterize_sample(num_seeds)
-        item_latent_sample_q = self.item_latent_q.reparameterize_sample(num_seeds)
+        # 1. sample latent variables from their variational distributions.
+        # (num_seeds, num_classes, dim)
+        sample_dict = dict()
+        for coef_name, variational in self.variational_dict.items():
+            sample_dict[coef_name] = variational.reparameterize_sample(num_seeds)
 
         # 2. compute log p(latent) prior.
-        if self.obs2prior_item:
-            item_features = batch.item_features
-        else:
-            item_features = None
-
-        if self.obs2prior_user:
-            user_features = batch.user_features
-        else:
-            user_features = None
-
         # (num_seeds,)
-        log_prior = self.log_prior(user_latent_sample_q, item_latent_sample_q,
-                                   user_features=user_features,
-                                   item_features=item_features)
+        log_prior = self.log_prior(batch, sample_dict)
+        # scalar
         elbo = log_prior.mean()  # average over Monte Carlo samples for expectation.
 
         # 3. compute the log likelihood log p(obs|latent).
         # (num_seeds, num_sessions, num_items)
-        log_p_all_items = self.log_likelihood(batch, user_latent_sample_q, item_latent_sample_q)
-        # (num_sessions, num_items), average over Monte Carlo samples for expectation at dim 0.
+        log_p_all_items = self.log_likelihood(batch, sample_dict)
+        # (num_sessions, num_items), averaged over Monte Carlo samples for expectation at dim 0.
         log_p_all_items = log_p_all_items.mean(dim=0)
 
         # log_p_cond[*, session] = log prob of the item bought in this session.
         # (num_sessions,)
         log_p_chosen_items = log_p_all_items[torch.arange(len(batch)), batch.label]
+        # scalar
         elbo += log_p_chosen_items.sum(dim=-1)  # sessions are independent.
 
         # 4. optionally add log likelihood under variational distributions q(latent).
         if self.trace_log_q:
-            log_q = self.log_variational(user_latent_sample_q, item_latent_sample_q)  # (num_seeds,)
-            elbo -= log_q.mean()
+            log_q = self.log_variational(sample_dict)  # (num_seeds,)
+            elbo -= log_q.mean()  # scalar.
 
         # log performance metrics.
         self.running_performance_dict['log_likelihood'].append(log_p_chosen_items.mean().detach().cpu().item())
