@@ -349,8 +349,14 @@ class BEMB(nn.Module):
     # ==============================================================================================
 
     @torch.no_grad()
-    def get_within_category_accuracy(self, log_p_all_items: torch.Tensor, label: torch.LongTensor) -> float:
-        """A helper function for computing prediction accuracy within category.
+    def get_within_category_accuracy(self,
+                                     log_p_all_items: torch.Tensor,
+                                     label: torch.LongTensor) -> Dict[str, float]:
+        """A helper function for computing prediction accuracy (i.e., all non-differential metrics)
+        within category.
+        In particular, thie method calculates the accuracy, precision, recall and F1 score.
+
+
         This method has the same functionality as the following peusodcode:
         for C in categories:
             # get sessions in which item in category C was purchased.
@@ -365,13 +371,15 @@ class BEMB(nn.Module):
 
             accuracy = mean(Y == predictions)
 
+        Similarly, this function computes precision, recall and f1score as well.
+
         Args:
             log_p_all_items (torch.Tensor): shape (num_sessions, num_items) the log probability of
                 choosing each item in each session.
             label (torch.LongTensor): shape (num_sessions,), the IDs of items purchased in each session.
 
         Returns:
-            [float]: A float of within category accuracy computed from the above pesudo-code.
+            [Dict[str, float]]: A dictionary containing performance metrics.
         """
         # argmax: (num_sessions, num_categories), within category argmax.
         # item IDs are consecutive, thus argmax is the same as IDs of the item with highest P.
@@ -387,7 +395,28 @@ class BEMB(nn.Module):
         pred_from_category = argmax_by_category[torch.arange(len(label)), category_purchased]
 
         within_category_accuracy = (pred_from_category == label).float().mean().item()
-        return within_category_accuracy
+
+        # precision
+        precision = list()
+        recall = list()
+        for i in range(self.num_items):
+            if not torch.any(pred_from_category == i) or not torch.any(label == i):
+                continue
+
+            correct_i = torch.sum((torch.logical_and(pred_from_category == i, label == i)).float())
+            precision_i = correct_i / torch.sum((pred_from_category == i).float())
+            recall_i = correct_i / torch.sum((label == i).float())
+
+            precision.append(precision_i.cpu().item())
+            recall.append(recall_i.cpu().item())
+
+        precision = float(np.mean(precision))
+        recall = float(np.mean(recall))
+
+        return {'accuracy': within_category_accuracy,
+                'precision': precision,
+                'recall': recall,
+                'f1score': 2 * precision * recall / (precision + recall)}
 
     # ==============================================================================================
     # Methods for terms in the ELBO: prior, likelihood, and variational.
