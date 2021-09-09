@@ -1,4 +1,5 @@
 import argparse
+import yaml
 import time
 import os
 from pprint import pprint
@@ -16,11 +17,20 @@ from termcolor import cprint
 
 from sklearn.preprocessing import LabelEncoder
 
-DEVICE = 'cuda'
-NUM_EPOCHS = 1000
-K = 20
 
-args = argparse.Namespace(shuffle=False, batch_size=100000)
+# rename command line configs.
+arg_old2new = {
+    
+}
+
+
+def load_configs(yaml_file: str):
+    with open(yaml_file, 'r') as file:
+        data_loaded = yaml.safe_load(file)
+    breakpoint()
+    configs = argparse.Namespace(**data_loaded)
+    return configs
+
 
 
 def load_params_to_model(model, path) -> None:
@@ -42,50 +52,57 @@ def load_params_to_model(model, path) -> None:
     model.variational_dict['alpha_item'].logstd.data = torch.log(cpp_alpha_std).to(model.device)
 
 
+def is_sorted(x):
+    return all(x == np.sort(x))
+
+
+def load_tsv(file_name):
+    return pd.read_csv(os.path.join(data_dir, file_name),
+                       sep='\t',
+                       index_col=None,
+                       names=['user_id', 'item_id', 'session_id', 'quantity'])
+
+
 if __name__ == '__main__':
     cprint('Your are running a debugging script!', 'red')
     # for debugging.
     data_dir = '/home/tianyudu/Data/MoreSupermarket/tsv'
 
-    def is_sorted(x):
-        return all(x == np.sort(x))
-
-    def load_tsv(file_name):
-        return pd.read_csv(os.path.join(data_dir, file_name),
-                           sep='\t',
-                           index_col=None,
-                           names=['user_id', 'item_id', 'session_id', 'quantity'])
+    # sys.argv[1] should be the yaml file.
+    configs = load_configs(sys.argv[1])
 
     train = load_tsv('train.tsv')
     validation = load_tsv('validation.tsv')
     test = load_tsv('test.tsv')
 
     data_all = pd.concat([train, validation, test], axis=0)
-    num_sessions = len(data_all)
-
-    # TODO: improve efficiency.
-    # num_users = data_all['user_id'].nunique()
-    # num_items = data_all['item_id'].nunique()
 
     # ordinal encoding users and items.
     user_encoder = LabelEncoder().fit(data_all['user_id'].values)
-    num_users = len(user_encoder.classes_)
+    configs.num_users = len(user_encoder.classes_)
     assert is_sorted(user_encoder.classes_)
+
     item_encoder = LabelEncoder().fit(data_all['item_id'].values)
-    num_items = len(item_encoder.classes_)
+    configs.num_items = len(item_encoder.classes_)
     assert is_sorted(item_encoder.classes_)
 
-    # load observables.
+    # load observables from legacy C++ version.
     user_obs = pd.read_csv(os.path.join(data_dir, 'obsUser.tsv'), sep='\t', index_col=0, header=None)
+    # TODO(Tianyu): there could be duplicate information for each user.
+    # do we need to catch it in some check process?
     user_obs = user_obs.groupby(user_obs.index).first().sort_index()
-    num_user_obs = user_obs.shape[1]
     user_obs = torch.Tensor(user_obs.values)
+    configs.num_user_obs = user_obs.shape[1]
 
     item_obs = pd.read_csv(os.path.join(data_dir, 'obsItem.tsv'), sep='\t', index_col=0, header=None)
     item_obs = item_obs.groupby(item_obs.index).first().sort_index()
-    num_item_obs = item_obs.shape[1]
     item_obs = torch.Tensor(item_obs.values)
+    configs.num_item_obs = item_obs.shape[1]
 
+    # parse item availability.
+    # TODO.
+
+    # prepare the data loaders.
     dataset_list = list()
     for d in (train, validation, test):
         user_idx = user_encoder.transform(d['user_id'].values)
@@ -96,27 +113,28 @@ if __name__ == '__main__':
 
         label = torch.LongTensor(item_encoder.transform(d['item_id'].values))
 
-        choice_dataset = ChoiceDataset(label=label, user_onehot=user_onehot,
-                                       item_availability=None,
+        choice_dataset = ChoiceDataset(label=label,
+                                       user_onehot=user_onehot,
+                                       item_availability=None,  # for now, available items only.
                                        user_obs=user_obs,
                                        item_obs=item_obs)
         dataset_list.append(choice_dataset)
 
-    # ... Load obs...
+    # load category information.
     item_groups = pd.read_csv(os.path.join(data_dir, 'itemGroup.tsv'),
                               sep='\t',
                               index_col=None,
                               names=['item_id', 'category_id'])
 
-    # TODO: fix.
+    # TODO(Tianyu): handle duplicate group information.
     item_groups = item_groups.groupby('item_id').first().reset_index()
-    # filter out items not in any dataset above.
+    # filter out items never purchased.
     mask = item_groups['item_id'].isin(item_encoder.classes_)
     item_groups = item_groups[mask].reset_index(drop=True)
     item_groups = item_groups.sort_values(by='item_id')
 
     category_encoder = LabelEncoder().fit(item_groups['category_id'])
-    num_categories = len(category_encoder.classes_)
+    configs.num_categories = len(category_encoder.classes_)
 
     item_groups['item_id'] = item_encoder.transform(
         item_groups['item_id'].values)
@@ -126,12 +144,12 @@ if __name__ == '__main__':
     item_groups = item_groups.groupby('category_id')['item_id'].apply(list)
     category_to_item = dict(zip(item_groups.index, item_groups.values))
 
-    # dataloaders = [create_data_loader(dataset, args) for dataset in dataset_list]
+    # dataloaders = [create_data_loader(dataset, configs) for dataset in dataset_list]
     # only care the training set for now.
     dataloaders = dict()
     for dataset, partition in zip(dataset_list, ('train', 'validation', 'test')):
         dataset = dataset.to(DEVICE)
-        dataloader = create_data_loader(dataset, args)
+        dataloader = create_data_loader(dataset, configs)
         dataloaders[partition] = dataloader
 
     # create model.
@@ -145,14 +163,14 @@ if __name__ == '__main__':
         # 'beta_item': True
     }
 
-    model = BEMB(num_users=num_users,
-                 num_items=num_items,
-                 obs2prior_dict=obs2prior_dict,
-                 latent_dim=K,
-                 trace_log_q=False,
+    model = BEMB(num_users=configs.num_users,
+                 num_items=configs.num_items,
+                 obs2prior_dict=configs.obs2prior_dict,
+                 latent_dim=configs.latent_dim,
+                 trace_log_q=configs.trace_log_q,
                  category_to_item=category_to_item,
-                 num_user_obs=num_user_obs,
-                 num_item_obs=num_item_obs
+                 num_user_obs=configs.num_user_obs,
+                 num_item_obs=configs.num_item_obs
                  ).to(DEVICE)
 
     # print(model.variational_dict['theta_user'].mean)

@@ -1,0 +1,18 @@
+device: cuda
+
+# model configuration.
+latent_dim: 10
+latent_dim_price: -1
+obs2prior_dict:
+  lambda_item: False
+  theta_user: False
+  alpha_item: False
+  zeta_user: False
+  lota_item: False
+  gamma_user: True
+  beta_item: True
+# optimization.
+trace_log_q: False
+shuffle: False
+batch_size: 100000
+num_epochs: 1000
