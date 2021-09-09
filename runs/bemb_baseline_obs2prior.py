@@ -19,12 +19,6 @@ from termcolor import cprint
 from sklearn.preprocessing import LabelEncoder
 
 
-# rename command line configs.
-# arg_old2new = {
-
-# }
-
-
 def load_configs(yaml_file: str):
     with open(yaml_file, 'r') as file:
         data_loaded = yaml.safe_load(file)
