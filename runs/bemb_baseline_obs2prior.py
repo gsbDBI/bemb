@@ -2,6 +2,7 @@ import argparse
 import yaml
 import time
 import os
+import sys
 from pprint import pprint
 
 import deepchoice
@@ -19,18 +20,16 @@ from sklearn.preprocessing import LabelEncoder
 
 
 # rename command line configs.
-arg_old2new = {
-    
-}
+# arg_old2new = {
+
+# }
 
 
 def load_configs(yaml_file: str):
     with open(yaml_file, 'r') as file:
         data_loaded = yaml.safe_load(file)
-    breakpoint()
     configs = argparse.Namespace(**data_loaded)
     return configs
-
 
 
 def load_params_to_model(model, path) -> None:
@@ -71,6 +70,7 @@ if __name__ == '__main__':
     # sys.argv[1] should be the yaml file.
     configs = load_configs(sys.argv[1])
 
+    # read standard BEMB input files.
     train = load_tsv('train.tsv')
     validation = load_tsv('validation.tsv')
     test = load_tsv('test.tsv')
@@ -86,28 +86,45 @@ if __name__ == '__main__':
     configs.num_items = len(item_encoder.classes_)
     assert is_sorted(item_encoder.classes_)
 
-    # load observables from legacy C++ version.
-    user_obs = pd.read_csv(os.path.join(data_dir, 'obsUser.tsv'), sep='\t', index_col=0, header=None)
+    # ==============================================================================================
+    # user observables
+    # ==============================================================================================
+    user_obs = pd.read_csv(os.path.join(data_dir, 'obsUser.tsv'),
+                           sep='\t',
+                           index_col=0,
+                           header=None)
     # TODO(Tianyu): there could be duplicate information for each user.
     # do we need to catch it in some check process?
     user_obs = user_obs.groupby(user_obs.index).first().sort_index()
     user_obs = torch.Tensor(user_obs.values)
     configs.num_user_obs = user_obs.shape[1]
 
-    item_obs = pd.read_csv(os.path.join(data_dir, 'obsItem.tsv'), sep='\t', index_col=0, header=None)
+    # ==============================================================================================
+    # item observables
+    # ==============================================================================================
+    item_obs = pd.read_csv(os.path.join(data_dir, 'obsItem.tsv'),
+                           sep='\t',
+                           index_col=0,
+                           header=None)
     item_obs = item_obs.groupby(item_obs.index).first().sort_index()
     item_obs = torch.Tensor(item_obs.values)
     configs.num_item_obs = item_obs.shape[1]
 
+    # ==============================================================================================
+    # item availability
+    # ==============================================================================================
     # parse item availability.
-    # TODO.
+    # TODO(Tianyu): not implemented yet ~
+    item_availability = None
 
-    # prepare the data loaders.
+    # ==============================================================================================
+    # create datasets
+    # ==============================================================================================
     dataset_list = list()
     for d in (train, validation, test):
         user_idx = user_encoder.transform(d['user_id'].values)
 
-        user_onehot = torch.zeros(len(d), num_users)
+        user_onehot = torch.zeros(len(d), configs.num_users)
         user_onehot[torch.arange(len(d)), user_idx] = 1
         user_onehot = user_onehot.long()
 
@@ -115,12 +132,15 @@ if __name__ == '__main__':
 
         choice_dataset = ChoiceDataset(label=label,
                                        user_onehot=user_onehot,
-                                       item_availability=None,  # for now, available items only.
+                                       item_availability=item_availability,
                                        user_obs=user_obs,
                                        item_obs=item_obs)
+
         dataset_list.append(choice_dataset)
 
-    # load category information.
+    # ==============================================================================================
+    # category information
+    # ==============================================================================================
     item_groups = pd.read_csv(os.path.join(data_dir, 'itemGroup.tsv'),
                               sep='\t',
                               index_col=None,
@@ -136,32 +156,30 @@ if __name__ == '__main__':
     category_encoder = LabelEncoder().fit(item_groups['category_id'])
     configs.num_categories = len(category_encoder.classes_)
 
+    # encode them to consecutive integers {0, ..., num_items-1}.
     item_groups['item_id'] = item_encoder.transform(
         item_groups['item_id'].values)
     item_groups['category_id'] = category_encoder.transform(
         item_groups['category_id'].values)
 
+    print('Category sizes:')
+    print(item_groups.groupby('category_id').size().describe())
     item_groups = item_groups.groupby('category_id')['item_id'].apply(list)
     category_to_item = dict(zip(item_groups.index, item_groups.values))
 
-    # dataloaders = [create_data_loader(dataset, configs) for dataset in dataset_list]
-    # only care the training set for now.
+    # ==============================================================================================
+    # create data loaders.
+    # ==============================================================================================
+
     dataloaders = dict()
     for dataset, partition in zip(dataset_list, ('train', 'validation', 'test')):
-        dataset = dataset.to(DEVICE)
+        dataset = dataset.to(configs.device)
         dataloader = create_data_loader(dataset, configs)
         dataloaders[partition] = dataloader
 
-    # create model.
-    obs2prior_dict = {
-        # 'lambda_item': False,
-        'theta_user': False,
-        'alpha_item': False,
-        # 'zeta_user': False,
-        # 'lota_item': False,
-        # 'gamma_user': True,
-        # 'beta_item': True
-    }
+    # ==============================================================================================
+    # create model
+    # ==============================================================================================
 
     model = BEMB(num_users=configs.num_users,
                  num_items=configs.num_items,
@@ -171,7 +189,7 @@ if __name__ == '__main__':
                  category_to_item=category_to_item,
                  num_user_obs=configs.num_user_obs,
                  num_item_obs=configs.num_item_obs
-                 ).to(DEVICE)
+                 ).to(configs.device)
 
     # print(model.variational_dict['theta_user'].mean)
     # # breakpoint()
@@ -186,10 +204,14 @@ if __name__ == '__main__':
     print(model)
     print(80 * '=')
 
+    # ==============================================================================================
+    # training
+    # ==============================================================================================
+
     performance_by_epoch = list()
 
-    for i in range(NUM_EPOCHS):
-        total_loss = torch.scalar_tensor(0.0).to(DEVICE)
+    for i in range(configs.num_epochs):
+        total_loss = torch.scalar_tensor(0.0).to(configs.device)
 
         for batch in dataloaders['train']:
             # maximize the ELBO.
@@ -202,8 +224,8 @@ if __name__ == '__main__':
             total_loss += loss.detach().item()
 
         scheduler.step()
-        if i % (NUM_EPOCHS // 10) == 0:
-            # report training progress, report 100 times in total.
+        if i % (configs.num_epochs // 10) == 0:
+            # report training progress, report 10 times in total.
             with torch.no_grad():
                 performance = {'iteration': i,
                                'duration_seconds': time.time() - start_time}
@@ -229,13 +251,14 @@ if __name__ == '__main__':
                 print(f'Epoch [{i}] negative elbo (the lower the better)={total_loss}')
     print(f'Time taken: {time.time() - start_time: 0.1f} seconds.')
     log = pd.DataFrame(performance_by_epoch)
-    log.to_csv('./training_log.csv')
-    quit()
-    # visualize the training performance.
 
-    # same fitted parameters for latter comparison.
-    theta = model.variational_dict['theta_user'].mean
-    alpha = model.variational_dict['alpha_item'].mean
-    torch.save(theta, './output/theta.pt')
-    torch.save(alpha, './output/alpha.pt')
-    cprint('Done.', 'green')
+    # ==============================================================================================
+    # save results
+    # ==============================================================================================
+
+    os.system(f'mkdir {configs.out_dir}')
+    log.to_csv(os.path.join(configs.out_dir, 'performance_log_by_epoch.csv'))
+
+    # save model weights
+    torch.save(model, os.path.join(configs.out_dir, 'model.pt'))
+    torch.save(model.state_dict(), os.path.join(configs.out_dir, 'state_dict.pt'))
