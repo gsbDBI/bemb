@@ -14,84 +14,12 @@ import torch.nn.functional as F
 from torch.utils.data.sampler import BatchSampler, SequentialSampler, RandomSampler
 import yaml
 
-sys.path.append('./src')
-sys.path.append('../src')
-sys.path.append('./')
-sys.path.append('../src/model')
-from data.data_formatter import stata_to_tensors
-# from data.dataset import CMDataset
-from data.choice_dataset import ChoiceDataset
-from model.conditional_logit_model_v2 import ConditionalLogitModel
-from train.train import train
+
+from deepchoice.data import utils
+from deepchoice.data import ChoiceDataset
 
 
-def main(modifier: Optional[dict]=None):
-    # arg_path = sys.argv[1]
-    arg_path = './args_mode_canada_new.yaml'
-    with open(arg_path) as file:
-        args = argparse.Namespace(**yaml.load(file, Loader=yaml.FullLoader))  # unwrap dictionary loaded.
-
-    # if modifier is not None:
-    #     for k, v in modifier.items():
-    #         setattr(args, k, v)
-
-    if not os.path.exists(args.out_dir):
-        os.mkdir(args.out_dir)
-
-    if args.device != 'cpu':
-        print(f'Running on device: {torch.cuda.get_device_name(args.device)}')
-    else:
-        print(f'Running on CPU.')
-
-    project_path = '~/Development/deepchoice'
-    mode_canada = pd.read_csv(os.path.join(project_path, 'data/ModeCanada.csv'), index_col=0)
-    mode_canada = mode_canada.query('noalt == 4').reset_index(drop=True)
-
-    num_sessions = mode_canada['case'].nunique()
-    print(f'{num_sessions=:}')
-    
-    from typing import Union, List
-
-    def pivot3d(df: pd.DataFrame, dim0: str, dim1: str, values: Union[str, List[str]]) -> torch.Tensor:
-        """
-        Creates a tensor of shape (df[dim0].nunique(), df[dim1].nunique(), len(values)) from the
-        provided data frame.
-
-        Example, if dim0 is the column of session ID, dim1 is the column of alternative names, then
-            out[t, i, k] is the feature values[k] of item i in session t. The returned tensor
-            has shape (num_sessions, num_items, num_params), which fits the purpose of conditioanl
-            logit models.
-        """
-        if not isinstance(values, list):
-            values = [values]
-        
-        dim1_list = sorted(df[dim1].unique())
-        
-        tensor_slice = list()
-        for value in values:
-            layer = df.pivot(index=dim0, columns=dim1, values=value)
-            tensor_slice.append(torch.Tensor(layer[dim1_list].values))
-        
-        tensor = torch.stack(tensor_slice, dim=-1)
-        assert tensor.shape == (df[dim0].nunique(), df[dim1].nunique(), len(values))
-        return tensor
-
-    price_cost = pivot3d(mode_canada, 'case', 'alt', ['cost', 'freq', 'ovt'])
-    session_income = torch.Tensor(mode_canada.groupby('case')['income'].first().values).view(-1, 1)
-    price_ivt = pivot3d(mode_canada, 'case', 'alt', 'ivt')
-    
-    label = mode_canada.pivot('case', 'alt', 'choice')[['air', 'bus', 'car', 'train']].values
-    _, label = torch.nonzero(torch.Tensor(label), as_tuple=True)
-    label = label.long()
-    
-    user_onehot = torch.ones(num_sessions, 1).long()
-
-    # dataset = CMDataset(X=X, user_onehot=user_onehot, A=A, Y=Y, C=C, device=args.device)
-    dataset = ChoiceDataset(label=label, user_onehot=user_onehot,
-                            price_cost=price_cost,
-                            price_ivt=price_ivt,
-                            session_income=session_income).to(args.device)
- 
+def __null__():
     print('Building the model...')
     model = ConditionalLogitModel(num_items=4,
                                   num_users=1,

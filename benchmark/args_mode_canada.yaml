@@ -2,6 +2,7 @@ out_dir: './out_mode_canada_test'
 device: 'cuda'
 tb_out: './out'
 # file system
+data_path: '~/Development/deepchoice/data'
 base_path: '/oak/stanford/groups/athey/MoreSupermarkets/csv/new_data/nf_runs'
 # stores: '3014_availability'
 # stores: '3014-3098-3089-3168'
