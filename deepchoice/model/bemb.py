@@ -398,17 +398,18 @@ class BEMB(nn.Module):
 
         # precision
         precision = list()
+       
         recall = list()
         for i in range(self.num_items):
-            if not torch.any(pred_from_category == i) or not torch.any(label == i):
-                continue
-
             correct_i = torch.sum((torch.logical_and(pred_from_category == i, label == i)).float())
             precision_i = correct_i / torch.sum((pred_from_category == i).float())
             recall_i = correct_i / torch.sum((label == i).float())
 
-            precision.append(precision_i.cpu().item())
-            recall.append(recall_i.cpu().item())
+            # do not add if divided by zero.
+            if torch.any(pred_from_category == i):
+                precision.append(precision_i.cpu().item())
+            if torch.any(label == i):
+                recall.append(recall_i.cpu().item())
 
         precision = float(np.mean(precision))
         recall = float(np.mean(recall))
