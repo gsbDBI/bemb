@@ -10,7 +10,7 @@ from torch.nn.functional import log_softmax
 from torch_scatter import scatter_max
 from torch_scatter.composite import scatter_log_softmax
 
-from gaussian import batch_factorized_gaussian_log_prob
+from deepchoice.model.gaussian import batch_factorized_gaussian_log_prob
 
 
 class VariationalFactorizedGaussian(nn.Module):
@@ -398,7 +398,7 @@ class BEMB(nn.Module):
 
         # precision
         precision = list()
-       
+
         recall = list()
         for i in range(self.num_items):
             correct_i = torch.sum((torch.logical_and(pred_from_category == i, label == i)).float())
