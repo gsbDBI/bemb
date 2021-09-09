@@ -2,3 +2,6 @@
 *.pyc
 *.pt
 /data
+deepchoice.egg-info
+/src
+/draft
