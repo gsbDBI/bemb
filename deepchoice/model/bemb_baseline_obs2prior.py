@@ -1,6 +1,7 @@
 import argparse
 import time
 import os
+from pprint import pprint
 
 import deepchoice
 import matplotlib.pyplot as plt
@@ -155,7 +156,7 @@ if __name__ == '__main__':
                  ).to(DEVICE)
 
     # print(model.variational_dict['theta_user'].mean)
-    # breakpoint()
+    # # breakpoint()
     # load_params_to_model(model, '/home/tianyudu/Data/MoreSupermarket/t79338-n2123-m1109-k20-users3-lik3-shuffle0-eta0.005-zF0.1-nS10-batch100000-run_K20_1000_rmsprop_bs100000')
     # print(model.variational_dict['theta_user'].mean)
 
@@ -206,12 +207,12 @@ if __name__ == '__main__':
                     performance[key] = np.mean(val)
 
                 performance_by_epoch.append(performance)
-                print(performance)
+                pprint(performance)
                 print(f'Epoch [{i}] negative elbo (the lower the better)={total_loss}')
     print(f'Time taken: {time.time() - start_time: 0.1f} seconds.')
     log = pd.DataFrame(performance_by_epoch)
     log.to_csv('./training_log.csv')
-
+    quit()
     # visualize the training performance.
 
     # same fitted parameters for latter comparison.
