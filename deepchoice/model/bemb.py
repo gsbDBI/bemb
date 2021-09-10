@@ -243,6 +243,8 @@ class BEMB(nn.Module):
             for c, items_in_c in self.category_to_item.items():
                 category_idx[items_in_c] = c
             self.category_idx = category_idx.long()
+        else:
+            self.category_idx = torch.zeros(self.num_items).long()
 
         # ==========================================================================================
         # Create Prior Distributions.
@@ -414,10 +416,15 @@ class BEMB(nn.Module):
         precision = float(np.mean(precision))
         recall = float(np.mean(recall))
 
+        if precision == recall == 0:
+            f1 = 0
+        else:
+            f1 = 2 * precision * recall / (precision + recall)
+
         return {'accuracy': within_category_accuracy,
                 'precision': precision,
                 'recall': recall,
-                'f1score': 2 * precision * recall / (precision + recall)}
+                'f1score': f1}
 
     # ==============================================================================================
     # Methods for terms in the ELBO: prior, likelihood, and variational.
