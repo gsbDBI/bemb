@@ -1,4 +1,3 @@
-"""Draft for the BEMB model"""
 import os
 from typing import Dict, List, Optional, Union
 
@@ -576,8 +575,8 @@ class BEMB(nn.Module):
         return total
 
     def log_variational(self, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
-        total = torch.scalar_tensor(0.0).to(self.device)
-        for coef_name, variational in self.variation_dict.items():
+        total = torch.Tensor([0]).to(self.device)
+        for coef_name, variational in self.variational_dict.items():
             # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
             total += variational.log_prob(sample_dict[coef_name]).sum(dim=-1)
         return total
