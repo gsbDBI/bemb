@@ -17,10 +17,11 @@ class JointDataset(torch.utils.data.Dataset):
         assert len(set([len(d) for d in self.datasets.values()])) == 1
 
     def __len__(self) -> int:
-        return len(self.dataset_list[0])
+        for d in self.datasets.values():
+            return len(d)
 
     def __getitem__(self, indices: Union[int, torch.LongTensor]):
-        return tuple(d[indices] for d in self.datasets.values())
+        return dict((name, d[indices]) for (name, d) in self.datasets.items())
 
     def __repr__(self) -> str:
         out = [f'JointDataset with {len(self.datasets)} sub-datasets: (']
@@ -28,3 +29,8 @@ class JointDataset(torch.utils.data.Dataset):
             out.append(f'\t{name}: {str(dataset)}')
         out.append(')')
         return '\n'.join(out)
+
+    @property
+    def device(self):
+        for d in self.datasets.values():
+            return d.device
