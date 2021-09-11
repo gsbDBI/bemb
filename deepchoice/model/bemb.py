@@ -304,7 +304,7 @@ class BEMB(nn.Module):
 
         # self._validate_args()
 
-    def forward(self, batch) -> torch.Tensor:
+    def forward(self, batch, return_logit: bool=False) -> torch.Tensor:
         """Computes the log likelihood of choosing each item in each session.
 
         Args:
@@ -320,7 +320,7 @@ class BEMB(nn.Module):
             sample_dict[coef_name] = variational.mean.unsqueeze(dim=0)  # (1, num_*, dim)
 
         # there is 1 random seed in this case.
-        out = self.log_likelihood(batch, sample_dict)  # (num_seeds=1, num_sessions, num_items)
+        out = self.log_likelihood(batch, sample_dict, return_logit)  # (num_seeds=1, num_sessions, num_items)
         return out.squeeze()  # (num_sessions, num_items)
 
     # def _validate_args(self):
@@ -432,6 +432,7 @@ class BEMB(nn.Module):
     def log_likelihood(self,
                        batch,
                        sample_dict,
+                       return_logit: bool=False
                        ) -> torch.Tensor:
         """Computes the log probability of choosing each item in each session based on current model
         parameters.
@@ -543,6 +544,9 @@ class BEMB(nn.Module):
             # TODO: warn reseachers to create -log(price) in the dataloader!
 
         assert utility_by_session.shape == (num_seeds, num_sessions, self.num_items)
+
+        if return_logit:
+            return utility_by_session
 
         # compute log likelihood log p(choosing item i | user, item latents)
         if self.likelihood == 'all':
