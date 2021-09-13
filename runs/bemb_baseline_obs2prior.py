@@ -16,6 +16,8 @@ from deepchoice.data.utils import create_data_loader
 from deepchoice.model import BEMB
 from termcolor import cprint
 
+from tqdm import tqdm
+
 from sklearn.preprocessing import LabelEncoder
 
 
@@ -222,7 +224,7 @@ if __name__ == '__main__':
 
     performance_by_epoch = list()
 
-    for i in range(configs.num_epochs):
+    for i in tqdm(range(configs.num_epochs)):
         total_loss = torch.scalar_tensor(0.0).to(configs.device)
 
         for batch in dataloaders['train']:
