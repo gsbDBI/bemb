@@ -1,5 +1,6 @@
 """
 The dataset class for consumer choice datasets.
+Supports for uit linux style naming for variables.
 """
 import copy
 from typing import List, Dict, Optional, Union
@@ -9,7 +10,7 @@ import torch
 class ChoiceDataset(torch.utils.data.Dataset):
     def __init__(self,
                  label: torch.LongTensor,
-                 user_onehot: Optional[torch.LongTensor] = None,
+                 user_index: Optional[torch.LongTensor] = None,
                  item_availability: Optional[torch.BoolTensor] = None,
                  **kwargs) -> None:
         """
@@ -18,7 +19,7 @@ class ChoiceDataset(torch.utils.data.Dataset):
         # ENHANCEMENT(Tianyu): add item_names for summary.
         super(ChoiceDataset, self).__init__()
         self.label = label
-        self.user_onehot = user_onehot
+        self.user_index = user_index
         self.item_availability = item_availability
 
         self.variable_types = ['user', 'item', 'session', 'taste', 'price']
@@ -50,10 +51,10 @@ class ChoiceDataset(torch.utils.data.Dataset):
 
         new_dict['label'] = self.label[indices]
 
-        if self.user_onehot is None:
-            new_dict['user_onehot'] = None
+        if self.user_index is None:
+            new_dict['user_index'] = None
         else:
-            new_dict['user_onehot'] = self.user_onehot[indices, :]
+            new_dict['user_index'] = self.user_index[indices]
 
         if self.item_availability is None:
             new_dict['item_availability'] = None
@@ -61,7 +62,7 @@ class ChoiceDataset(torch.utils.data.Dataset):
             new_dict['item_availability'] = self.item_availability[indices, :]
 
         for key, val in self.__dict__.items():
-            # ignore 'label', 'user_onehot' and 'item_availability' keys, already added.
+            # ignore 'label', 'user_index' and 'item_availability' keys, already added.
             if key in new_dict.keys():
                 continue
             # for tensors that has the session dimension, subset them.
@@ -214,8 +215,7 @@ class ChoiceDataset(torch.utils.data.Dataset):
         num_params = val.shape[-1]
         if self._is_user_attribute(key):
             # user_attribute (num_users, *)
-            user_idx = torch.nonzero(self.user_onehot, as_tuple=True)[1]
-            out = val[user_idx].view(
+            out = val[self.user_index].view(
                 self.num_sessions, 1, num_params).expand(-1, self.num_items, -1)
         elif self._is_item_attribute(key):
             # item_attribute (num_items, *)
@@ -227,8 +227,7 @@ class ChoiceDataset(torch.utils.data.Dataset):
                            num_params).expand(-1, self.num_items, -1)
         elif self._is_taste_attribute(key):
             # taste_attribute (num_users, num_items, *)
-            user_idx = torch.nonzero(self.user_onehot, as_tuple=True)[1]
-            out = val[user_idx, :, :]
+            out = val[self.user_index, :, :]
         elif self._is_price_attribute(key):
             # price_attribute (num_sessions, num_items, *)
             out = val
