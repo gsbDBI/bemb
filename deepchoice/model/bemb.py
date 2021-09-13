@@ -195,7 +195,8 @@ class BEMB(nn.Module):
                 as keys, and category_to_item[C] contains the list of item ids belonging to category C.
                 If None is provided, all items are assumed to be in the same category.
                 Defaults to None.
-            likelihood (str, optional): specifiy the method used for computing likelihood P(item i | user, session, ...).
+            likelihood (str, optional): specifiy the method used for computing likelihood
+                P(item i | user, session, ...).
                 Options are
                 - 'all': a softmax across all items.
                 - 'within_category': firstly group items by categories and run separate softmax for each category.
@@ -214,7 +215,8 @@ class BEMB(nn.Module):
                 Defaults to False.
             obs2utility_item (bool, optional): whether to allow direct effect from item observables to utility or not.
                 Defaults to False.
-            obs2utility_session (bool, optional): whether to allow direct effect from session observables to utility or not.
+            obs2utility_session (bool, optional): whether to allow direct effect from session observables
+                to utility or not.
                 Defaults to False.
             num_session_obs (Optional[int], optional): number of session observables, required only if
                 obs2utility_session is True. Defaults to None.
@@ -479,7 +481,8 @@ class BEMB(nn.Module):
         if 'theta_user' in sample_dict.keys() and 'alpha_item' in sample_dict.keys():
             assert sample_dict['theta_user'].shape == (num_seeds, self.num_users, self.latent_dim)
             assert sample_dict['alpha_item'].shape == (num_seeds, self.num_items, self.latent_dim)
-            # (num_seeds, num_users, latent_dim) bmm (num_seeds, latent_dim, num_items) -> (num_seeds, num_users, num_items)
+            # (num_seeds, num_users, latent_dim) bmm (num_seeds, latent_dim, num_items)
+            # -> (num_seeds, num_users, num_items)
             utility += torch.bmm(sample_dict['theta_user'], torch.transpose(sample_dict['alpha_item'], 1, 2))
 
         # 1.c. zeta_user * x_item_obs
@@ -523,17 +526,21 @@ class BEMB(nn.Module):
         # 2.c. price variable.
         if 'gamma_user' in sample_dict.keys() and 'beta_item' in sample_dict.keys():
             # change dim to self.latent_dim * self.num_price_obs.
-            assert sample_dict['gamma_user'].shape == (num_seeds, self.num_users, self.latent_dim_price * self.num_price_obs)
-            assert sample_dict['beta_item'].shape == (num_seeds, self.num_items, self.latent_dim_price * self.num_price_obs)
+            assert sample_dict['gamma_user'].shape == (num_seeds, self.num_users,
+                                                       self.latent_dim_price * self.num_price_obs)
+            assert sample_dict['beta_item'].shape == (num_seeds, self.num_items,
+                                                      self.latent_dim_price * self.num_price_obs)
             # support single price for now.
             assert batch.price_obs.shape == (num_sessions, self.num_items, self.num_price_obs)
 
-            gamma_user = sample_dict['gamma_user'].view(num_seeds, self.num_users, 1, self.num_price_obs, self.latent_dim_price)
-            beta_item = sample_dict['beta_item'].view(num_seeds, 1, self.num_items, self.num_price_obs, self.latent_dim_price)
+            gamma_user = sample_dict['gamma_user'].view(num_seeds, self.num_users, 1,
+                                                        self.num_price_obs, self.latent_dim_price)
+            beta_item = sample_dict['beta_item'].view(num_seeds, 1, self.num_items,
+                                                      self.num_price_obs, self.latent_dim_price)
 
             coef = (gamma_user * beta_item).sum(dim=-1)
             assert coef.shape(num_seeds, self.num_users, self.num_items, self.num_price_obs)
-            coef = coef[:, user_idx, :, :]
+            coef = coef[:, batch.user_index, :, :]
             assert coef.shape == (num_seeds, num_sessions, self.num_items, self.num_price_obs)
             price_obs = batch.price_obs.view(1, num_sessions, self.num_items, self.num_price_obs)
             out = (coef * price_obs).sum(dim=-1)
