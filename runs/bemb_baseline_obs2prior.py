@@ -108,8 +108,26 @@ if __name__ == '__main__':
     # item availability
     # ==============================================================================================
     # parse item availability.
-    # TODO(Tianyu): not implemented yet ~
-    item_availability = None
+    # Try and catch? Optionally specify full availability?
+    a_tsv = pd.read_csv(os.path.join(data_dir, 'availabilityList.tsv'),
+                        sep='\t',
+                        index_col=None,
+                        header=None,
+                        names=['session_id', 'item_id'])
+
+    date_encoder = LabelEncoder().fit(a_tsv['session_id'].values)
+    configs.num_dates = len(date_encoder.classes_)
+    assert is_sorted(date_encoder.classes_)
+    # this loop could be slow, depends on # sessions.
+    item_availability = torch.zeros(configs.num_dates, configs.num_items).bool()
+
+    a_tsv['item_id'] = item_encoder.transform(a_tsv['item_id'].values)
+    a_tsv['session_id'] = date_encoder.transform(a_tsv['session_id'].values)
+
+    for date_id, df_group in a_tsv.groupby('session_id'):
+        # get IDs of items available at this date.
+        a_item_ids = df_group['item_id'].unique()  # this unique is not necessary if the dataset is well-prepared.
+        item_availability[date_id, a_item_ids] = True
 
     # ==============================================================================================
     # create datasets
@@ -124,9 +142,13 @@ if __name__ == '__main__':
 
         label = torch.LongTensor(item_encoder.transform(d['item_id'].values))
 
+        # get the date (aka session_id in the raw dataset) of each row in the dataset, retrieve
+        # the item availability information from that date.
+        date_ids = date_encoder.transform(d['session_id'].values)
+
         choice_dataset = ChoiceDataset(label=label,
                                        user_onehot=user_onehot,
-                                       item_availability=item_availability,
+                                       item_availability=item_availability[date_ids, :],
                                        user_obs=user_obs,
                                        item_obs=item_obs)
 

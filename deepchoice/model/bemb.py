@@ -545,6 +545,11 @@ class BEMB(nn.Module):
 
         assert utility_by_session.shape == (num_seeds, num_sessions, self.num_items)
 
+        if batch.item_availability is not None:
+            # expand to the Monte Carlo sample dimension.
+            A = batch.item_availability.unsqueeze(dim=0).view(num_seeds, num_sessions, self.num_items)
+            utility_by_session[~A] = -1.0e20
+
         if return_logit:
             return utility_by_session
 
