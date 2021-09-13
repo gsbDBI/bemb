@@ -134,11 +134,7 @@ if __name__ == '__main__':
     # ==============================================================================================
     dataset_list = list()
     for d in (train, validation, test):
-        user_idx = user_encoder.transform(d['user_id'].values)
-
-        user_onehot = torch.zeros(len(d), configs.num_users)
-        user_onehot[torch.arange(len(d)), user_idx] = 1
-        user_onehot = user_onehot.long()
+        user_index = user_encoder.transform(d['user_id'].values)
 
         label = torch.LongTensor(item_encoder.transform(d['item_id'].values))
 
@@ -147,7 +143,7 @@ if __name__ == '__main__':
         date_ids = date_encoder.transform(d['session_id'].values)
 
         choice_dataset = ChoiceDataset(label=label,
-                                       user_onehot=user_onehot,
+                                       user_index=user_index,
                                        item_availability=item_availability[date_ids, :],
                                        user_obs=user_obs,
                                        item_obs=item_obs)
