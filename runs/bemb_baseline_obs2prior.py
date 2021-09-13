@@ -60,14 +60,14 @@ def load_tsv(file_name):
 
 if __name__ == '__main__':
     cprint('Your are running a debugging script!', 'red')
-    # for debugging.
-    data_dir = '/home/tianyudu/Data/MoreSupermarket/tsv'
 
     # sys.argv[1] should be the yaml file.
     configs = load_configs(sys.argv[1])
+    data_dir = configs.data_dir
+    # for debugging.
+    train = load_tsv('train.tsv')
 
     # read standard BEMB input files.
-    train = load_tsv('train.tsv')
     validation = load_tsv('validation.tsv')
     test = load_tsv('test.tsv')
 
@@ -137,7 +137,6 @@ if __name__ == '__main__':
     dataset_list = list()
     for d in (train, validation, test):
         user_index = user_encoder.transform(d['user_id'].values)
-
         label = torch.LongTensor(item_encoder.transform(d['item_id'].values))
 
         # get the date (aka session_id in the raw dataset) of each row in the dataset, retrieve
