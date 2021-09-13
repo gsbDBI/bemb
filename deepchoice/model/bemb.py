@@ -510,6 +510,7 @@ class BEMB(nn.Module):
         # ==========================================================================================
         # convert to utility by session now.
         # get the utility for choosing each items by the user corresponding to that session.
+        num_sessions = len(batch.user_index)
         utility_by_session = utility[:, batch.user_index, :]  # (num_seeds, num_sessions, num_items)
 
         # 2.a. mu_i * delta_w
