@@ -455,7 +455,7 @@ class BEMB(nn.Module):
                 out[x, y, z] is the proabbility of choosing item z in session y conditioned on user
                 and item latents to be the x-th Monte Carlo sample.
         """
-        assert hasattr(batch, 'user_onehot') and hasattr(batch, 'label')
+        assert hasattr(batch, 'user_index') and hasattr(batch, 'label')
         assert sample_dict.keys() == self.obs2prior_dict.keys()
 
         # get the base utility of each item for each user with shape (num_seeds, num_users, num_items).
@@ -510,10 +510,7 @@ class BEMB(nn.Module):
         # ==========================================================================================
         # convert to utility by session now.
         # get the utility for choosing each items by the user corresponding to that session.
-        # get the index of the user who was making decision in each session.
-        user_idx = torch.nonzero(batch.user_onehot, as_tuple=True)[1].to(self.device)
-        num_sessions = user_idx.shape[0]
-        utility_by_session = utility[:, user_idx, :]  # (num_seeds, num_sessions, num_items)
+        utility_by_session = utility[:, batch.user_index, :]  # (num_seeds, num_sessions, num_items)
 
         # 2.a. mu_i * delta_w
         if 'mu_item' in sample_dict.keys():
