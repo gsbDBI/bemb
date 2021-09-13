@@ -556,6 +556,7 @@ class BEMB(nn.Module):
             utility_by_session[~A] = -1.0e20
 
         if return_logit:
+            # output shape: (num_seeds, num_sessions, self.num_items)
             return utility_by_session
 
         # compute log likelihood log p(choosing item i | user, item latents)
