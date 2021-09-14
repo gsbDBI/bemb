@@ -6,11 +6,15 @@ import sys
 from datetime import datetime
 
 import deepchoice
+import torch
 import yaml
 from deepchoice.data.contrib.mode_canada import main as load_dataset
 from deepchoice.data.utils import create_data_loader
 from deepchoice.model import ConditionalLogitModel
 from deepchoice.train.train import train
+
+from deepchoice.utils.std import parameter_std
+import torch.nn.functional as F
 
 if __name__ == '__main__':
     # 0. load configuration.
@@ -38,6 +42,19 @@ if __name__ == '__main__':
     # 5. training loop.
     start = datetime.now()
     train(data_loaders, model, args)
+
+    def nll_loss(model):
+        # TODO: change batch to dataset.
+        data_train = data_loaders[0]
+        log_likelihood = torch.scalar_tensor(0.0).to('cuda')
+        for batch in data_train:
+            y_pred = model(batch)
+            loss = F.cross_entropy(y_pred, batch.label, reduction='mean')
+            log_likelihood = loss * torch.scalar_tensor(len(batch)).to('cuda')
+        return log_likelihood
+    std = parameter_std(model, nll_loss)
+    print(std)
+    breakpoint()
 
     # 6. post-training analysis.
     std_dict = model.compute_std(x_dict=dataset.x_dict,

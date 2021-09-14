@@ -100,7 +100,7 @@ def train(data_loaders: List[dict],
                 out += f"[Val] LL={perf['log_likelihood']:5f}, ACC={perf['accuracy']:5f}%, LOSS={perf['loss']:5f}"
             if do_test:
                 perf = eval_step(model, data_test, args)
-                out += f"[Test] LL={perf['log_likelihood']:5f}, ACC={perf['accuracy']:5f}%, LOSS={perf['loss']:5f}" 
+                out += f"[Test] LL={perf['log_likelihood']:5f}, ACC={perf['accuracy']:5f}%, LOSS={perf['loss']:5f}"
             print(out)
 
 
