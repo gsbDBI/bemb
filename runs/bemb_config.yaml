@@ -1,4 +1,5 @@
 device: cuda
+data_dir: /home/tianyudu/Data/MoreSupermarket/tsv/
 out_dir: ./output/
 # model configuration.
 latent_dim: 10

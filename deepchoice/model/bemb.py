@@ -457,7 +457,7 @@ class BEMB(nn.Module):
                 out[x, y, z] is the proabbility of choosing item z in session y conditioned on user
                 and item latents to be the x-th Monte Carlo sample.
         """
-        assert hasattr(batch, 'user_index') and hasattr(batch, 'label')
+        assert hasattr(batch, 'user_index')
         assert sample_dict.keys() == self.obs2prior_dict.keys()
 
         # get the base utility of each item for each user with shape (num_seeds, num_users, num_items).

@@ -27,7 +27,7 @@ num_param_dict:
   price_ivt: 1
   intercept: 1
 # training
-max_epochs: 25000
+max_epochs: 10000
 param_norm_eps: 0.001  # for assessing the convergence of parameter.
 learning_rate: 0.01
 lr_decay: 0.9999  # exponential learning rate decay, put 1.0 for not decaying.

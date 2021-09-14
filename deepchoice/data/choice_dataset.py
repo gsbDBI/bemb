@@ -15,6 +15,7 @@ class ChoiceDataset(torch.utils.data.Dataset):
         """
         reserved classes: item (i), user (u), session (t)
         """
+        # ENHANCEMENT(Tianyu): add item_names for summary.
         super(ChoiceDataset, self).__init__()
         self.label = label
         self.user_onehot = user_onehot

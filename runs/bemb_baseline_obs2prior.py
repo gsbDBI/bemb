@@ -51,7 +51,7 @@ def is_sorted(x):
     return all(x == np.sort(x))
 
 
-def load_tsv(file_name):
+def load_tsv(file_name, data_dir):
     return pd.read_csv(os.path.join(data_dir, file_name),
                        sep='\t',
                        index_col=None,
@@ -65,11 +65,11 @@ if __name__ == '__main__':
     configs = load_configs(sys.argv[1])
     data_dir = configs.data_dir
     # for debugging.
-    train = load_tsv('train.tsv')
+    train = load_tsv('train.tsv', data_dir)
 
     # read standard BEMB input files.
-    validation = load_tsv('validation.tsv')
-    test = load_tsv('test.tsv')
+    validation = load_tsv('validation.tsv', data_dir)
+    test = load_tsv('test.tsv', data_dir)
 
     data_all = pd.concat([train, validation, test], axis=0)
 
