@@ -164,7 +164,7 @@ class ChoiceDataset(torch.utils.data.Dataset):
 
     @staticmethod
     def _is_user_attribute(key: str) -> bool:
-        return key.startswith('user_') and 'onehot' not in key
+        return key.startswith('user_') and 'index' not in key
 
     @staticmethod
     def _is_session_attribute(key: str) -> bool:
