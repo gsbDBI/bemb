@@ -20,11 +20,21 @@ from tqdm import tqdm
 
 from sklearn.preprocessing import LabelEncoder
 
+STOP_CODES = {
+    1 : 'validation set llh increase per supplied config'
+}
 
 def load_configs(yaml_file: str):
     with open(yaml_file, 'r') as file:
         data_loaded = yaml.safe_load(file)
-    configs = argparse.Namespace(**data_loaded)
+    # Add defaults
+    defaults = {
+        'num_verify_val' : 10,
+        'early_stopping' : {'validation_llh_flat' : -1},
+        'write_best_model' : True
+    }
+    defaults.update(data_loaded)
+    configs = argparse.Namespace(**defaults)
     return configs
 
 
@@ -49,7 +59,6 @@ def load_params_to_model(model, path) -> None:
 
 def is_sorted(x):
     return all(x == np.sort(x))
-
 
 def load_tsv(file_name, data_dir):
     return pd.read_csv(os.path.join(data_dir, file_name),
@@ -204,6 +213,14 @@ if __name__ == '__main__':
                  num_item_obs=configs.num_item_obs
                  ).to(configs.device)
 
+    best_val_llh_model = BEMB(num_users=configs.num_users,
+                 num_items=configs.num_items,
+                 obs2prior_dict=configs.obs2prior_dict,
+                 latent_dim=configs.latent_dim, trace_log_q=configs.trace_log_q,
+                 category_to_item=category_to_item,
+                 num_user_obs=configs.num_user_obs,
+                 num_item_obs=configs.num_item_obs ).to(configs.device)
+
     # print(model.variational_dict['theta_user'].mean)
     # # breakpoint()
     # load_params_to_model(model, '/home/tianyudu/Data/MoreSupermarket/t79338-n2123-m1109-k20-users3-lik3-shuffle0-eta0.005-zF0.1-nS10-batch100000-run_K20_1000_rmsprop_bs100000')
@@ -222,6 +239,12 @@ if __name__ == '__main__':
     # ==============================================================================================
 
     performance_by_epoch = list()
+    best_val_llh = np.NINF
+    last_val_llh = np.NINF
+    val_llh_decrease_count = 0
+    # stop > 0 leads to a stopping criteria different from num epochs having run
+    # we use stop = 1 when we perform an early stop based on validation log likelihood
+    stop = 0
 
     for i in tqdm(range(configs.num_epochs)):
         total_loss = torch.scalar_tensor(0.0).to(configs.device)
@@ -237,7 +260,7 @@ if __name__ == '__main__':
             total_loss += loss.detach().item()
 
         scheduler.step()
-        if i % (configs.num_epochs // 10) == 0:
+        if i % (configs.num_epochs // configs.num_verify_val) == 0:
             # report training progress, report 10 times in total.
             with torch.no_grad():
                 performance = {'iteration': i,
@@ -259,9 +282,25 @@ if __name__ == '__main__':
                 for key, val in performance.items():
                     performance[key] = np.mean(val)
 
+                # Early Stopping
+                val_llh = performance['validation_log_likelihood']
+                if val_llh <= best_val_llh:
+                    best_val_llh_model.load_state_dict(model.state_dict())
+
+                if val_llh < last_val_llh:
+                    val_llh_decrease_count += 1
+                    early_stop = configs.early_stopping['validation_llh_flat']
+                    if early_stop > 0 and val_llh_decrease_count >= early_stop:
+                        stop = 1
+                else:
+                    val_llh_decrease_count = 0
+                last_val_llh = val_llh
                 performance_by_epoch.append(performance)
                 pprint(performance)
                 print(f'Epoch [{i}] negative elbo (the lower the better)={total_loss}')
+        if stop > 0:
+            print(f'EARLY STOPPING due to {STOP_CODES[stop]}')
+            break
     print(f'Time taken: {time.time() - start_time: 0.1f} seconds.')
     log = pd.DataFrame(performance_by_epoch)
 
@@ -271,6 +310,11 @@ if __name__ == '__main__':
 
     os.system(f'mkdir {configs.out_dir}')
     log.to_csv(os.path.join(configs.out_dir, 'performance_log_by_epoch.csv'))
+
+    # save best_val_llh_model weights
+    if (configs.write_best_model):
+        torch.save(best_val_llh_model, os.path.join(configs.out_dir, 'best_val_llh_model.pt'))
+        torch.save(best_val_llh_model.state_dict(), os.path.join(configs.out_dir, 'best_val_llh_model_state_dict.pt'))
 
     # save model weights
     torch.save(model, os.path.join(configs.out_dir, 'model.pt'))

@@ -1,9 +1,9 @@
-data_dir: '/home/ubuntu/MoreSupermarkets_data/csv/new_data/nf_runs/1904-1887/20180101-20191231_8/tsv'
+data_dir: '/home/ubuntu/MoreSupermarkets_data/csv/new_data/nf_runs/1904-1887/20180101-20191231_13/tsv/grid_rand/tsv_c-100_u-1000_d-1000'
 device: cuda
-out_dir: ./output/
+out_dir: '/home/ubuntu/MoreSupermarkets_data/csv/new_data/nf_runs/1904-1887/20180101-20191231_13/tsv/grid_rand/tsv_c-100_u-1000_d-1000/output'
 # model configuration.
 latent_dim: 10
-latent_dim_price: -1
+latent_dim_price: 10
 obs2prior_dict:
   # lambda_item: False
   theta_user: False
@@ -15,6 +15,10 @@ obs2prior_dict:
 #### optimization.
 trace_log_q: False
 shuffle: False
-batch_size: 1000
-num_epochs: 1000
+batch_size: 10000
+num_epochs: 800
 num_mc_seeds: 1
+num_verify_val : 20
+write_best_model : True
+early_stopping:
+  validation_llh_flat: 1
