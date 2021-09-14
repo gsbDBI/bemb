@@ -215,6 +215,9 @@ class NestedLogitModel(nn.Module):
         self._clamp_called_flag = False
         return logP
 
+    def log_likelihood(self, *args):
+        return - self.negative_log_likelihood(*args)
+
     def negative_log_likelihood(self,
                                 batch,
                                 y: torch.LongTensor,
