@@ -26,7 +26,7 @@ class NestedLogitModel(nn.Module):
         Args:
             category_to_item (Dict[object, List[int]]): a dictionary maps a category ID to a list
                 of items IDs of the queried category.
-            
+
             category_coef_variation_dict (Dict[str, str]): a dictionary maps a variable type
                 (i.e., variable group) to the level of variation for the coefficient of this type
                 of variables.
@@ -41,7 +41,7 @@ class NestedLogitModel(nn.Module):
             num_users (Optional[int], optional): number of users to be modelled, this is only
                 required if any of variable type requires user-specific variations.
                 Defaults to None.
-                
+
             shared_lambda (bool): a boolean indicating whether to enforce the elasticity lambda, which
                 is the coefficient for inclusive values, to be constant for all categories.
                 The lambda enters the category-level selection as the following
@@ -58,7 +58,7 @@ class NestedLogitModel(nn.Module):
         self.item_coef_variation_dict = item_coef_variation_dict
         self.item_num_param_dict = item_num_param_dict
         self.num_users = num_users
-        
+
         self.categories = list(category_to_item.keys())
         self.num_categories = len(self.categories)
         self.num_items = sum(len(items) for items in category_to_item.values())
@@ -67,12 +67,12 @@ class NestedLogitModel(nn.Module):
         self.category_coef_dict = self._build_coef_dict(self.category_coef_variation_dict,
                                                         self.category_num_param_dict,
                                                         self.num_categories)
-        
+
         # item coefficients.
         self.item_coef_dict = self._build_coef_dict(self.item_coef_variation_dict,
                                                     self.item_num_param_dict,
                                                     self.num_items)
-        
+
         self.shared_lambda = shared_lambda
         if self.shared_lambda:
             self.lambda_weight = nn.Parameter(torch.ones(1), requires_grad=True)
@@ -102,7 +102,7 @@ class NestedLogitModel(nn.Module):
                                               num_params=num_params)
         return nn.ModuleDict(coef_dict)
 
-    def _check_input_shapes(self, category_x_dict, item_x_dict, user_onehot, item_availability) -> None:
+    def _check_input_shapes(self, category_x_dict, item_x_dict, user_index, item_availability) -> None:
         T = list(category_x_dict.values())[0].shape[0]  # batch size.
         for var_type, x_category in category_x_dict.items():
             x_item = item_x_dict[var_type]
@@ -110,23 +110,23 @@ class NestedLogitModel(nn.Module):
             assert x_category.shape[0] == x_item.shape[0]
             assert x_category.shape == (T, self.num_categories, self.category_num_param_dict[var_type])
             assert x_item.shape == (T, self.num_items, self.item_num_param_dict[var_type])
-  
-        if (user_onehot is not None) and (self.num_users is not None):
-            assert user_onehot == (T, self.num_users)
- 
+
+        if (user_index is not None) and (self.num_users is not None):
+            assert user_index.shape == (T,)
+
         if item_availability is not None:
             assert item_availability.shape == (T, self.num_items)
 
     def forward(self, batch):
         return self._forward(batch['category'].x_dict,
                              batch['item'].x_dict,
-                             batch['item'].user_onehot,
+                             batch['item'].user_index,
                              batch['item'].item_availability)
 
     def _forward(self,
                  category_x_dict: Dict[str, torch.Tensor],
                  item_x_dict: Dict[str, torch.Tensor],
-                 user_onehot: Optional[torch.LongTensor] = None,
+                 user_index: Optional[torch.LongTensor] = None,
                  item_availability: Optional[torch.BoolTensor] = None
                  ) -> torch.Tensor:
         """"Computes log P[t, i] = the log probability for the user involved in trip t to choose item i.
@@ -138,6 +138,9 @@ class NestedLogitModel(nn.Module):
                 features of all categories in each trip.
             x_item (torch.Tensor): a tensor with shape (num_trips, num_items, *) including features
                 of all items in each trip.
+            user_index (torch.LongTensor): a tensor of shape (num_trips,) indicating which user is
+                making decision in each trip. Setting user_index = None assumes the same user is
+                making decisions in all trips.
             item_availability (torch.BoolTensor): a boolean tensor with shape (num_trips, num_items)
                 indicating the aviliability of items in each trip. If item_availability[t, i] = False,
                 the utility of choosing item i in trip t, V[t, i], will be set to -inf.
@@ -166,12 +169,12 @@ class NestedLogitModel(nn.Module):
             category_x_dict['intercept'] = torch.ones((T, self.num_categories, 1)).to(device)
 
         for var_type, coef in self.category_coef_dict.items():
-            W += coef(category_x_dict[var_type], user_onehot)
+            W += coef(category_x_dict[var_type], user_index)
 
         # compute item-specific utility (T, num_items).
         Y = torch.zeros(T, self.num_items).to(device)
         for var_type, coef in self.item_coef_dict.items():
-            Y += coef(item_x_dict[var_type], user_onehot)
+            Y += coef(item_x_dict[var_type], user_index)
 
         if item_availability is not None:
             Y[~item_availability] = -1.0e20
@@ -205,7 +208,7 @@ class NestedLogitModel(nn.Module):
         # only count each category once in the logsumexp within the category level model.
         cols = [x[0] for x in self.category_to_item.values()]
         logP_category = logit - torch.logsumexp(logit[:, cols], dim=1, keepdim=True)
- 
+
         # =============================================================================
         # compute the joint log P_{ni} as in the textbook.
         logP = logP_item + logP_category
