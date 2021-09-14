@@ -63,14 +63,15 @@ class Coefficient(nn.Module):
 
     def forward(self,
                 x: torch.Tensor,
-                user_onehot: Optional[torch.Tensor]=None,
+                user_index: Optional[torch.Tensor]=None,
                 manual_coef_value: Optional[torch.Tensor]=None
                 ) -> torch.Tensor:
         """
         Args:
             x (torch.Tensor): a tensor of shape (num_sessions, num_items, num_params).
-            user_onehot (Optional[torch.Tensor], optional): a tensor of shape (num_sessions, num_users)
-                in which one row is the one-hot vector of the user involved in that session.
+            user_index (Optional[torch.Tensor], optional): a tensor of shape (num_sessions,)
+                contain IDs of the user involved in that session. If set to None, assume the same
+                user is making all decisions.
                 Defaults to None.
             manual_coef_value (Optional[torch.Tensor], optional): a tensor with the same number of
                 entries as self.coef. If provided, the forward function uses provided values
@@ -91,7 +92,7 @@ class Coefficient(nn.Module):
         else:
             # use the learned coefficient values, coef is a nn.Parameter.
             coef = self.coef
-        
+
         num_trips, num_items, num_feats = x.shape
         assert self.num_params == num_feats
 
@@ -112,28 +113,26 @@ class Coefficient(nn.Module):
 
         elif self.variation == 'user':
             # coef has shape (num_users, num_params)
-            coef = user_onehot @ coef  # (num_trips, num_params) user-specific coefficients.
+            coef = coef[user_index, :]  # (num_trips, num_params) user-specific coefficients.
             coef = coef.view(num_trips, 1, self.num_params).expand(-1, num_items, -1)
 
         elif self.variation == 'user-item':
             # (num_trips,) long tensor of user ID.
-            user_idx = torch.nonzero(user_onehot, as_tuple=True)[1]
             # originally, coef has shape (num_users, num_items-1, num_params)
             # transform to (num_trips, num_items - 1, num_params), user-specific.
-            coef = coef[user_idx, :, :]
+            coef = coef[user_index, :, :]
             # coefs for the first item for all users are enforced to 0.
             zeros = torch.zeros(num_trips, 1, self.num_params).to(coef.device)
             coef = torch.cat((zeros, coef), dim=1)  # (num_trips, num_items, num_params)
 
         elif self.variation == 'user-item-full':
             # originally, coef has shape (num_users, num_items, num_params)
-            user_idx = torch.nonzero(user_onehot, as_tuple=True)[1]
-            coef = coef[user_idx, :, :]  # (num_trips, num_items, num_params)
+            coef = coef[user_index, :, :]  # (num_trips, num_items, num_params)
 
         else:
             raise ValueError(f'Unsupported type of variation: {self.variation}.')
 
         assert coef.shape == (num_trips, num_items, num_feats) == x.shape
-        
+
         # compute the utility of each item in each trip.
         return (x * coef).sum(dim=-1)
