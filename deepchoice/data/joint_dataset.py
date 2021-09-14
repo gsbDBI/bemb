@@ -34,3 +34,8 @@ class JointDataset(torch.utils.data.Dataset):
     def device(self):
         for d in self.datasets.values():
             return d.device
+
+    def to(self, device):
+        for d in self.datasets.values():
+            d = d.to(device)
+        return self
