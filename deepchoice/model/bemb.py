@@ -270,6 +270,7 @@ class BEMB(nn.Module):
             'alpha_item': self.latent_dim,
             'zeta_user': self.num_item_obs,
             'iota_item': self.num_user_obs,
+            'mu_item': self.num_session_obs,
             'delta_item': None,  # TODO: update this.
             'gamma_user': self.latent_dim_price * self.num_price_obs if has_price else None,
             'beta_item': self.latent_dim_price * self.num_price_obs if has_price else None
@@ -516,9 +517,17 @@ class BEMB(nn.Module):
         num_sessions = len(batch.user_index)
         utility_by_session = utility[:, batch.user_index, :]  # (num_seeds, num_sessions, num_items)
 
-        # 2.a. mu_i * delta_w
+        # 2.a. mu_i * x_session_obs
         if 'mu_item' in sample_dict.keys():
-            raise NotImplementedError
+            assert sample_dict['mu_item'].shape == (num_seeds, self.num_items, self.num_session_obs)
+            assert batch.session_obs.shape == (num_sessions, self.num_session_obs)
+            # index: (seed_id, session_id, item_id, obs_id).
+            session_obs = batch.session_obs.view(1, num_sessions, 1, self.num_session_obs)
+            # session_obs = session_obs.expand(num_seeds, -1, self.num_items, -1)
+            mu = sample_dict['mu_item'].view(num_seeds, 1, self.num_items, self.num_session_obs)
+            out = (mu * session_obs).sum(dim=-1)
+            assert out.shape == (num_seeds, num_sessions, self.num_items)
+            utility_by_session += out
 
         # 2.b. weekday_id.
         # TODO:
