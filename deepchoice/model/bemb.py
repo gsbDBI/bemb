@@ -491,9 +491,9 @@ class BEMB(nn.Module):
             assert batch.item_obs.shape == (self.num_items, self.num_item_obs)
 
             # TODO: double check this.
-            item_obs = batch.item_obs.view(1, 1, self.items, self.num_item_obs)
+            item_obs = batch.item_obs.view(1, 1, self.num_items, self.num_item_obs)
             zeta = sample_dict['zeta_user'].view(num_seeds, self.num_users, 1, self.num_item_obs)
-            out = (item_obs * zeta).sum(dim=1)
+            out = (item_obs * zeta).sum(dim=-1)
             assert out.shape == (num_seeds, self.num_users, self.num_items)
             utility += out
 
@@ -505,7 +505,7 @@ class BEMB(nn.Module):
             user_obs = batch.user_obs.view(1, self.num_users, 1, self.num_user_obs)
             iota = sample_dict['iota_item'].view(num_seeds, 1, self.num_items, self.num_user_obs)
             out = (user_obs * iota).sum(dim=-1)
-            assert out.shape == (num_seeds, self.num_users, self.num_user)
+            assert out.shape == (num_seeds, self.num_users, self.num_users)
             utility += out
 
         # ==========================================================================================
