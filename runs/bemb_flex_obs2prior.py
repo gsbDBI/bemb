@@ -13,7 +13,7 @@ import seaborn as sns
 import torch
 from deepchoice.data import ChoiceDataset
 from deepchoice.data.utils import create_data_loader
-from deepchoice.model import BEMB
+from deepchoice.model import BEMBFlex
 from termcolor import cprint
 
 from tqdm import tqdm
@@ -60,6 +60,7 @@ def load_params_to_model(model, path) -> None:
 def is_sorted(x):
     return all(x == np.sort(x))
 
+
 def load_tsv(file_name, data_dir):
     return pd.read_csv(os.path.join(data_dir, file_name),
                        sep='\t',
@@ -73,6 +74,7 @@ if __name__ == '__main__':
     # sys.argv[1] should be the yaml file.
     configs = load_configs(sys.argv[1])
     data_dir = configs.data_dir
+
     # for debugging.
     train = load_tsv('train.tsv', data_dir)
 
@@ -203,23 +205,27 @@ if __name__ == '__main__':
     # create model
     # ==============================================================================================
 
-    model = BEMB(num_users=configs.num_users,
-                 num_items=configs.num_items,
-                 obs2prior_dict=configs.obs2prior_dict,
-                 latent_dim=configs.latent_dim,
-                 trace_log_q=configs.trace_log_q,
-                 category_to_item=category_to_item,
-                 num_user_obs=configs.num_user_obs,
-                 num_item_obs=configs.num_item_obs
-                 ).to(configs.device)
+    model = BEMBFlex(
+        utility_formula=configs.utility,
+        num_users=configs.num_users,
+        num_items=configs.num_items,
+        obs2prior_dict=configs.obs2prior_dict,
+        latent_dim=configs.latent_dim,
+        trace_log_q=configs.trace_log_q,
+        category_to_item=category_to_item,
+        num_user_obs=configs.num_user_obs,
+        num_item_obs=configs.num_item_obs
+    ).to(configs.device)
 
-    best_val_llh_model = BEMB(num_users=configs.num_users,
-                 num_items=configs.num_items,
-                 obs2prior_dict=configs.obs2prior_dict,
-                 latent_dim=configs.latent_dim, trace_log_q=configs.trace_log_q,
-                 category_to_item=category_to_item,
-                 num_user_obs=configs.num_user_obs,
-                 num_item_obs=configs.num_item_obs ).to(configs.device)
+    best_val_llh_model = BEMBFlex(
+        utility_formula=configs.utility,
+        num_users=configs.num_users,
+        num_items=configs.num_items,
+        obs2prior_dict=configs.obs2prior_dict,
+        latent_dim=configs.latent_dim, trace_log_q=configs.trace_log_q,
+        category_to_item=category_to_item,
+        num_user_obs=configs.num_user_obs,
+        num_item_obs=configs.num_item_obs).to(configs.device)
 
     # print(model.variational_dict['theta_user'].mean)
     # # breakpoint()
