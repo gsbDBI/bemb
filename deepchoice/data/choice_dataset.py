@@ -60,17 +60,17 @@ class ChoiceDataset(torch.utils.data.Dataset):
 
         self._is_valid()
 
-    @staticmethod
-    def _dict_index(d, indices) -> dict:
-        # subset values of dictionary using the provided index, this method only subsets tensors and
-        # keeps other values unchanged.
-        subset = dict()
-        for key, val in d.items():
-            if torch.is_tensor(val):
-                subset[key] = val[indices, ...]
-            else:
-                subset[key] = val
-        return subset
+    # @staticmethod
+    # def _dict_index(d, indices) -> dict:
+    #     # subset values of dictionary using the provided index, this method only subsets tensors and
+    #     # keeps other values unchanged.
+    #     subset = dict()
+    #     for key, val in d.items():
+    #         if torch.is_tensor(val):
+    #             subset[key] = val[indices, ...]
+    #         else:
+    #             subset[key] = val
+    #     return subset
 
     def __getitem__(self, indices: Union[int, torch.LongTensor]):
         # TODO: Do we really need to initialize a new ChoiceDataset object?
@@ -152,6 +152,13 @@ class ChoiceDataset(torch.utils.data.Dataset):
         # ENHANCEMENT(Tianyu): cache results, check performance.
         return out
 
+    @classmethod
+    def _from_dict(cls, dictionary: Dict[str, torch.tensor]):
+        dataset = cls(**dictionary)
+        for key, item in dictionary.items():
+            setattr(dataset, key, item)
+        return dataset
+
     def apply_tensor(self, func):
         for key, item in self.__dict__.items():
             if torch.is_tensor(item):
@@ -183,13 +190,6 @@ class ChoiceDataset(torch.utils.data.Dataset):
         if len(set(devices)) > 1:
             raise Exception(f'Found tensors on different devices: {set(devices)}.',
                             'Use dataset.to() method to align devices.')
-
-    @classmethod
-    def _from_dict(cls, dictionary: Dict[str, torch.tensor]):
-        dataset = cls(**dictionary)
-        for key, item in dictionary.items():
-            setattr(dataset, key, item)
-        return dataset
 
     def _size_repr(self, value) -> List[int]:
         if torch.is_tensor(value):
