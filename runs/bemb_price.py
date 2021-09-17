@@ -288,8 +288,8 @@ if __name__ == '__main__':
             total_loss += loss.detach().item()
 
         scheduler.step()
-        # if i % (configs.num_epochs // configs.num_verify_val) == 0:
-        if (i + 1) == configs.num_epochs:
+        if i % (configs.num_epochs // configs.num_verify_val) == 0:
+        # if (i + 1) == configs.num_epochs:
             # report training progress, report 10 times in total.
             with torch.no_grad():
                 performance = {'iteration': i,
