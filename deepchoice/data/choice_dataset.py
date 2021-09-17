@@ -250,10 +250,10 @@ class ChoiceDataset(torch.utils.data.Dataset):
             if self._is_session_attribute(key) or self._is_price_attribute(key):
                 num_sessions = value.shape[0]
 
-        if any(self._is_user_attribute(x) for x in self.keys()):
+        if any(self._is_user_attribute(x) for x in self.__dict__.keys()):
             assert self.user_index is not None
 
-        if any(self._is_session_attribute(x) or self._is_price_attribute(x) for x in self.keys()):
+        if any(self._is_session_attribute(x) or self._is_price_attribute(x) for x in self.__dict__.keys()):
             assert self.session_index is not None
 
 
