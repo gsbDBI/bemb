@@ -147,6 +147,12 @@ class BEMBFlex(nn.Module):
                                                            dim=self.coef_dim_dict[coef_name])
         self.coef_dict = nn.ModuleDict(coef_dict)
 
+    def __str__(self):
+        return f'Bayesian EMBedding Model with U[user, item, session] = {self.raw_formula}\n' \
+               + f'Total number of parameters: {self.num_params}.\n' \
+               + 'With the following coefficients:\n' \
+               + str(self.coef_dict)
+
     def forward(self, batch, return_logit: bool=False) -> torch.Tensor:
         """Computes the log likelihood of choosing each item in each session.
 
