@@ -12,8 +12,8 @@ from torch_scatter.composite import scatter_log_softmax
 from deepchoice.model.gaussian import batch_factorized_gaussian_log_prob
 from deepchoice.model.bayesian_coefficient import BayesianCoefficient
 
+
 def parse_utility(utility_string: str) -> list:
-    # TODO: move this to BEMBFlex internal.
     # split additive terms
     parameter_suffix = ('_item', '_user')
     observable_prefix = ('item_', 'user_', 'session_', 'price_', 'taste_')
@@ -24,7 +24,6 @@ def parse_utility(utility_string: str) -> list:
     def is_observable(name: str) -> bool:
         return any(name.startswith(prefix) for prefix in observable_prefix)
 
-    # TODO: variable names here are pretty random, need to change them.
     additive_terms = utility_string.split(' + ')
     additive_decomposition = list()
     for term in additive_terms:
@@ -46,9 +45,9 @@ class BEMBFlex(nn.Module):
                  utility_formula: str,
                  num_users: int,
                  num_items: int,
+                 num_sessions: int,
                  obs2prior_dict: Dict[str, bool],
-                 latent_dim: int,
-                 latent_dim_price: Optional[int]=None,
+                 coef_dim_dict: Dict[str, int],
                  trace_log_q: bool=False,
                  category_to_item: Dict[str, List[int]]=None,
                  likelihood: str='within_category',
@@ -56,7 +55,7 @@ class BEMBFlex(nn.Module):
                  num_item_obs: Optional[int]=None,
                  num_session_obs: Optional[int]=None,
                  num_price_obs: Optional[int]=None,
-                 num_taste_obs: Optional[int]=None  # Not used for now.
+                 num_taste_obs: Optional[int]=None
                  ) -> None:
         """
         Args:
@@ -112,7 +111,7 @@ class BEMBFlex(nn.Module):
             self.category_idx = torch.zeros(self.num_items).long()
 
         # ==========================================================================================
-        # Create Prior and Variational Distributions.
+        # Create Bayesian Coefficient Objects
         # ==========================================================================================
         # model configuration.
         self.formula = parse_utility(utility_formula)
@@ -128,31 +127,10 @@ class BEMBFlex(nn.Module):
             'taste': num_taste_obs
         }
 
-        # dimension of each latent variable.
-        has_price = (self.latent_dim_price is not None) and (self.num_price_obs is not None)
-        # TODO: need to change this to input file.
-        self.coef_dim_dict = {
-            'lambda_item': 1,
-            'theta_user': self.latent_dim,
-            'alpha_item': self.latent_dim,
-            'zeta_user': self.num_item_obs,
-            'iota_item': self.num_user_obs,
-            'mu_item': self.num_session_obs,
-            'delta_item': None,  # TODO: update this.
-            'gamma_user': self.latent_dim_price * self.num_price_obs if has_price else None,
-            'beta_item': self.latent_dim_price * self.num_price_obs if has_price else None
-        }
-
         # prior_dict = dict()
         # variational_dict = dict()
         coef_dict = dict()
         for additive_term in self.formula:
-            # obs_name = additive_term['observable']
-            # if obs_name is None:
-            #     num_obs = None
-            # else:
-            #     num_obs = self.num_obs_dict[obs_name.split('_')[0]]
-
             for coef_name in additive_term['coefficient']:
                 variation = coef_name.split('_')[-1]
                 if variation == 'user':
@@ -168,32 +146,6 @@ class BEMBFlex(nn.Module):
                                                            num_obs=self.num_obs_dict[variation],
                                                            dim=self.coef_dim_dict[coef_name])
         self.coef_dict = nn.ModuleDict(coef_dict)
-        # for coef_name, obs2prior in self.obs2prior_dict.items():
-        #     subject = coef_name.split('_')[-1]  # {user, item, session, price, taste}
-        #     if obs2prior:
-        #         prior_dict[coef_name] = LearnableGaussianPrior(dim_in=self.num_obs_dict[subject],
-        #                                                        dim_out=self.coef_dim_dict[coef_name])
-        #     else:
-        #         prior_dict[coef_name] = StandardGaussianPrior(dim_in=self.num_obs_dict[subject],
-        #                                                       dim_out=self.coef_dim_dict[coef_name])
-
-        # # for now, assume all variational distributions are factorized Gaussians.
-        # for coef_name in self.obs2prior_dict.keys():
-        #     if coef_name.endswith('_user'):
-        #         num_classes = self.num_users
-        #     elif coef_name.endswith('_item'):
-        #         num_classes = self.num_items
-        #     else:
-        #         num_classes = 1  # learnable constant.
-
-        #     variational_dict[coef_name] = VariationalFactorizedGaussian(num_classes,
-        #                                                                 self.coef_dim_dict[coef_name])
-
-        # properly register module so that model.parameter() method correctly identifies all weights.
-        # self.prior_dict = nn.ModuleDict(prior_dict)
-        # self.variational_dict = nn.ModuleDict(variational_dict)
-
-        # self._validate_args()
 
     def forward(self, batch, return_logit: bool=False) -> torch.Tensor:
         """Computes the log likelihood of choosing each item in each session.
@@ -213,19 +165,6 @@ class BEMBFlex(nn.Module):
         # there is 1 random seed in this case.
         out = self.log_likelihood(batch, sample_dict, return_logit)  # (num_seeds=1, num_sessions, num_items)
         return out.squeeze()  # (num_sessions, num_items)
-
-    # def _validate_args(self):
-    #     # TODO: add more meaningful error message.
-    #     assert self.likelihood in ['all', 'within_category']
-
-    #     if self.obs2prior_user:
-    #         assert self.num_user_obs is not None
-
-    #     if self.obs2prior_item or self.obs2utility_item:
-    #         assert self.num_item_obs is not None
-
-    #     if self.obs2utility_session:
-    #         assert self.num_session_obs is not None
 
     @property
     def num_params(self) -> int:
@@ -356,30 +295,33 @@ class BEMBFlex(nn.Module):
 
         utility = torch.zeros(num_seeds, self.num_users, self.num_items).to(self.device)
 
+        class PositiveInteger(object):
+            def __eq__(self, other):
+                return isinstance(other, int) and other > 0
+
+        positive_integer = PositiveInteger()
 
         # ==========================================================================================
         # Direct Construction.
         # ==========================================================================================
         # short-hands for easier shape check.
         R = num_seeds
-        S = len(batch)  # num_sessions.
+        P = len(batch)  # num_purchases.
+        S = self.num_sessions
         U = self.num_users
         I = self.num_items
 
         def reshape_item_coef_sample(C):
-            P = C.shape[-1]
-            assert C.shape == (R, I, P)
-            C = C.view(R, 1, I, P).expand(-1, S, -1, -1)
-            assert C.shape == (R, S, I, P)
+            # input shape (R, I, *)
+            C = C.view(R, 1, I, -1).expand(-1, P, -1, -1)
+            assert C.shape == (R, P, I, positive_integer)
             return C
 
         def reshape_user_coef_sample(C):
-            # (R, U, P) --> (R, S, I, P)
-            P = C.shape[-1]
-            assert C.shape == (R, U, P)
-            C = C.view(R, U, 1, P).expand(-1, -1, I, -1)
+            # input shape (R, U, *)
+            C = C.view(R, U, 1, -1).expand(-1, -1, I, -1)  # (R, U, I, *)
             C = C[:, batch.user_index, :, :]
-            assert C.shape == (R, S, I, P)
+            assert C.shape == (R, P, I, positive_integer)
             return C
 
         def reshape_coef_sample(sample, name):
@@ -390,66 +332,68 @@ class BEMBFlex(nn.Module):
             else:
                 raise ValueError
 
-        class PositiveInteger(object):
-            def __eq__(self, other):
-                return isinstance(other, int) and other > 0
-
         def reshape_observable(obs, name):
             O = obs.shape[-1]  # numberof observables.
-            assert O == PositiveInteger()
+            assert O == positive_integer
             if name.startswith('item_'):
                 assert obs.shape == (I, O)
-                return obs.view(1, 1, I, O).expand(R, S, -1, -1)
+                obs = obs.view(1, 1, I, O).expand(R, P, -1, -1)
             elif name.startswith('user_'):
                 assert obs.shape == (U, O)
-                obs = obs[batch.user_index, :]  # (S, P)
-                return obs.view(1, S, 1, O).expand(R, -1, I, -1)
+                obs = obs[batch.user_index, :]  # (P, O)
+                obs = obs.view(1, P, 1, O).expand(R, -1, I, -1)
             elif name.startswith('session_'):
                 assert obs.shape == (S, O)
-                return obs.view(1, S, 1, O).expand(R, -1, I, -1)
+                obs = obs[batch.session_index, :]  # (P, O)
+                return obs.view(1, P, 1, O).expand(R, -1, I, -1)
             elif name.startswith('price_'):
                 assert obs.shape == (S, I, O)
-                return obs.view(1, S, I, O).expand(R, -1, -1, -1)
+                obs = obs[batch.session_index, :, :]  # (P, I, O)
+                return obs.view(1, P, I, O).expand(R, -1, -1, -1)
             elif name.startswith('taste_'):
                 assert obs.shape == (U, I, O)
-                obs = obs[batch.user_index, :, :]  # (S, I, O)
-                return obs.view(1, S, I, O).expand(R, -1, -1, -1)
+                obs = obs[batch.user_index, :, :]  # (P, I, O)
+                return obs.view(1, P, I, O).expand(R, -1, -1, -1)
             else:
                 raise ValueError
+            assert obs.shape == (R, P, I, O)
+            return obs
 
-        utility = torch.zeros(R, S, I).to(self.device)
+        # (random_seeds, num_purchases, num_items).
+        utility = torch.zeros(R, P, I).to(self.device)
         # loop over additive term to utility
         for term in self.formula:
             if len(term['coefficient']) == 0 and term['observable'] is None:
                 raise ValueError
 
             elif len(term['coefficient']) == 1 and term['observable'] is None:
-                # lambda_item or lambda_user
+                # E.g., lambda_item or lambda_user
                 coef_name = term['coefficient'][0]
                 coef_sample = reshape_coef_sample(sample_dict[coef_name], coef_name)
-                assert coef_sample.shape == (R, S, I, 1)
-                utility += coef_sample.view(R, S, I)
+                assert coef_sample.shape == (R, P, I, 1)
+                utility += coef_sample.view(R, P, I)
 
             elif len(term['coefficient']) == 2 and term['observable'] is None:
-                # E.g., <theta_user, lambda_item>
+                # E.g., <theta_user, lambda_item>.
                 coef_name_0 = term['coefficient'][0]
                 coef_name_1 = term['coefficient'][1]
 
                 coef_sample_0 = reshape_coef_sample(sample_dict[coef_name_0], coef_name_0)
                 coef_sample_1 = reshape_coef_sample(sample_dict[coef_name_1], coef_name_1)
 
-                assert coef_sample_0.shape == coef_sample_1.shape == (R, S, I, PositiveInteger())
+                assert coef_sample_0.shape == coef_sample_1.shape == (R, P, I, positive_integer)
 
                 utility += (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
             elif len(term['coefficient']) == 1 and term['observable'] is not None:
+                # E.g., theta_user * x_obs_item
                 coef_name = term['coefficient'][0]
                 coef_sample = reshape_coef_sample(sample_dict[coef_name], coef_name)
-                assert coef_sample.shape == (R, S, I, PositiveInteger())
+                assert coef_sample.shape == (R, P, I, PositiveInteger())
 
                 obs_name = term['observable']
                 obs = reshape_observable(getattr(batch, obs_name), obs_name)
-                assert obs.shape == (R, S, I, PositiveInteger())
+                assert obs.shape == (R, P, I, PositiveInteger())
 
                 utility += (coef_sample * obs).sum(dim=-1)
 
@@ -459,19 +403,20 @@ class BEMBFlex(nn.Module):
 
                 coef_sample_0 = reshape_coef_sample(sample_dict[coef_name_0], coef_name_0)
                 coef_sample_1 = reshape_coef_sample(sample_dict[coef_name_1], coef_name_1)
-                OP = coef_sample_0.shape[-1]  # dim of latent * num of observables.
-
-                assert coef_sample_0.shape == coef_sample_1.shape == (R, S, I, OP)
+                assert coef_sample_0.shape == coef_sample_1.shape == (R, P, I, positive_integer)
+                O_times_latent_dim = coef_sample_0.shape[-1]
 
                 obs_name = term['observable']
                 obs = reshape_observable(getattr(batch, obs_name), obs_name)
+                assert obs.shape == (R, P, I, positive_integer)
                 O = obs.shape[-1]  # number of observables.
-                assert obs.shape == (R, S, I, O)
 
-                P = OP / O
+                assert (O_times_latent_dim % O) == 0
+                latent_dim = O_times_latent_dim // O
 
-                coef_sample_0 = coef_sample_0.view(R, S, I, O, P)
-                coef_sample_1 = coef_sample_1.view(R, S, I, O, P)
+                coef_sample_0 = coef_sample_0.view(R, P, I, O, latent_dim)
+                coef_sample_1 = coef_sample_1.view(R, P, I, O, latent_dim)
+                # compute the coefficient with shape (R, P, I, O).
                 coef = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
                 utility += (coef * obs).sum(dim=-1)
@@ -481,7 +426,8 @@ class BEMBFlex(nn.Module):
 
         if batch.item_availability is not None:
             # expand to the Monte Carlo sample dimension.
-            A = batch.item_availability.unsqueeze(dim=0).view(R, S, I)
+            assert batch.item_availability[batch.session_index, :].shape == (P, I)
+            A = batch.item_availability[batch.session_index, :].unsqueeze(dim=0).view(R, P, I)
             utility[~A] = -1.0e20
 
         if return_logit:
