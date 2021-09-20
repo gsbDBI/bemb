@@ -430,7 +430,7 @@ class BEMBFlex(nn.Module):
 
             else:
                 raise ValueError
-            # additive_term_list.append(additive_term)
+
             utility += additive_term
 
         if batch.item_availability is not None:
