@@ -10,7 +10,14 @@ from torch.nn.functional import log_softmax
 from torch_scatter import scatter_max
 from torch_scatter.composite import scatter_log_softmax
 
+<<<<<<< HEAD
 from deepchoice.model.bayesian_coefficient_dev import BayesianCoefficient
+=======
+from deepchoice.model.gaussian import batch_factorized_gaussian_log_prob
+from deepchoice.model.bayesian_coefficient_dev import BayesianCoefficient
+
+from torch.profiler import record_function
+>>>>>>> 7accaf68652e4b749cdc78a746f2418fde01b273
 
 
 def parse_utility(utility_string: str) -> list:
@@ -301,6 +308,11 @@ class BEMBFlex(nn.Module):
             num_seeds = v.shape[0]
             break
 
+<<<<<<< HEAD
+=======
+        # utility = torch.zeros(num_seeds, self.num_users, self.num_items).to(self.device)
+
+>>>>>>> 7accaf68652e4b749cdc78a746f2418fde01b273
         class PositiveInteger(object):
             def __eq__(self, other):
                 return isinstance(other, int) and other > 0
@@ -366,9 +378,16 @@ class BEMBFlex(nn.Module):
             return obs
 
         # (random_seeds, num_purchases, num_items).
+<<<<<<< HEAD
         utility = torch.zeros(R, P, I, device=self.device)
+=======
+        # utility = torch.zeros(R, P, I).to(self.device)
+        # utility = torch.Tensor([[[0]]]).to(self.device)
+        # utility = torch.zeros([1, 1, 1]).to(self.device)
+>>>>>>> 7accaf68652e4b749cdc78a746f2418fde01b273
 
         # loop over additive term to utility
+        additive_term_list = list()
         for term in self.formula:
             if len(term['coefficient']) == 0 and term['observable'] is None:
                 raise ValueError
@@ -430,6 +449,9 @@ class BEMBFlex(nn.Module):
 
             else:
                 raise ValueError
+            additive_term_list.append(additive_term)
+
+        utility = torch.stack(additive_term_list).sum(dim=0)
 
             utility += additive_term
 
@@ -459,7 +481,12 @@ class BEMBFlex(nn.Module):
             num_seeds = sample.shape[0]
             break
 
+<<<<<<< HEAD
         total = torch.zeros(num_seeds, device=self.device)
+=======
+        # total = torch.zeros(num_seeds).to(self.device)
+        log_prior_list = list()
+>>>>>>> 7accaf68652e4b749cdc78a746f2418fde01b273
         for coef_name, coef in self.coef_dict.items():
             # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
 
@@ -473,16 +500,30 @@ class BEMBFlex(nn.Module):
             else:
                 x_obs = None
 
-            total += coef.log_prior(sample=sample_dict[coef_name], x_obs=x_obs).sum(dim=-1)
+            log_prior_list.append(coef.log_prior(sample=sample_dict[coef_name], x_obs=x_obs).sum(dim=-1))
+        total = torch.stack(log_prior_list).sum(dim=0)
         return total
 
     def log_variational(self, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
+<<<<<<< HEAD
         total = torch.Tensor([0], device=self.device)
 
         for coef_name, coef in self.coef_dict.items():
             # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
             total += coef.log_variational(sample_dict[coef_name]).sum(dim=-1)
 
+=======
+        total = torch.Tensor([0]).to(self.device)
+
+        log_variational_list = list()
+
+        for coef_name, coef in self.coef_dict.items():
+            # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
+            # total += coef.log_variational(sample_dict[coef_name]).sum(dim=-1)
+            log_variational_list.append(coef.log_variational(sample_dict[coef_name]).sum(dim=-1))
+
+        total = torch.stack(log_variational_list).sum(dim=0)
+>>>>>>> 7accaf68652e4b749cdc78a746f2418fde01b273
         return total
 
     def elbo(self, batch, num_seeds: int=1) -> torch.Tensor:
