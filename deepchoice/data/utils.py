@@ -1,3 +1,5 @@
+
+import os
 from typing import Union, List
 
 import pandas as pd
@@ -17,20 +19,20 @@ def pivot3d(df: pd.DataFrame, dim0: str, dim1: str, values: Union[str, List[str]
     """
     if not isinstance(values, list):
         values = [values]
-    
+
     dim1_list = sorted(df[dim1].unique())
-    
+
     tensor_slice = list()
     for value in values:
         layer = df.pivot(index=dim0, columns=dim1, values=value)
         tensor_slice.append(torch.Tensor(layer[dim1_list].values))
-    
+
     tensor = torch.stack(tensor_slice, dim=-1)
     assert tensor.shape == (df[dim0].nunique(), df[dim1].nunique(), len(values))
     return tensor
 
 
-def create_data_loader(dataset, args):
+def create_data_loader(dataset, args, num_workers: int=0):
     if args.batch_size == -1:
         # use full-batch.
         args.batch_size = len(dataset)
@@ -43,7 +45,7 @@ def create_data_loader(dataset, args):
     # cannot use multiple workers if the entire dataset is already on GPU.
     dataloader = torch.utils.data.DataLoader(dataset,
                                              sampler=sampler,
-                                             num_workers=0,  # 0 if dataset.device == 'cuda' else os.cpu_count(),
+                                             num_workers=num_workers,
                                              collate_fn=lambda x: x[0],
                                              pin_memory=(dataset.device == 'cpu'))
     return dataloader
