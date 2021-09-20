@@ -433,8 +433,6 @@ class BEMBFlex(nn.Module):
             # additive_term_list.append(additive_term)
             utility += additive_term
 
-        # utility = torch.stack(additive_term_list).sum(dim=0)
-
         if batch.item_availability is not None:
             # expand to the Monte Carlo sample dimension.
             assert batch.item_availability[batch.session_index, :].shape == (P, I)
