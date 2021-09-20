@@ -1,4 +1,5 @@
 import os
+from sys import breakpointhook
 from typing import Dict, List, Optional, Union
 
 import numpy as np
@@ -9,8 +10,7 @@ from torch.nn.functional import log_softmax
 from torch_scatter import scatter_max
 from torch_scatter.composite import scatter_log_softmax
 
-from deepchoice.model.gaussian import batch_factorized_gaussian_log_prob
-from deepchoice.model.bayesian_coefficient import BayesianCoefficient
+from deepchoice.model.bayesian_coefficient_dev import BayesianCoefficient
 
 
 def parse_utility(utility_string: str) -> list:
@@ -106,9 +106,11 @@ class BEMBFlex(nn.Module):
             category_idx = torch.zeros(self.num_items)
             for c, items_in_c in self.category_to_item.items():
                 category_idx[items_in_c] = c
-            self.category_idx = category_idx.long()
+            category_idx = category_idx.long()
         else:
-            self.category_idx = torch.zeros(self.num_items).long()
+            category_idx = torch.zeros(self.num_items).long()
+
+        self.register_buffer('category_idx', category_idx)
 
         # ==========================================================================================
         # Create Bayesian Coefficient Objects
@@ -220,7 +222,7 @@ class BEMBFlex(nn.Module):
         """
         # argmax: (num_sessions, num_categories), within category argmax.
         # item IDs are consecutive, thus argmax is the same as IDs of the item with highest P.
-        self.category_idx = self.category_idx.to(self.device)
+        # self.category_idx = self.category_idx.to(self.device)
         _, argmax_by_category = scatter_max(log_p_all_items, self.category_idx, dim=-1)
 
         # category_purchased[t] = the category of item label[t].
@@ -299,8 +301,6 @@ class BEMBFlex(nn.Module):
             num_seeds = v.shape[0]
             break
 
-        utility = torch.zeros(num_seeds, self.num_users, self.num_items).to(self.device)
-
         class PositiveInteger(object):
             def __eq__(self, other):
                 return isinstance(other, int) and other > 0
@@ -366,7 +366,8 @@ class BEMBFlex(nn.Module):
             return obs
 
         # (random_seeds, num_purchases, num_items).
-        utility = torch.zeros(R, P, I).to(self.device)
+        utility = torch.zeros(R, P, I, device=self.device)
+
         # loop over additive term to utility
         for term in self.formula:
             if len(term['coefficient']) == 0 and term['observable'] is None:
@@ -377,7 +378,7 @@ class BEMBFlex(nn.Module):
                 coef_name = term['coefficient'][0]
                 coef_sample = reshape_coef_sample(sample_dict[coef_name], coef_name)
                 assert coef_sample.shape == (R, P, I, 1)
-                utility += coef_sample.view(R, P, I)
+                additive_term = coef_sample.view(R, P, I)
 
             elif len(term['coefficient']) == 2 and term['observable'] is None:
                 # E.g., <theta_user, lambda_item>.
@@ -389,7 +390,7 @@ class BEMBFlex(nn.Module):
 
                 assert coef_sample_0.shape == coef_sample_1.shape == (R, P, I, positive_integer)
 
-                utility += (coef_sample_0 * coef_sample_1).sum(dim=-1)
+                additive_term = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
             elif len(term['coefficient']) == 1 and term['observable'] is not None:
                 # E.g., theta_user * x_obs_item
@@ -401,7 +402,7 @@ class BEMBFlex(nn.Module):
                 obs = reshape_observable(getattr(batch, obs_name), obs_name)
                 assert obs.shape == (R, P, I, PositiveInteger())
 
-                utility += (coef_sample * obs).sum(dim=-1)
+                additive_term = (coef_sample * obs).sum(dim=-1)
 
             elif len(term['coefficient']) == 2 and term['observable'] is not None:
                 coef_name_0 = term['coefficient'][0]
@@ -425,10 +426,14 @@ class BEMBFlex(nn.Module):
                 # compute the coefficient with shape (R, P, I, O).
                 coef = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
-                utility += (coef * obs).sum(dim=-1)
+                additive_term = (coef * obs).sum(dim=-1)
 
             else:
                 raise ValueError
+            # additive_term_list.append(additive_term)
+            utility += additive_term
+
+        # utility = torch.stack(additive_term_list).sum(dim=0)
 
         if batch.item_availability is not None:
             # expand to the Monte Carlo sample dimension.
@@ -446,7 +451,8 @@ class BEMBFlex(nn.Module):
             log_p = log_softmax(utility, dim=-1)
         elif self.likelihood == 'within_category':
             # compute log softmax separately within each category.
-            log_p = scatter_log_softmax(utility, self.category_idx.to(self.device), dim=-1)
+            # log_p = scatter_log_softmax(utility, self.category_idx.to(self.device), dim=-1)
+            log_p = scatter_log_softmax(utility, self.category_idx, dim=-1)
         # output shape: (num_seeds, num_sessions, self.num_items)
         return log_p
 
@@ -455,7 +461,7 @@ class BEMBFlex(nn.Module):
             num_seeds = sample.shape[0]
             break
 
-        total = torch.zeros(num_seeds).to(self.device)
+        total = torch.zeros(num_seeds, device=self.device)
         for coef_name, coef in self.coef_dict.items():
             # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
 
@@ -473,10 +479,12 @@ class BEMBFlex(nn.Module):
         return total
 
     def log_variational(self, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
-        total = torch.Tensor([0]).to(self.device)
+        total = torch.Tensor([0], device=self.device)
+
         for coef_name, coef in self.coef_dict.items():
             # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
             total += coef.log_variational(sample_dict[coef_name]).sum(dim=-1)
+
         return total
 
     def elbo(self, batch, num_seeds: int=1) -> torch.Tensor:
