@@ -5,15 +5,13 @@ import os
 import sys
 from pprint import pprint
 
-import deepchoice
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import torch
 from deepchoice.data import ChoiceDataset
 from deepchoice.data.utils import create_data_loader
-from deepchoice.model import BEMBFlex as BEMB
+from deepchoice.model import BEMB
 from termcolor import cprint
 
 from tqdm import tqdm
@@ -24,14 +22,15 @@ STOP_CODES = {
     1 : 'validation set llh increase per supplied config'
 }
 
+
 def load_configs(yaml_file: str):
     with open(yaml_file, 'r') as file:
         data_loaded = yaml.safe_load(file)
     # Add defaults
     defaults = {
-        'num_verify_val' : 10,
-        'early_stopping' : {'validation_llh_flat' : -1},
-        'write_best_model' : True
+        'num_verify_val': 10,
+        'early_stopping': {'validation_llh_flat': -1},
+        'write_best_model': True
     }
     defaults.update(data_loaded)
     configs = argparse.Namespace(**defaults)
@@ -60,6 +59,7 @@ def load_params_to_model(model, path) -> None:
 def is_sorted(x):
     return all(x == np.sort(x))
 
+
 def load_tsv(file_name, data_dir):
     return pd.read_csv(os.path.join(data_dir, file_name),
                        sep='\t',
@@ -68,25 +68,28 @@ def load_tsv(file_name, data_dir):
 
 
 if __name__ == '__main__':
-    cprint('Your are running a debugging script!', 'red')
-
+    cprint('Your are running an example script.', 'green')
     # sys.argv[1] should be the yaml file.
     configs = load_configs(sys.argv[1])
-    data_dir = configs.data_dir
-    # for debugging.
-    train = load_tsv('train.tsv', data_dir)
 
+    # ==============================================================================================
+    # Load standard BEMB inputs.
+    # ==============================================================================================
+    train = load_tsv('train.tsv', configs.data_dir)
     # read standard BEMB input files.
-    validation = load_tsv('validation.tsv', data_dir)
-    test = load_tsv('test.tsv', data_dir)
+    validation = load_tsv('validation.tsv', configs.data_dir)
+    test = load_tsv('test.tsv', configs.data_dir)
 
+    # ==============================================================================================
+    # Encode users and items to {0, 1, ..., num-1}.
+    # ==============================================================================================
+    # combine data for encoding.
     data_all = pd.concat([train, validation, test], axis=0)
-
-    # ordinal encoding users and items.
+    # encode user.
     user_encoder = LabelEncoder().fit(data_all['user_id'].values)
     configs.num_users = len(user_encoder.classes_)
     assert is_sorted(user_encoder.classes_)
-
+    # encode items.
     item_encoder = LabelEncoder().fit(data_all['item_id'].values)
     configs.num_items = len(item_encoder.classes_)
     assert is_sorted(item_encoder.classes_)
@@ -94,7 +97,7 @@ if __name__ == '__main__':
     # ==============================================================================================
     # user observables
     # ==============================================================================================
-    user_obs = pd.read_csv(os.path.join(data_dir, 'obsUser.tsv'),
+    user_obs = pd.read_csv(os.path.join(configs.data_dir, 'obsUser.tsv'),
                            sep='\t',
                            index_col=0,
                            header=None)
@@ -107,7 +110,7 @@ if __name__ == '__main__':
     # ==============================================================================================
     # item observables
     # ==============================================================================================
-    item_obs = pd.read_csv(os.path.join(data_dir, 'obsItem.tsv'),
+    item_obs = pd.read_csv(os.path.join(configs.data_dir, 'obsItem.tsv'),
                            sep='\t',
                            index_col=0,
                            header=None)
@@ -120,7 +123,7 @@ if __name__ == '__main__':
     # ==============================================================================================
     # parse item availability.
     # Try and catch? Optionally specify full availability?
-    a_tsv = pd.read_csv(os.path.join(data_dir, 'availabilityList.tsv'),
+    a_tsv = pd.read_csv(os.path.join(configs.data_dir, 'availabilityList.tsv'),
                         sep='\t',
                         index_col=None,
                         header=None,
@@ -144,7 +147,7 @@ if __name__ == '__main__':
     # ==============================================================================================
     # price observables
     # ==============================================================================================
-    df_price = pd.read_csv(os.path.join(data_dir, 'item_sess_price.tsv'),
+    df_price = pd.read_csv(os.path.join(configs.data_dir, 'item_sess_price.tsv'),
                            sep='\t',
                            names=['item_id', 'session_id', 'price'])
 
@@ -184,7 +187,7 @@ if __name__ == '__main__':
     # ==============================================================================================
     # category information
     # ==============================================================================================
-    item_groups = pd.read_csv(os.path.join(data_dir, 'itemGroup.tsv'),
+    item_groups = pd.read_csv(os.path.join(configs.data_dir, 'itemGroup.tsv'),
                               sep='\t',
                               index_col=None,
                               names=['item_id', 'category_id'])
@@ -274,10 +277,10 @@ if __name__ == '__main__':
     # we use stop = 1 when we perform an early stop based on validation log likelihood
     stop = 0
 
-    for i in tqdm(range(configs.num_epochs)):
+    for i in tqdm(range(configs.num_epochs), desc='epoch'):
         total_loss = torch.scalar_tensor(0.0).to(configs.device)
 
-        for batch in dataloaders['train']:
+        for batch in tqdm(dataloaders['train'], desc='batch'):
             # maximize the ELBO.
             loss = - model.elbo(batch.to(configs.device), num_seeds=1)
 
@@ -289,6 +292,7 @@ if __name__ == '__main__':
 
         scheduler.step()
         if i % (configs.num_epochs // configs.num_verify_val) == 0:
+        # if False:
         # if (i + 1) == configs.num_epochs:
             # report training progress, report 10 times in total.
             with torch.no_grad():
