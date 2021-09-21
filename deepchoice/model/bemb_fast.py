@@ -326,19 +326,6 @@ class BEMB(nn.Module):
         out = self.log_likelihood(batch, sample_dict, return_logit)  # (num_seeds=1, num_sessions, num_items)
         return out.squeeze()  # (num_sessions, num_items)
 
-    # def _validate_args(self):
-    #     # TODO: add more meaningful error message.
-    #     assert self.likelihood in ['all', 'within_category']
-
-    #     if self.obs2prior_user:
-    #         assert self.num_user_obs is not None
-
-    #     if self.obs2prior_item or self.obs2utility_item:
-    #         assert self.num_item_obs is not None
-
-    #     if self.obs2utility_session:
-    #         assert self.num_session_obs is not None
-
     @property
     def num_params(self) -> int:
         return sum([p.numel() for p in self.parameters()])
