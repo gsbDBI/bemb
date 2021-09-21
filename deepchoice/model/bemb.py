@@ -169,6 +169,7 @@ class BEMB(nn.Module):
     def __init__(self,
                  num_users: int,
                  num_items: int,
+                 num_sessions: int,
                  obs2prior_dict: Dict[str, bool],
                  latent_dim: int,
                  latent_dim_price: Optional[int]=None,
@@ -185,6 +186,7 @@ class BEMB(nn.Module):
         Args:
             num_users (int): number of users.
             num_items (int): number of items.
+            num_sessions (int): number of sessions.
             latent_dim (int): dimension of user and item latents.
             latent_dim_price (int, optional): the dimension of latents for the price coefficient.
             trace_log_q (bool, optional): whether to trace the derivative of varitional likelihood logQ
@@ -223,6 +225,8 @@ class BEMB(nn.Module):
         super(BEMB, self).__init__()
         self.num_users = num_users
         self.num_items = num_items
+        self.num_sessions = num_sessions
+
         self.latent_dim = latent_dim
         self.latent_dim_price = latent_dim_price
         self.trace_log_q = trace_log_q
@@ -274,7 +278,6 @@ class BEMB(nn.Module):
             'gamma_user': self.latent_dim_price * self.num_price_obs if has_price else None,
             'beta_item': self.latent_dim_price * self.num_price_obs if has_price else None
         }
-
         prior_dict = dict()
         for coef_name, obs2prior in self.obs2prior_dict.items():
             subject = coef_name.split('_')[-1]  # {user, item, session, price, taste}
@@ -304,8 +307,6 @@ class BEMB(nn.Module):
 
         self.variational_dict = nn.ModuleDict(variational_dict)
 
-        # self._validate_args()
-
     def forward(self, batch, return_logit: bool=False) -> torch.Tensor:
         """Computes the log likelihood of choosing each item in each session.
 
@@ -316,7 +317,6 @@ class BEMB(nn.Module):
             torch.Tensor: a tensor of shape (num_sessions, num_items) containing the log likelihood
                 that each item is chosen in each session.
         """
-        # TODO: need some testing.
         sample_dict = dict()
         for coef_name, variational in self.variational_dict.items():
             sample_dict[coef_name] = variational.mean.unsqueeze(dim=0)  # (1, num_*, dim)
@@ -444,7 +444,6 @@ class BEMB(nn.Module):
                 out[x, y, z] is the proabbility of choosing item z in session y conditioned on user
                 and item latents to be the x-th Monte Carlo sample.
         """
-        assert hasattr(batch, 'user_index')
         assert sample_dict.keys() == self.obs2prior_dict.keys()
 
         # get the base utility of each item for each user with shape (num_seeds, num_users, num_items).
@@ -453,7 +452,7 @@ class BEMB(nn.Module):
             num_seeds = v.shape[0]
             break
 
-        utility = torch.zeros(num_seeds, self.num_users, self.num_items).to(self.device)
+        utility = torch.zeros(num_seeds, self.num_users, self.num_items, device=self.device)
 
         # ==========================================================================================
         # 1. Time-invariant part of utility.
@@ -492,7 +491,7 @@ class BEMB(nn.Module):
             user_obs = batch.user_obs.view(1, self.num_users, 1, self.num_user_obs)
             iota = sample_dict['iota_item'].view(num_seeds, 1, self.num_items, self.num_user_obs)
             out = (user_obs * iota).sum(dim=-1)
-            assert out.shape == (num_seeds, self.num_users, self.num_users)
+            assert out.shape == (num_seeds, self.num_users, self.num_items)
             utility += out
 
         # ==========================================================================================
@@ -500,20 +499,20 @@ class BEMB(nn.Module):
         # ==========================================================================================
         # convert to utility by session now.
         # get the utility for choosing each items by the user corresponding to that session.
-        num_sessions = len(batch.user_index)
-        utility_by_session = utility[:, batch.user_index, :]  # (num_seeds, num_sessions, num_items)
+        num_purchases = len(batch.user_index)
+        utility_by_purchase = utility[:, batch.user_index, :]  # (num_seeds, num_sessions, num_items)
 
         # 2.a. mu_i * x_session_obs
         if 'mu_item' in sample_dict.keys():
             assert sample_dict['mu_item'].shape == (num_seeds, self.num_items, self.num_session_obs)
-            assert batch.session_obs.shape == (num_sessions, self.num_session_obs)
-            # index: (seed_id, session_id, item_id, obs_id).
-            session_obs = batch.session_obs.view(1, num_sessions, 1, self.num_session_obs)
-            # session_obs = session_obs.expand(num_seeds, -1, self.num_items, -1)
+            assert batch.session_obs.shape == (self.num_sessions, self.num_session_obs)
+            session_obs = batch.session_obs[batch.session_index, :]  # (num_purchases, *)
+            # index: (seed_id, purchase_id, item_id, obs_id).
+            session_obs = batch.session_obs.view(1, num_purchases, 1, self.num_session_obs)
             mu = sample_dict['mu_item'].view(num_seeds, 1, self.num_items, self.num_session_obs)
             out = (mu * session_obs).sum(dim=-1)
-            assert out.shape == (num_seeds, num_sessions, self.num_items)
-            utility_by_session += out
+            assert out.shape == (num_seeds, num_purchases, self.num_items)
+            utility_by_purchase += out
 
         # 2.b. weekday_id.
         # TODO:
@@ -523,44 +522,50 @@ class BEMB(nn.Module):
             # change dim to self.latent_dim * self.num_price_obs.
             assert sample_dict['gamma_user'].shape == (num_seeds, self.num_users,
                                                        self.latent_dim_price * self.num_price_obs)
+
             assert sample_dict['beta_item'].shape == (num_seeds, self.num_items,
                                                       self.latent_dim_price * self.num_price_obs)
-            # support single price for now.
-            assert batch.price_obs.shape == (num_sessions, self.num_items, self.num_price_obs)
 
+            assert batch.price_obs.shape == (self.num_sessions, self.num_items, self.num_price_obs)
+
+            # dims: (seed, user, item, price_obs, latent_dim)
             gamma_user = sample_dict['gamma_user'].view(num_seeds, self.num_users, 1,
                                                         self.num_price_obs, self.latent_dim_price)
             beta_item = sample_dict['beta_item'].view(num_seeds, 1, self.num_items,
                                                       self.num_price_obs, self.latent_dim_price)
 
+            # dims: (seed, user, item, price_obs)
             coef = (gamma_user * beta_item).sum(dim=-1)
-            assert coef.shape(num_seeds, self.num_users, self.num_items, self.num_price_obs)
+            assert coef.shape == (num_seeds, self.num_users, self.num_items, self.num_price_obs)
             coef = coef[:, batch.user_index, :, :]
-            assert coef.shape == (num_seeds, num_sessions, self.num_items, self.num_price_obs)
-            price_obs = batch.price_obs.view(1, num_sessions, self.num_items, self.num_price_obs)
+            assert coef.shape == (num_seeds, num_purchases, self.num_items, self.num_price_obs)
+
+            price_obs = batch.price_obs[batch.session_index, :, :]  # (num_purchases, num_items, num_price_obs)
+
+            price_obs = price_obs.view(1, num_purchases, self.num_items, self.num_price_obs)
             out = (coef * price_obs).sum(dim=-1)
-            assert out.shape == (num_seeds, num_sessions, self.num_items)
-            utility_by_session += out
+            assert out.shape == (num_seeds, num_purchases, self.num_items)
+            utility_by_purchase += out
             # TODO: warn reseachers to create -log(price) in the dataloader!
 
-        assert utility_by_session.shape == (num_seeds, num_sessions, self.num_items)
+        assert utility_by_purchase.shape == (num_seeds, num_purchases, self.num_items)
 
         if batch.item_availability is not None:
             # expand to the Monte Carlo sample dimension.
-            A = batch.item_availability.unsqueeze(dim=0).view(num_seeds, num_sessions, self.num_items)
-            utility_by_session[~A] = -1.0e20
+            A = batch.item_availability[batch.session_index, :].unsqueeze(dim=0).expand(num_seeds, -1, -1)
+            utility_by_purchase[~A] = -1.0e20
 
         if return_logit:
             # output shape: (num_seeds, num_sessions, self.num_items)
-            return utility_by_session
+            return utility_by_purchase
 
         # compute log likelihood log p(choosing item i | user, item latents)
         if self.likelihood == 'all':
             # compute log softmax for all items all together.
-            log_p = log_softmax(utility_by_session, dim=-1)
+            log_p = log_softmax(utility_by_purchase, dim=-1)
         elif self.likelihood == 'within_category':
             # compute log softmax separately within each category.
-            log_p = scatter_log_softmax(utility_by_session, self.category_idx.to(self.device), dim=-1)
+            log_p = scatter_log_softmax(utility_by_purchase, self.category_idx.to(self.device), dim=-1)
         # output shape: (num_seeds, num_sessions, self.num_items)
         return log_p
 
