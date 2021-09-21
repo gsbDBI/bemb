@@ -2,7 +2,6 @@ import os
 from typing import Dict, List, Optional, Union
 
 import numpy as np
-import pandas as pd
 import torch
 import torch.nn as nn
 from torch.nn.functional import log_softmax
