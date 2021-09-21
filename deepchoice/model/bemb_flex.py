@@ -10,7 +10,7 @@ from torch.nn.functional import log_softmax
 from torch_scatter import scatter_max
 from torch_scatter.composite import scatter_log_softmax
 
-from deepchoice.model.bayesian_coefficient_dev import BayesianCoefficient
+from deepchoice.model.bayesian_coefficient import BayesianCoefficient
 
 
 def parse_utility(utility_string: str) -> list:
