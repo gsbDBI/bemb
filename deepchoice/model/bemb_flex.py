@@ -44,7 +44,7 @@ def parse_utility(utility_string: str) -> list:
     return additive_decomposition
 
 
-class BEMB(nn.Module):
+class BEMBFlex(nn.Module):
     def __init__(self,
                  utility_formula: str,
                  obs2prior_dict: Dict[str, bool],
@@ -111,7 +111,7 @@ class BEMB(nn.Module):
                 user and item observables can enter the prior of coefficient. Hence session, price,
                 and taste observables are never required, we include it here for completeness.
         """
-        super(BEMB, self).__init__()
+        super(BEMBFlex, self).__init__()
         self.utility_formula = utility_formula
         self.obs2prior_dict = obs2prior_dict
         self.coef_dim_dict = coef_dim_dict
