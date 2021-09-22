@@ -63,7 +63,7 @@ class VariationalFactorizedGaussian(nn.Module):
                 the C-th Gaussian distribution.
         """
         # create random seeds from N(0, 1).
-        eps = torch.randn(num_seeds, self.num_classes, self.dim).to(self.device)
+        eps = torch.randn(num_seeds, self.num_classes, self.dim, device=self.device)
         # parameters for each Gaussian distribution, boardcast across random seeds.
         mu = self.mean.view(1, self.num_classes, self.dim)
         std = torch.exp(self.logstd).view(1, self.num_classes, self.dim)
@@ -158,8 +158,8 @@ class StandardGaussianPrior(nn.Module):
         """
         batch_size, num_classes, dim_out = value.shape
         assert dim_out == self.dim_out
-        mu = torch.zeros(num_classes, self.dim_out).to(value.device)
-        logstd = torch.zeros(num_classes, self.dim_out).to(value.device)  # (num_classes, self.dim_out)
+        mu = torch.zeros(num_classes, self.dim_out, device=value.device)
+        logstd = torch.zeros(num_classes, self.dim_out, device=value.device)  # (num_classes, self.dim_out)
         out = batch_factorized_gaussian_log_prob(mu, logstd, value)
         assert out.shape == (batch_size, num_classes)
         return out
@@ -246,9 +246,11 @@ class BEMB(nn.Module):
             category_idx = torch.zeros(self.num_items)
             for c, items_in_c in self.category_to_item.items():
                 category_idx[items_in_c] = c
-            self.category_idx = category_idx.long()
+            category_idx = category_idx.long()
         else:
-            self.category_idx = torch.zeros(self.num_items).long()
+            category_idx = torch.zeros(self.num_items).long()
+
+        self.register_buffer('category_idx', category_idx)
 
         # ==========================================================================================
         # Create Prior Distributions.
@@ -373,7 +375,6 @@ class BEMB(nn.Module):
         """
         # argmax: (num_sessions, num_categories), within category argmax.
         # item IDs are consecutive, thus argmax is the same as IDs of the item with highest P.
-        self.category_idx = self.category_idx.to(self.device)
         _, argmax_by_category = scatter_max(log_p_all_items, self.category_idx, dim=-1)
 
         # category_purchased[t] = the category of item label[t].
@@ -565,7 +566,7 @@ class BEMB(nn.Module):
             log_p = log_softmax(utility_by_purchase, dim=-1)
         elif self.likelihood == 'within_category':
             # compute log softmax separately within each category.
-            log_p = scatter_log_softmax(utility_by_purchase, self.category_idx.to(self.device), dim=-1)
+            log_p = scatter_log_softmax(utility_by_purchase, self.category_idx, dim=-1)
         # output shape: (num_seeds, num_sessions, self.num_items)
         return log_p
 
@@ -574,7 +575,7 @@ class BEMB(nn.Module):
             num_seeds = sample.shape[0]
             break
 
-        total = torch.zeros(num_seeds).to(self.device)
+        total = torch.zeros(num_seeds, device=self.device)
         for coef_name, prior in self.prior_dict.items():
             # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
             if self.obs2prior_dict[coef_name]:
@@ -590,7 +591,7 @@ class BEMB(nn.Module):
         return total
 
     def log_variational(self, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
-        total = torch.Tensor([0]).to(self.device)
+        total = torch.zeros([0], device=self.device)
         for coef_name, variational in self.variational_dict.items():
             # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
             total += variational.log_prob(sample_dict[coef_name]).sum(dim=-1)
