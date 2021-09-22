@@ -1,0 +1,31 @@
+# data_dir: '/home/ubuntu/MoreSupermarkets_data/csv/new_data/nf_runs/1904-1887/20180101-20191231_13/tsv'
+# data_dir: /home/tianyudu/Data/MoreSupermarket/tsv/
+data_dir: /home/tianyudu/Data/MoreSupermarket/20180101-20191231_13/tsv/
+device: cuda
+# out_dir: '/home/ubuntu/MoreSupermarkets_data/csv/new_data/nf_runs/1904-1887/20180101-20191231_13/tsv/output'
+# val_llh_series_out: '/home/ubuntu/MoreSupermarkets_data/csv/new_data/nf_runs/1904-1887/20180101-20191231_13/tsv/output/val_llh.tsv'
+# alt_val_dir: '/home/ubuntu/MoreSupermarkets_data/csv/new_data/nf_runs/1904-1887/20180101-20191231_13/tsv'
+# alt_val_llh_series_out: '/home/ubuntu/MoreSupermarkets_data/csv/new_data/nf_runs/1904-1887/20180101-20191231_13/tsv/output/alt_val_llh.tsv'
+# utility: lambda_item + theta_user * alpha_item + gamma_user * beta_item * price_obs + obsuser_item * user_obs + obsitem_user * item_obs
+# utility: lambda_item + theta_user * alpha_item
+# model configuration.
+obs2prior_dict:
+  lambda_item: False
+  theta_user: False
+  alpha_item: False
+  zeta_user: False
+  iota_item: False
+  gamma_user: False
+  beta_item: False
+latent_dim: 3
+latent_dim_price: 3
+#### optimization.
+trace_log_q: False
+shuffle: False
+batch_size: 50000
+num_epochs: 100
+num_mc_seeds: 1
+num_verify_val : 1
+write_best_model : True
+early_stopping:
+  validation_llh_flat: 1
