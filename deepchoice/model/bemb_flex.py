@@ -19,7 +19,7 @@ class PositiveInteger(object):
 
 def parse_utility(utility_string: str) -> list:
     # split additive terms
-    parameter_suffix = ('_item', '_user')
+    parameter_suffix = ('_item', '_user', '_constant')
     observable_prefix = ('item_', 'user_', 'session_', 'price_', 'taste_')
 
     def is_parameter(name: str) -> bool:
@@ -155,22 +155,22 @@ class BEMBFlex(nn.Module):
             'item': num_item_obs,
             'session': num_session_obs,
             'price': num_price_obs,
-            'taste': num_taste_obs
+            'taste': num_taste_obs,
+            'constant': 1
+        }
+
+        variation_to_num_classes = {
+            'user': self.num_users,
+            'item': self.num_items,
+            'constant': 1
         }
 
         coef_dict = dict()
         for additive_term in self.formula:
             for coef_name in additive_term['coefficient']:
                 variation = coef_name.split('_')[-1]
-                if variation == 'user':
-                    num_classes = self.num_users
-                elif variation == 'item':
-                    num_classes = self.num_items
-                else:
-                    raise NotImplementedError
-
                 coef_dict[coef_name] = BayesianCoefficient(variation=variation,
-                                                           num_classes=num_classes,
+                                                           num_classes=variation_to_num_classes[variation],
                                                            obs2prior=self.obs2prior_dict[coef_name],
                                                            num_obs=self.num_obs_dict[variation],
                                                            dim=self.coef_dim_dict[coef_name])
@@ -363,6 +363,12 @@ class BEMBFlex(nn.Module):
             assert C.shape == (R, P, I, positive_integer)
             return C
 
+        def reshape_constant_coef_sample(C):
+            # input shape (R, *)
+            C = C.view(R, 1, 1, -1).expand(-1, P, I, -1)
+            assert C.shape == (R, P, I, positive_integer)
+            return C
+
         def reshape_coef_sample(sample, name):
             # reshape the monte carlo sample of coefficients to (R, P, I, *).
             if name.endswith('_user'):
@@ -371,6 +377,9 @@ class BEMBFlex(nn.Module):
             elif name.endswith('_item'):
                 # (R, I, *) --> (R, P, I, *)
                 return reshape_item_coef_sample(sample)
+            elif name.endswith('_constant'):
+                # (R, *) --> (R, P, I, *)
+                return reshape_constant_coef_sample(sample)
             else:
                 raise ValueError
 
@@ -546,7 +555,7 @@ class BEMBFlex(nn.Module):
         Returns:
             torch.Tensor: [description]
         """
-        total = torch.Tensor([0], device=self.device)
+        total = torch.zeros(1, device=self.device)
 
         for coef_name, coef in self.coef_dict.items():
             # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).

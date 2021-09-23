@@ -17,11 +17,11 @@ class BayesianCoefficient(nn.Module):
                  ):
         super(BayesianCoefficient, self).__init__()
         assert variation in ['item', 'user', 'constant']
-        if variation == 'constant':
-            raise NotImplementedError
 
         self.variation = variation
         self.obs2prior = obs2prior
+        if variation == 'constant':
+            assert not obs2prior
         self.num_classes = num_classes
         self.num_obs = num_obs
         self.dim = dim  # the dimension of greek letter parameter.
