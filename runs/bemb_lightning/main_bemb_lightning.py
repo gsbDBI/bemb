@@ -1,13 +1,7 @@
 import argparse
-
-from pytorch_lightning.loops.dataloader.dataloader_loop import DataLoaderLoop
-from deepchoice.model.bemb_flex_lightning import LitBEMBFlex
 import os
 import sys
-import time
-from pprint import pprint
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
@@ -15,15 +9,9 @@ import torch
 import yaml
 from deepchoice.data import ChoiceDataset
 from deepchoice.data.utils import create_data_loader
-from deepchoice.model import BEMBFlex
+from deepchoice.model.bemb_flex_lightning import LitBEMBFlex
 from sklearn.preprocessing import LabelEncoder
 from termcolor import cprint
-from torch.utils.data import DataLoader
-from tqdm import tqdm
-
-STOP_CODES = {
-    1 : 'validation set llh increase per supplied config'
-}
 
 
 def load_configs(yaml_file: str):
@@ -38,25 +26,6 @@ def load_configs(yaml_file: str):
     defaults.update(data_loaded)
     configs = argparse.Namespace(**defaults)
     return configs
-
-
-def load_params_to_model(model, path) -> None:
-    def load_cpp_tsv(file):
-        df = pd.read_csv(os.path.join(path, file), sep='\t', index_col=0, header=None)
-        return torch.Tensor(df.values[:, 1:])
-
-    cpp_theta_mean = load_cpp_tsv('param_theta_mean.tsv')
-    cpp_theta_std = load_cpp_tsv('param_theta_std.tsv')
-
-    cpp_alpha_mean = load_cpp_tsv('param_alpha_mean.tsv')
-    cpp_alpha_std = load_cpp_tsv('param_alpha_std.tsv')
-
-    # theta user
-    model.variational_dict['theta_user'].mean.data = cpp_theta_mean.to(model.device)
-    model.variational_dict['theta_user'].logstd.data = torch.log(cpp_theta_std).to(model.device)
-    # alpha item
-    model.variational_dict['alpha_item'].mean.data = cpp_alpha_mean.to(model.device)
-    model.variational_dict['alpha_item'].logstd.data = torch.log(cpp_alpha_std).to(model.device)
 
 
 def is_sorted(x):
@@ -235,7 +204,7 @@ if __name__ == '__main__':
         # trainings args.
         learning_rate=configs.learning_rate,
         num_seeds=configs.num_mc_seeds,
-        # model args.
+        # model args, will be passed to BEMB constructor.
         utility_formula=configs.utility,
         num_users=configs.num_users,
         num_items=configs.num_items,
@@ -249,101 +218,9 @@ if __name__ == '__main__':
         num_price_obs=configs.num_price_obs
     )
     trainer = pl.Trainer(gpus=1,
-                         max_epochs=1000,
-                         progress_bar_refresh_rate=20,
-                         val_check_interval=1000,
+                         max_epochs=30,
+                         check_val_every_n_epoch=3,
                          log_every_n_steps=1)
-    # train = DataLoader(dataset_list[0], batch_size=100)
-    breakpoint()
-    train = create_data_loader(dataset_list[0], configs)
-    validation = create_data_loader(dataset_list[1], configs)
+    train = create_data_loader(dataset_list[0], configs, num_workers=8)
+    validation = create_data_loader(dataset_list[1], configs, num_workers=8)
     trainer.fit(bemb, train, validation)
-
-    quit()
-    # ==============================================================================================
-    # training
-    # ==============================================================================================
-    # breakpoint()
-    performance_by_epoch = list()
-    best_val_llh = np.NINF
-    last_val_llh = np.NINF
-    val_llh_decrease_count = 0
-    # stop > 0 leads to a stopping criteria different from num epochs having run
-    # we use stop = 1 when we perform an early stop based on validation log likelihood
-    stop = 0
-
-    for i in tqdm(range(configs.num_epochs), desc='epoch'):
-        total_loss = torch.scalar_tensor(0.0).to(configs.device)
-
-        for batch in tqdm(dataloaders['train'], desc='batch'):
-            # maximize the ELBO.
-            loss = - model.elbo(batch.to(configs.device), num_seeds=1)
-
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            total_loss += loss.detach().item()
-        print(loss.item())
-        scheduler.step()
-        # if i % (configs.num_epochs // configs.num_verify_val) == 0:
-        # if False:
-        if (i + 1) == configs.num_epochs:
-            # report training progress, report 10 times in total.
-            with torch.no_grad():
-                performance = {'iteration': i,
-                               'duration_seconds': time.time() - start_time}
-                # compute performance for each data partition.
-                for partition in ('train', 'validation', 'test'):
-                    metrics = ['log_likelihood', 'accuracy', 'precision', 'recall', 'f1score']
-                    for m in metrics:
-                        performance[partition + '_' + m] = list()
-                    # compute performance for each batch.
-                    for batch in dataloaders[partition]:
-                        pred = model(batch.to(configs.device))  # (num_sessions, num_items) log-likelihood.
-                        LL = pred[torch.arange(len(batch)), batch.label].mean().detach().cpu().item()
-                        performance[partition + '_log_likelihood'].append(LL)
-                        accuracy_metrics = model.get_within_category_accuracy(pred, batch.label)
-                        for key, val in accuracy_metrics.items():
-                            performance[partition + '_' + key].append(val)
-
-                for key, val in performance.items():
-                    performance[key] = np.mean(val)
-
-                # Early Stopping
-                val_llh = performance['validation_log_likelihood']
-                if val_llh <= best_val_llh:
-                    best_val_llh_model.load_state_dict(model.state_dict())
-
-                if val_llh < last_val_llh:
-                    val_llh_decrease_count += 1
-                    early_stop = configs.early_stopping['validation_llh_flat']
-                    if early_stop > 0 and val_llh_decrease_count >= early_stop:
-                        stop = 1
-                else:
-                    val_llh_decrease_count = 0
-                last_val_llh = val_llh
-                performance_by_epoch.append(performance)
-                pprint(performance)
-                print(f'Epoch [{i}] negative elbo (the lower the better)={total_loss}')
-        if stop > 0:
-            print(f'EARLY STOPPING due to {STOP_CODES[stop]}')
-            break
-    print(f'Time taken: {time.time() - start_time: 0.1f} seconds.')
-    log = pd.DataFrame(performance_by_epoch)
-
-    # ==============================================================================================
-    # save results
-    # ==============================================================================================
-
-    os.system(f'mkdir {configs.out_dir}')
-    log.to_csv(os.path.join(configs.out_dir, 'performance_log_by_epoch.csv'))
-
-    # save best_val_llh_model weights
-    if (configs.write_best_model):
-        torch.save(best_val_llh_model, os.path.join(configs.out_dir, 'best_val_llh_model.pt'))
-        torch.save(best_val_llh_model.state_dict(), os.path.join(configs.out_dir, 'best_val_llh_model_state_dict.pt'))
-
-    # save model weights
-    torch.save(model, os.path.join(configs.out_dir, 'model.pt'))
-    torch.save(model.state_dict(), os.path.join(configs.out_dir, 'state_dict.pt'))

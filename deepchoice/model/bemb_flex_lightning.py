@@ -32,26 +32,22 @@ class LitBEMBFlex(pl.LightningModule):
         loss = - elbo
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def evaluation_step(self, batch, batch_idx, name):
+        # common codes in the validation and test step.
+        # name is either val or test.
         # get the log-likelihood.
         pred = self.model(batch)
         # non-differentiable metrics.
         performance = self.model.get_within_category_accuracy(pred, batch.label)
+        performance[name + '_log_likelihood'] = pred[torch.arange(len(batch)), batch.label].mean().detach().cpu().item()
         for key, val in performance.items():
-            self.log('val_' + key, val, prog_bar=(key == 'accuracy'))
-        LL = pred[torch.arange(len(batch)), batch.label].mean().detach().cpu().item()
-        self.log('val_log_likelihood', LL)
+            self.log(name + '_' + key, val, prog_bar=(key == 'accuracy'))
+
+    def validation_step(self, batch, batch_idx):
+        self.evaluation_step(batch, batch_idx, 'val')
 
     def test_step(self, batch, batch_idx):
-        # --------------------------
-        # REPLACE WITH YOUR OWN
-        # x, y = batch
-        # x = x.view(x.size(0), -1)
-        # z = self.encoder(x)
-        # x_hat = self.decoder(z)
-        # loss = F.mse_loss(x_hat, x)
-        # self.log('test_loss', loss)
-        raise NotImplementedError
+        self.evaluation_step(batch, batch_idx, 'test')
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
