@@ -5,3 +5,4 @@
 deepchoice.egg-info
 /src
 /draft
+*lightning_logs/
