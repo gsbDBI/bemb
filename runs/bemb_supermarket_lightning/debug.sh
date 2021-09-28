@@ -1,0 +1,1 @@
+python3 -m pdb -c c main_supermarket.py ./configs_supermarket.yaml
