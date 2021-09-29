@@ -1,5 +1,6 @@
 """
 The Bayesian EMBedding (BEMB) model.
+An attempt to speed up things.
 """
 from typing import Dict, List, Optional
 
@@ -10,6 +11,7 @@ from deepchoice.model.bayesian_coefficient import BayesianCoefficient
 from torch.nn.functional import log_softmax
 from torch_scatter import scatter_max
 from torch_scatter.composite import scatter_log_softmax
+from termcolor import cprint
 
 
 class PositiveInteger(object):
@@ -112,6 +114,7 @@ class BEMBFlex(nn.Module):
                 and taste observables are never required, we include it here for completeness.
         """
         super(BEMBFlex, self).__init__()
+        cprint('You are using BEMB Flex v2', 'red')
         self.utility_formula = utility_formula
         self.obs2prior_dict = obs2prior_dict
         self.coef_dim_dict = coef_dim_dict
@@ -328,10 +331,18 @@ class BEMBFlex(nn.Module):
         """
         # assert we have sample for all coefficients.
         assert sample_dict.keys() == self.coef_dict.keys()
-
         for v in sample_dict.values():
             num_seeds = v.shape[0]
             break
+
+        user_session_index = torch.stack([batch.user_index, batch.session_index])
+        assert user_session_index.shape == (2, len(batch))
+        unique_user_sess, inverse_indices = torch.unique(user_session_index, dim=1, return_inverse=True)
+
+        user_index = unique_user_sess[0, :]
+        session_index = unique_user_sess[1, :]
+
+        # print(len(session_index) / len(batch))
 
         positive_integer = PositiveInteger()
 
@@ -342,18 +353,18 @@ class BEMBFlex(nn.Module):
         # ==========================================================================================
         # short-hands for easier shape check.
         R = num_seeds
-        P = len(batch)  # num_purchases.
+        # P = len(batch)  # num_purchases.
+        P = unique_user_sess.shape[1]
         S = self.num_sessions
         U = self.num_users
         I = self.num_items
-
         # ==========================================================================================
         # Helper Functions for Reshaping.
         # ==========================================================================================
         def reshape_user_coef_sample(C):
             # input shape (R, U, *)
             C = C.view(R, U, 1, -1).expand(-1, -1, I, -1)  # (R, U, I, *)
-            C = C[:, batch.user_index, :, :]
+            C = C[:, user_index, :, :]
             assert C.shape == (R, P, I, positive_integer)
             return C
 
@@ -393,19 +404,19 @@ class BEMBFlex(nn.Module):
                 obs = obs.view(1, 1, I, O).expand(R, P, -1, -1)
             elif name.startswith('user_'):
                 assert obs.shape == (U, O)
-                obs = obs[batch.user_index, :]  # (P, O)
+                obs = obs[user_index, :]  # (P, O)
                 obs = obs.view(1, P, 1, O).expand(R, -1, I, -1)
             elif name.startswith('session_'):
                 assert obs.shape == (S, O)
-                obs = obs[batch.session_index, :]  # (P, O)
+                obs = obs[session_index, :]  # (P, O)
                 return obs.view(1, P, 1, O).expand(R, -1, I, -1)
             elif name.startswith('price_'):
                 assert obs.shape == (S, I, O)
-                obs = obs[batch.session_index, :, :]  # (P, I, O)
+                obs = obs[session_index, :, :]  # (P, I, O)
                 return obs.view(1, P, I, O).expand(R, -1, -1, -1)
             elif name.startswith('taste_'):
                 assert obs.shape == (U, I, O)
-                obs = obs[batch.user_index, :, :]  # (P, I, O)
+                obs = obs[user_index, :, :]  # (P, I, O)
                 return obs.view(1, P, I, O).expand(R, -1, -1, -1)
             else:
                 raise ValueError
@@ -413,13 +424,58 @@ class BEMBFlex(nn.Module):
             return obs
 
         # ==========================================================================================
+        # Compute Components contigent to users and items only.
+        # ==========================================================================================
+        utility = torch.zeros(R, U, I, device=self.device)
+
+        # user and item interactions.
+        def is_time_invariant_observable(name):
+            return name is None or name.endswith('_item') or name.endswith('_user')
+
+        def is_time_invariant_term(term):
+            return is_time_invariant_observable(term['observable'])
+
+        def _reshape(sample, name):
+            if name.endswith('_constant'):
+                out = sample.view(R, 1, 1, -1).expand(-1, U, I, -1)
+            elif name.endswith('_item'):
+                out = sample.view(R, 1, I, -1).expand(-1, U, -1, -1)
+            elif name.endswith('_user'):
+                out = sample.view(R, U, 1, -1).expand(-1, -1, I, -1)
+            return out
+
+        for term in self.formula:
+            if is_time_invariant_term(term):
+                if len(term['coefficient']) == 1 and term['observable'] is None:
+                    out = _reshape(sample_dict[term['coefficient'][0]], term['coefficient'][0])
+                    utility += out.view(R, U, I)
+
+                elif len(term['coefficient']) == 2 and term['observable'] is None:
+                    A = _reshape(sample_dict[term['coefficient'][0]], term['coefficient'][0])
+                    B = _reshape(sample_dict[term['coefficient'][1]], term['coefficient'][1])
+                    utility += (A * B).sum(dim=-1).view(R, U, I)
+
+                elif len(term['coefficient']) == 1 and term['observable'] is not None:
+                    coef = _reshape(sample_dict[term['coefficient'][0]], term['coefficient'[0]])
+                    obs_name = term['observable']
+                    if obs_name.startswith('item_'):
+                        obs = getattr(batch, obs_name).view(1, 1, I, -1).expand(R, U, -1, -1)
+                    elif obs_name.startswith('user_'):
+                        obs = getattr(batch, obs_name).view(1, U, 1, -1).expand(R, -1, I, -1)
+                    utility += (coef * obs).sum(dim=-1).view(R, U, I)
+
+        # ==========================================================================================
         # Copmute the Utility Term by Term.
         # ==========================================================================================
         # (random_seeds, num_purchases, num_items).
-        utility = torch.zeros(R, P, I, device=self.device)
+        # utility = torch.zeros(R, P, I, device=self.device)
+        utility = utility[:, user_index, :]
 
         # loop over additive term to utility
         for term in self.formula:
+            if not is_time_invariant_term(term):
+                pass
+
             # Type I: single coefficient, e.g., lambda_item or lambda_user.
             if len(term['coefficient']) == 1 and term['observable'] is None:
                 # E.g., lambda_item or lambda_user
@@ -486,11 +542,15 @@ class BEMBFlex(nn.Module):
         # ==========================================================================================
         # Mask Out Unavailable Items in Each Session.
         # ==========================================================================================
+
         if batch.item_availability is not None:
             # expand to the Monte Carlo sample dimension.
             # (S, I) -> (P, I) -> (1, P, I) -> (R, P, I)
-            A = batch.item_availability[batch.session_index, :].unsqueeze(dim=0).expand(R, -1, -1)
+            A = batch.item_availability[session_index, :].unsqueeze(dim=0).expand(R, -1, -1)
             utility[~A] = -1.0e20
+
+        utility = utility[:, inverse_indices, :]
+        assert utility.shape == (R, len(batch), I)
 
         if return_logit:
             # output shape: (num_seeds, num_purchases, num_items)
