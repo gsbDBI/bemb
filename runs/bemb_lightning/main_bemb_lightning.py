@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import time
 
 import numpy as np
 import pandas as pd
@@ -142,7 +143,7 @@ if __name__ == '__main__':
     # ==============================================================================================
     dataset_list = list()
     for d in (train, validation, test):
-        user_index = user_encoder.transform(d['user_id'].values)
+        user_index = torch.LongTensor(user_encoder.transform(d['user_id'].values))
         label = torch.LongTensor(item_encoder.transform(d['item_id'].values))
         session_index = torch.LongTensor(session_encoder.transform(d['session_id'].values))
         # get the date (aka session_id in the raw dataset) of each row in the dataset, retrieve
@@ -217,10 +218,19 @@ if __name__ == '__main__':
         num_item_obs=configs.num_item_obs,
         num_price_obs=configs.num_price_obs
     )
+
+    from pytorch_lightning.profiler import AdvancedProfiler
+    profiler = AdvancedProfiler(output_filename='./profile.txt')
+
     trainer = pl.Trainer(gpus=1,
-                         max_epochs=30,
-                         check_val_every_n_epoch=3,
-                         log_every_n_steps=1)
+                         max_epochs=configs.num_epochs,
+                         check_val_every_n_epoch=1,
+                         log_every_n_steps=1,
+                         profiler=profiler)
     train = create_data_loader(dataset_list[0], configs, num_workers=8)
     validation = create_data_loader(dataset_list[1], configs, num_workers=8)
-    trainer.fit(bemb, train, validation)
+    # trainer.fit(bemb, train, validation)
+    start_time = time.time()
+    trainer.fit(bemb, train)
+    cprint(f'time taken: {time.time() - start_time}', 'red')
+
