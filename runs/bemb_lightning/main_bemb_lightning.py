@@ -214,7 +214,7 @@ if __name__ == '__main__':
 
     trainer = pl.Trainer(gpus=1,
                          max_epochs=configs.num_epochs,
-                         check_val_every_n_epoch=5,
+                         check_val_every_n_epoch=1,
                          log_every_n_steps=1)
                          # auto_scale_batch_size='power',
                          # auto_lr_find=True,
@@ -236,5 +236,5 @@ if __name__ == '__main__':
 
     start_time = time.time()
     trainer.fit(bemb, train, validation)
-    # trainer.fit(bemb, train)
+    trainer.test(bemb, test)
     cprint(f'time taken: {time.time() - start_time}', 'red')
