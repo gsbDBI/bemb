@@ -759,7 +759,9 @@ class BEMBFlex(nn.Module):
             utility[~A] = -1.0e20
 
         # compute log likelihood log p(choosing item i | user, item latents)
-        if not return_logit:
+        if return_logit:
+            log_p = utility
+        else:
             # compute the log probability from logits/utilities.
             log_p = scatter_log_softmax(utility, reverse_indices, dim=-1)
         # TODO: check if this makes sense.
