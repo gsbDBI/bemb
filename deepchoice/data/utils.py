@@ -32,14 +32,14 @@ def pivot3d(df: pd.DataFrame, dim0: str, dim1: str, values: Union[str, List[str]
     return tensor
 
 
-def create_data_loader(dataset, args, num_workers: int=0):
-    if args.batch_size == -1:
+def create_data_loader(dataset, batch_size, shuffle, num_workers: int=0):
+    if batch_size == -1:
         # use full-batch.
-        args.batch_size = len(dataset)
+        batch_size = len(dataset)
 
     sampler = BatchSampler(
-        RandomSampler(dataset) if args.shuffle else SequentialSampler(dataset),
-        batch_size=args.batch_size,
+        RandomSampler(dataset) if shuffle else SequentialSampler(dataset),
+        batch_size=batch_size,
         drop_last=False)
     # feed a batch_sampler as sampler so that dataset.__getitem__ is called with a list of indices.
     # cannot use multiple workers if the entire dataset is already on GPU.
