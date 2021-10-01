@@ -191,7 +191,7 @@ class BEMBFlex(nn.Module):
                + 'With the following coefficients:\n' \
                + str(self.coef_dict)
 
-    def forward(self, batch, return_logit: bool = False) -> torch.Tensor:
+    def forward(self, batch, return_logit: bool = False, all_items: bool = True) -> torch.Tensor:
         """Computes the log likelihood of choosing each item in each session.
 
         Args:
@@ -209,7 +209,10 @@ class BEMBFlex(nn.Module):
 
         # there is 1 random seed in this case.
         # (num_seeds=1, num_sessions, num_items)
-        out = self.log_likelihood_all_items(batch, sample_dict, return_logit)
+        if all_items:
+            out = self.log_likelihood_all_items(batch, sample_dict, return_logit)
+        else:
+            out = self.log_likelihood(batch, sample_dict)
         return out.squeeze()  # (num_sessions, num_items)
 
     @property
