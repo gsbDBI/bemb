@@ -1007,6 +1007,8 @@ class BEMBFlex(nn.Module):
         # 2. compute log p(latent) prior.
         elbo = self.log_prior(batch, sample_dict).mean(dim=0)  # (num_seeds,) -> scalar.
 
+        # self.__check_log_likelihood(batch, sample_dict)
+
         # 3. compute the log likelihood log p(obs|latent).
         # sum over independent purchase decision for individual items, mean over MC seeds.
         # (num_sessions, num_relevant_items) -> scalar.
@@ -1017,3 +1019,18 @@ class BEMBFlex(nn.Module):
             elbo -= self.log_variational(sample_dict).mean(dim=0)
 
         return elbo
+
+    @torch.no_grad()
+    def __check_log_likelihood(self, batch, sample_dict):
+        cprint('You are calling a debugging method', 'red')
+        for return_logit in (True, False):
+            A = self.log_likelihood(batch, sample_dict, return_logit=return_logit).squeeze()
+
+            B = self.log_likelihood_all_items(batch, sample_dict, return_logit=return_logit).squeeze()
+            B = B[torch.arange(len(batch)), batch.label]
+
+            C = self.__log_likelihood_all_items_old(batch, sample_dict, return_logit=return_logit).squeeze()
+            C = C[torch.arange(len(batch)), batch.label]
+
+            assert torch.max(torch.abs(A - B)) < 1E-5
+            assert torch.max(torch.abs(B - C)) < 1E-5
