@@ -212,7 +212,7 @@ class BEMBFlex(nn.Module):
         if all_items:
             out = self.log_likelihood_all_items(batch, sample_dict, return_logit)
         else:
-            out = self.log_likelihood(batch, sample_dict)
+            out = self.log_likelihood(batch, sample_dict, return_logit)
         return out.squeeze()  # (num_sessions, num_items)
 
     @property
@@ -574,6 +574,7 @@ class BEMBFlex(nn.Module):
     def log_likelihood(self,
                        batch,
                        sample_dict: Dict[str, torch.Tensor],
+                       return_logit: bool = False
                        ) -> torch.Tensor:
         """
         NOTE: this method is more efficient.
@@ -758,7 +759,9 @@ class BEMBFlex(nn.Module):
             utility[~A] = -1.0e20
 
         # compute log likelihood log p(choosing item i | user, item latents)
-        log_p = scatter_log_softmax(utility, reverse_indices, dim=-1)
+        if not return_logit:
+            # compute the log probability from logits/utilities.
+            log_p = scatter_log_softmax(utility, reverse_indices, dim=-1)
         # TODO: check if this makes sense.
         log_p = log_p[:, label_expanded == relevant_item_index]
         # output shape: (num_seeds, num_purchases, num_items)
