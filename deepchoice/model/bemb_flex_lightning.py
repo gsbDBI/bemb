@@ -27,37 +27,23 @@ class LitBEMBFlex(pl.LightningModule):
         return str(self.model)
 
     def training_step(self, batch, batch_idx):
-        # with torch.no_grad():
-        #     p_all = self.model(batch, all_items=True, return_logit=True)
-        #     p1 = p_all[torch.arange(len(batch)), batch.label]
-        #     p2 = self.model(batch, all_items=False, return_logit=True)
-        #     print(torch.max(torch.abs(p1 - p2)))
         elbo = self.model.elbo(batch, num_seeds=self.num_needs)
         self.log('train_elbo', elbo)
         loss = - elbo
         return loss
 
-    def evaluation_step(self, batch, batch_idx, name, report_accuracy: bool = False):
-        # common codes in the validation and test step.
-        # name is either val or test.
-        # get the log-likelihood.
-        # non-differentiable metrics.
-        if report_accuracy:
-            pred = self.model(batch)
-            performance = self.model.get_within_category_accuracy(pred, batch.label)
-        else:
-            performance = dict()
-
-        # performance[name + '_log_likelihood'] = pred[torch.arange(len(batch)), batch.label].mean().detach().cpu().item()
-        performance[name + '_log_likelihood'] = self.model.forward(batch, all_items=False)
-        for key, val in performance.items():
-            self.log(name + '_' + key, val, prog_bar=True)
-
     def validation_step(self, batch, batch_idx):
-        self.evaluation_step(batch, batch_idx, 'val', report_accuracy=False)
+        LL = self.model.forward(batch, return_logit=False, all_items=False).mean()
+        self.log('val_log_likelihood', LL, prog_bar=True)
 
     def test_step(self, batch, batch_idx):
-        self.evaluation_step(batch, batch_idx, 'test', report_accuracy=True)
+        LL = self.model.forward(batch, return_logit=False, all_items=False).mean()
+        self.log('test_log_likelihood', LL)
+
+        pred = self.model(batch)
+        performance = self.model.get_within_category_accuracy(pred, batch.label)
+        for key, val in performance.items():
+            self.log('test_' + key, val, prog_bar=True)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
