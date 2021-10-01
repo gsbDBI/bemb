@@ -6,6 +6,7 @@ import time
 import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks import EarlyStopping
 import torch
 import yaml
 from deepchoice.data import ChoiceDataset
@@ -187,17 +188,6 @@ if __name__ == '__main__':
     print(item_groups.groupby('category_id').size().describe())
     item_groups = item_groups.groupby('category_id')['item_id'].apply(list)
     category_to_item = dict(zip(item_groups.index, item_groups.values))
-
-    # ==============================================================================================
-    # create data loaders.
-    # ==============================================================================================
-
-    # dataloaders = dict()
-    # for dataset, partition in zip(dataset_list, ('train', 'validation', 'test')):
-    #     # dataset = dataset.to(configs.device)
-    #     dataloader = create_data_loader(dataset, configs)
-    #     dataloaders[partition] = dataloader
-
     # ==============================================================================================
     # pytorch-lighning training
     # ==============================================================================================
@@ -220,17 +210,31 @@ if __name__ == '__main__':
     )
 
     from pytorch_lightning.profiler import AdvancedProfiler
-    profiler = AdvancedProfiler(output_filename='./profile.txt')
+    # profiler = AdvancedProfiler(output_filename='./profile.txt')
 
     trainer = pl.Trainer(gpus=1,
                          max_epochs=configs.num_epochs,
-                         check_val_every_n_epoch=1,
-                         log_every_n_steps=1,
-                         profiler=profiler)
-    train = create_data_loader(dataset_list[0], configs, num_workers=8)
-    validation = create_data_loader(dataset_list[1], configs, num_workers=8)
-    # trainer.fit(bemb, train, validation)
-    start_time = time.time()
-    trainer.fit(bemb, train)
-    cprint(f'time taken: {time.time() - start_time}', 'red')
+                         check_val_every_n_epoch=5,
+                         log_every_n_steps=1)
+                         # auto_scale_batch_size='power',
+                         # auto_lr_find=True,
+                         # callbacks=[EarlyStopping],
+                         # profiler=profiler)
+    train = create_data_loader(dataset_list[0],
+                               batch_size=configs.batch_size,
+                               shuffle=True,
+                               num_workers=8)
+    validation = create_data_loader(dataset_list[1],
+                                    batch_size=configs.batch_size,
+                                    shuffle=False,
+                                    num_workers=8)
 
+    test = create_data_loader(dataset_list[2],
+                              batch_size=10000,  # use smaller batch size for test, which takes more mem.
+                              shuffle=False,
+                              num_workers=8)
+
+    start_time = time.time()
+    trainer.fit(bemb, train, validation)
+    # trainer.fit(bemb, train)
+    cprint(f'time taken: {time.time() - start_time}', 'red')
