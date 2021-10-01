@@ -1,18 +1,18 @@
 device: cuda
-data_dir: /home/tianyudu/Data/MoreSupermarket/tsv/
-# data_dir: /home/tianyudu/Data/MoreSupermarket/20180101-20191231_13/tsv/
+# data_dir: /home/tianyudu/Data/MoreSupermarket/tsv/
+data_dir: /home/tianyudu/Data/MoreSupermarket/20180101-20191231_13/tsv/
 # utility: lambda_item
-utility: theta_user * alpha_item
+# utility: lambda_item + theta_user * alpha_item
 # utility: lambda_item + theta_user * alpha_item + zeta_user * item_obs
-# utility: lambda_item + theta_user * alpha_item + gamma_user * beta_item * price_obs
+utility: lambda_item + theta_user * alpha_item + gamma_user * beta_item * price_obs
 out_dir: ./output/
 # model configuration.
 obs2prior_dict:
   lambda_item: True
-  theta_user: False
-  alpha_item: False
-  # zeta_user: True
-  # lota_item: False
+  theta_user: True
+  alpha_item: True
+  zeta_user: True
+  lota_item: True
   gamma_user: True
   beta_item: True
 coef_dim_dict:
@@ -23,8 +23,9 @@ coef_dim_dict:
   beta_item: 10
 #### optimization.
 trace_log_q: False
-shuffle: True
+shuffle: False
 batch_size: 10000
-num_epochs: 1000
+batch_size_test: 10000
+num_epochs: 100
 learning_rate: 0.03
 num_mc_seeds: 1
