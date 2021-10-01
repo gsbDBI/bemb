@@ -386,7 +386,7 @@ class BEMBFlex(nn.Module):
 
         user_index = unique_user_sess[0, :]
         session_index = unique_user_sess[1, :]
-        assert len(user_index) == len(session_index) == len(batch)
+        assert len(user_index) == len(session_index)
 
         # short-hands for easier shape check.
         R = num_seeds
