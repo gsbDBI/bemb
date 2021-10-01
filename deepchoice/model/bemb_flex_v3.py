@@ -1,9 +1,11 @@
 """
 The Bayesian EMBedding (BEMB) model.
-A futher attempt to speed things up, split the (1) training step, only calculate utilitis for items
+(Version 3) A futher attempt to speed things up, split the (1) training step, only calculate utilitis for items
 in categories bought during training (2) compute all utilities during the inference time.
+NOTE: release candidate, this version is sufficiently optimized for users.
 """
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
+from pprint import pprint
 
 import numpy as np
 import torch
@@ -15,17 +17,41 @@ from torch_scatter.composite import scatter_log_softmax
 
 
 class PositiveInteger(object):
+    # A helper wildcard class for shape matching.
     def __eq__(self, other):
         return isinstance(other, int) and other > 0
 
 
-def parse_utility(utility_string: str) -> list:
+positive_integer = PositiveInteger()
+
+
+def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]]:
+    """
+    A helper funciton parse utility string into a list of additive terms.
+
+    Example:
+        utility_string = 'lambda_item + theta_user * alpha_item + gamma_user * beta_item * price_obs'
+        output = [
+            {
+                'coefficient': ['lambda_item'],
+                'observable': None
+            },
+            {
+                'coefficient': ['theta_user', 'alpha_item'],
+                'observable': None
+            },
+            {
+                'coefficient': ['gamma_user', 'beta_item'],
+                'observable': 'price_obs'
+            }
+            ]
+    """
     # split additive terms
-    parameter_suffix = ('_item', '_user', '_constant')
+    coefficient_suffix = ('_item', '_user', '_constant')
     observable_prefix = ('item_', 'user_', 'session_', 'price_', 'taste_')
 
-    def is_parameter(name: str) -> bool:
-        return any(name.endswith(suffix) for suffix in parameter_suffix)
+    def is_coefficient(name: str) -> bool:
+        return any(name.endswith(suffix) for suffix in coefficient_suffix)
 
     def is_observable(name: str) -> bool:
         return any(name.startswith(prefix) for prefix in observable_prefix)
@@ -36,7 +62,7 @@ def parse_utility(utility_string: str) -> list:
         atom = {'coefficient': [], 'observable': None}
         # split multiplicative terms.
         for x in term.split(' * '):
-            if is_parameter(x):
+            if is_coefficient(x):
                 atom['coefficient'].append(x)
             elif is_observable(x):
                 atom['observable'] = x
@@ -56,7 +82,7 @@ class BEMBFlex(nn.Module):
                  num_sessions: Optional[int] = None,
                  trace_log_q: bool = False,
                  category_to_item: Dict[str, List[int]] = None,
-                 likelihood: str = 'within_category',
+                 # number of observables.
                  num_user_obs: Optional[int] = None,
                  num_item_obs: Optional[int] = None,
                  num_session_obs: Optional[int] = None,
@@ -71,6 +97,7 @@ class BEMBFlex(nn.Module):
                     lambda_item
                     lambda_item + theta_user * alpha_item + zeta_user * item_obs
                     lambda_item + theta_user * alpha_item + gamma_user * beta_item * price_obs
+                See the doc-string of parse_utility for an example.
 
             obs2prior_dict (Dict[str, bool]): a dictionary maps coefficient name (e.g., 'lambda_item')
                 to a boolean indicating if observable (e.g., item_obs) enters the prior of the coefficient.
@@ -100,13 +127,6 @@ class BEMBFlex(nn.Module):
                 If None is provided, all items are assumed to be in the same category.
                 Defaults to None.
 
-            likelihood (str, optional): specifiy the method used for computing likelihood
-                P(item i | user, session, ...).
-                Options are
-                - 'all': a softmax across all items.
-                - 'within_category': firstly group items by categories and run separate softmax for each category.
-                Defaults to 'within_category'.
-
             num_{user, item, session, price, taste}_obs (int, optional): number of observables of
                 each type of features, only required if observable enters prior.
                 NOTE: currently we only allow coefficient to depend on either user or item, thus only
@@ -114,17 +134,17 @@ class BEMBFlex(nn.Module):
                 and taste observables are never required, we include it here for completeness.
         """
         super(BEMBFlex, self).__init__()
-        cprint('You are using BEMB Flex v3', 'red')
+        cprint('You are using BEMB Flex v3 (rc)', 'red')
         self.utility_formula = utility_formula
         self.obs2prior_dict = obs2prior_dict
         self.coef_dim_dict = coef_dim_dict
+
         self.num_items = num_items
         self.num_users = num_users
         self.num_sessions = num_sessions
+
         self.trace_log_q = trace_log_q
         self.category_to_item = category_to_item
-        self.likelihood = likelihood
-        assert self.likelihood == 'within_category'  # TODO: remove this.
 
         # ==========================================================================================
         # Category ID to Item ID mapping.
@@ -154,20 +174,23 @@ class BEMBFlex(nn.Module):
         # ==========================================================================================
         # model configuration.
         self.formula = parse_utility(utility_formula)
-        print('utility formula parsed:\n', self.formula)
+        print('BEMB: utility formula parsed:')
+        pprint(self.formula)
         self.raw_formula = utility_formula
         self.obs2prior_dict = obs2prior_dict
 
-        # dimension of each observable.
+        # dimension of each observable, this one is used only for obs2prior.
         self.num_obs_dict = {
             'user': num_user_obs,
             'item': num_item_obs,
             'session': num_session_obs,
             'price': num_price_obs,
             'taste': num_taste_obs,
-            'constant': 1
+            'constant': 1  # not really used, for dummy variables.
         }
 
+        # how many classes for the variational distribution.
+        # for example, beta_item would be `num_items` 10-dimensional gaussian if latent dim = 10.
         variation_to_num_classes = {
             'user': self.num_users,
             'item': self.num_items,
@@ -192,28 +215,36 @@ class BEMBFlex(nn.Module):
                + str(self.coef_dict)
 
     def forward(self, batch, return_logit: bool = False, all_items: bool = True) -> torch.Tensor:
-        """Computes the log likelihood of choosing each item in each session.
+        """The combined method of computing utilities and log probability.
 
         Args:
             batch ([type]): [description]
+            return_logit (bool): return the logit (utility) if set to True, otherwise apply
+                category-wise log-softmax to compute the log-likelihood before returning.
+            all_items (bool): only reutrn the logit/log-P of the bought items if set to True,
+                otherwise return the logit/log-P of all items.
+                Set all_items to False if only need to compute the log-likelihood for validation
+                purpose.
+                Set all_items to True only if you acutally need logits/log-P for all items, such
+                as for computing inclusive values of categories.
 
         Returns:
-            torch.Tensor: a tensor of shape (num_sessions, num_items) containing the log likelihood
-                that each item is chosen in each session.
+            torch.Tensor: a tensor of shape (len(batch), num_items) if all_items is True.
+                          a tensor of shape (len(batch),) if all_items is False.
         """
-        # TODO: need some testing.
+        # Use the means of variatioanl distributions as the sole MC sample.
         sample_dict = dict()
         for coef_name, coef in self.coef_dict.items():
-            sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(
-                dim=0)  # (1, num_*, dim)
+            sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
 
         # there is 1 random seed in this case.
-        # (num_seeds=1, num_sessions, num_items)
         if all_items:
+            # (num_seeds=1, len(batch), num_items)
             out = self.log_likelihood_all_items(batch, sample_dict, return_logit)
         else:
+            # (num_seeds=1, len(batch))
             out = self.log_likelihood(batch, sample_dict, return_logit)
-        return out.squeeze()  # (num_sessions, num_items)
+        return out.squeeze()  # (len(batch), num_items) or (len(batch),)
 
     @property
     def num_params(self) -> int:
@@ -317,7 +348,8 @@ class BEMBFlex(nn.Module):
                                  return_logit: bool = False
                                  ) -> torch.Tensor:
         """
-        NOTE: this method computes utilities for all items available.
+        NOTE: this method computes utilities for all items available, this is relatively slow, for
+        training purpose, use self.log_likelihood() instead.
 
         Computes the log probability of choosing each item in each session based on current model
         parameters.
@@ -334,11 +366,12 @@ class BEMBFlex(nn.Module):
                 The value of sample_dict should be tensors of shape (num_seeds, num_classes, dim)
                 where num_classes in {num_users, num_items, 1}
                 and dim in {latent_dim(K), num_item_obs, num_user_obs, 1}.
+            return_logit(bool): if set to True, return the probability, otherwise return the log-P.
 
         Returns:
-            torch.Tensor: a tensor of shape (num_seeds, num_sessions, self.num_items), where
-                out[x, y, z] is the proabbility of choosing item z in session y conditioned on user
-                and item latents to be the x-th Monte Carlo sample.
+            torch.Tensor: a tensor of shape (num_seeds, len(batch), self.num_items), where
+                out[x, y, z] is the proabbility of choosing item z in session y conditioned on
+                latents to be the x-th Monte Carlo sample.
         """
         # assert we have sample for all coefficients.
         assert sample_dict.keys() == self.coef_dict.keys()
@@ -346,20 +379,15 @@ class BEMBFlex(nn.Module):
             num_seeds = v.shape[0]
             break
 
+        # avoid repeated work when user purchased several items in the same session.
         user_session_index = torch.stack([batch.user_index, batch.session_index])
         assert user_session_index.shape == (2, len(batch))
         unique_user_sess, inverse_indices = torch.unique(user_session_index, dim=1, return_inverse=True)
 
         user_index = unique_user_sess[0, :]
         session_index = unique_user_sess[1, :]
+        assert len(user_index) == len(session_index) == len(batch)
 
-        positive_integer = PositiveInteger()
-
-        # ==========================================================================================
-        # Compute the utility tensor U with shape (random_seeds, num_purchases, num_items).
-        # where U[seed_id, p, i] indicates the utility for the user in the p-th purchase record to
-        # purchase item i according to the seed_id-th random sample of coefficient.
-        # ==========================================================================================
         # short-hands for easier shape check.
         R = num_seeds
         # P = len(batch)  # num_purchases.
@@ -367,6 +395,7 @@ class BEMBFlex(nn.Module):
         S = self.num_sessions
         U = self.num_users
         I = self.num_items
+
         # ==========================================================================================
         # Helper Functions for Reshaping.
         # ==========================================================================================
@@ -433,58 +462,14 @@ class BEMBFlex(nn.Module):
             return obs
 
         # ==========================================================================================
-        # Compute Components contigent to users and items only.
-        # ==========================================================================================
-        utility = torch.zeros(R, U, I, device=self.device)
-
-        # # user and item interactions.
-        # def is_time_invariant_observable(name):
-        #     return name is None or name.endswith('_item') or name.endswith('_user')
-
-        # def is_time_invariant_term(term):
-        #     return is_time_invariant_observable(term['observable'])
-
-        # def _reshape(sample, name):
-        #     if name.endswith('_constant'):
-        #         out = sample.view(R, 1, 1, -1).expand(-1, U, I, -1)
-        #     elif name.endswith('_item'):
-        #         out = sample.view(R, 1, I, -1).expand(-1, U, -1, -1)
-        #     elif name.endswith('_user'):
-        #         out = sample.view(R, U, 1, -1).expand(-1, -1, I, -1)
-        #     return out
-
-        # for term in self.formula:
-        #     if is_time_invariant_term(term):
-        #         if len(term['coefficient']) == 1 and term['observable'] is None:
-        #             out = _reshape(sample_dict[term['coefficient'][0]], term['coefficient'][0])
-        #             utility += out.view(R, U, I)
-
-        #         elif len(term['coefficient']) == 2 and term['observable'] is None:
-        #             A = _reshape(sample_dict[term['coefficient'][0]], term['coefficient'][0])
-        #             B = _reshape(sample_dict[term['coefficient'][1]], term['coefficient'][1])
-        #             utility += (A * B).sum(dim=-1).view(R, U, I)
-
-        #         elif len(term['coefficient']) == 1 and term['observable'] is not None:
-        #             coef = _reshape(sample_dict[term['coefficient'][0]], term['coefficient'[0]])
-        #             obs_name = term['observable']
-        #             if obs_name.startswith('item_'):
-        #                 obs = getattr(batch, obs_name).view(1, 1, I, -1).expand(R, U, -1, -1)
-        #             elif obs_name.startswith('user_'):
-        #                 obs = getattr(batch, obs_name).view(1, U, 1, -1).expand(R, -1, I, -1)
-        #             utility += (coef * obs).sum(dim=-1).view(R, U, I)
-
-        # ==========================================================================================
         # Copmute the Utility Term by Term.
         # ==========================================================================================
-        # (random_seeds, num_purchases, num_items).
+        # P is the number of unique (user, session) pairs.
+        # (random_seeds, P, num_items).
         utility = torch.zeros(R, P, I, device=self.device)
-        # utility = utility[:, user_index, :]
 
         # loop over additive term to utility
         for term in self.formula:
-            # if not is_time_invariant_term(term):
-            #     continue
-
             # Type I: single coefficient, e.g., lambda_item or lambda_user.
             if len(term['coefficient']) == 1 and term['observable'] is None:
                 # E.g., lambda_item or lambda_user
@@ -568,7 +553,7 @@ class BEMBFlex(nn.Module):
         # compute log likelihood log p(choosing item i | user, item latents)
         # compute log softmax separately within each category.
         log_p = scatter_log_softmax(utility, self.item_to_category_tensor, dim=-1)
-        # output shape: (num_seeds, num_purchases, num_items)
+        # output shape: (num_seeds, len(batch), num_items)
         return log_p
 
     def log_likelihood(self,
@@ -577,7 +562,7 @@ class BEMBFlex(nn.Module):
                        return_logit: bool = False
                        ) -> torch.Tensor:
         """
-        NOTE: this method is more efficient.
+        NOTE: this method is more efficient only computes log-likelihood for bought items.
 
         Computes the log probability of choosing each item in each session based on current model
         parameters.
@@ -596,9 +581,9 @@ class BEMBFlex(nn.Module):
                 and dim in {latent_dim(K), num_item_obs, num_user_obs, 1}.
 
         Returns:
-            torch.Tensor: a tensor of shape (num_seeds, num_sessions, self.num_items), where
-                out[x, y, z] is the proabbility of choosing item z in session y conditioned on user
-                and item latents to be the x-th Monte Carlo sample.
+            torch.Tensor: a tensor of shape (num_seeds, len(batch)), where
+                out[x, y] is the proabbility of choosing item batch.item[y] in session y
+                conditioned on latents to be the x-th Monte Carlo sample.
         """
         # assert we have sample for all coefficients.
         assert sample_dict.keys() == self.coef_dict.keys()
@@ -606,12 +591,13 @@ class BEMBFlex(nn.Module):
             num_seeds = v.shape[0]
             break
 
-        # get category id of each item bought.
+        # get category id of the item bought in each row of batch.
         cate_index = self.item_to_category_tensor[batch.label]
 
         # get item ids of all items from the same category of each item bought.
         relevant_item_index = self.category_to_item_tensor[cate_index, :]
         relevant_item_index = relevant_item_index.view(-1,)
+        # index were padded with -1's, drop those dummy entries.
         relevant_item_index = relevant_item_index[relevant_item_index != -1]
 
         # the first repeats[0] entries in relevant_item_index are for the category of label[0]
@@ -623,14 +609,6 @@ class BEMBFlex(nn.Module):
         session_index = torch.repeat_interleave(batch.session_index, repeats)
         label_expanded = torch.repeat_interleave(batch.label, repeats)
 
-        # use for shape check.
-        positive_integer = PositiveInteger()
-
-        # ==========================================================================================
-        # Compute the utility tensor U with shape (random_seeds, num_purchases, num_items).
-        # where U[seed_id, p, i] indicates the utility for the user in the p-th purchase record to
-        # purchase item i according to the seed_id-th random sample of coefficient.
-        # ==========================================================================================
         # short-hands for easier shape check.
         R = num_seeds
         total_computation = len(session_index)  # total number of relevant items.
@@ -764,7 +742,7 @@ class BEMBFlex(nn.Module):
         else:
             # compute the log probability from logits/utilities.
             log_p = scatter_log_softmax(utility, reverse_indices, dim=-1)
-        # TODO: check if this makes sense.
+        # select the log-P of the item actually bought.
         log_p = log_p[:, label_expanded == relevant_item_index]
         # output shape: (num_seeds, num_purchases, num_items)
         return log_p
@@ -778,14 +756,13 @@ class BEMBFlex(nn.Module):
         This method is the old implementation of log-likelihood, which is relatively slow, but we
         leave it here for santify check and debugging purpose.
         """
+        cprint('You are calling a debugging method', 'red')
         # assert we have sample for all coefficients.
         assert sample_dict.keys() == self.coef_dict.keys()
 
         for v in sample_dict.values():
             num_seeds = v.shape[0]
             break
-
-        positive_integer = PositiveInteger()
 
         # ==========================================================================================
         # Compute the utility tensor U with shape (random_seeds, num_purchases, num_items).
@@ -1033,26 +1010,6 @@ class BEMBFlex(nn.Module):
         # 3. compute the log likelihood log p(obs|latent).
         # sum over independent purchase decision for individual items, mean over MC seeds.
         # (num_sessions, num_relevant_items) -> scalar.
-
-        # ================================
-        A = self.log_likelihood(batch, sample_dict).sum(dim=1).mean(dim=0)
-        log_p_all_items = self.log_likelihood_all_items(batch, sample_dict)
-        # (num_purchases, num_items), averaged over Monte Carlo samples for expectation at dim 0.
-        log_p_all_items = log_p_all_items.mean(dim=0)
-        # (num_sessions,)
-        log_p_chosen_items = log_p_all_items[torch.arange(len(batch)), batch.label]
-        B = log_p_chosen_items.sum(dim=0)
-
-        log_p_all_items = self.log_likelihood_all_items_old(batch, sample_dict)
-        # (num_purchases, num_items), averaged over Monte Carlo samples for expectation at dim 0.
-        log_p_all_items = log_p_all_items.mean(dim=0)
-        # (num_sessions,)
-        log_p_chosen_items = log_p_all_items[torch.arange(len(batch)), batch.label]
-        C = log_p_chosen_items.sum(dim=0)
-        breakpoint()
-        print(A, B)
-        # =================================
-
         elbo += self.log_likelihood(batch, sample_dict).sum(dim=1).mean(dim=0)
 
         # 4. optionally add log likelihood under variational distributions q(latent).
