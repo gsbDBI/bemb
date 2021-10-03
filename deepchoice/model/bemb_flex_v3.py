@@ -81,7 +81,7 @@ class BEMBFlex(nn.Module):
                  num_users: Optional[int] = None,
                  num_sessions: Optional[int] = None,
                  trace_log_q: bool = False,
-                 category_to_item: Dict[str, List[int]] = None,
+                 category_to_item: Dict[int, List[int]] = None,
                  # number of observables.
                  num_user_obs: Optional[int] = None,
                  num_item_obs: Optional[int] = None,
@@ -244,7 +244,7 @@ class BEMBFlex(nn.Module):
         else:
             # (num_seeds=1, len(batch))
             out = self.log_likelihood(batch, sample_dict, return_logit)
-        return out.squeeze()  # (len(batch), num_items) or (len(batch),)
+        return out.squeeze(dim=0)  # (len(batch), num_items) or (len(batch),)
 
     @property
     def num_params(self) -> int:
@@ -1024,13 +1024,14 @@ class BEMBFlex(nn.Module):
     def __check_log_likelihood(self, batch, sample_dict):
         cprint('You are calling a debugging method', 'red')
         for return_logit in (True, False):
-            A = self.log_likelihood(batch, sample_dict, return_logit=return_logit).squeeze()
+            A = self.log_likelihood(batch, sample_dict, return_logit=return_logit)
 
-            B = self.log_likelihood_all_items(batch, sample_dict, return_logit=return_logit).squeeze()
-            B = B[torch.arange(len(batch)), batch.label]
+            B = self.log_likelihood_all_items(batch, sample_dict, return_logit=return_logit)
+            B = B[:, torch.arange(len(batch)), batch.label]
 
-            C = self.__log_likelihood_all_items_old(batch, sample_dict, return_logit=return_logit).squeeze()
-            C = C[torch.arange(len(batch)), batch.label]
+            C = self.__log_likelihood_all_items_old(batch, sample_dict, return_logit=return_logit)
+            C = C[:, torch.arange(len(batch)), batch.label]
 
-            assert torch.max(torch.abs(A - B)) < 1E-5
-            assert torch.max(torch.abs(B - C)) < 1E-5
+            assert torch.max(torch.abs(A - B)) < 1E-5, f'{torch.max(torch.abs(A - B))}'
+            assert torch.max(torch.abs(B - C)) < 1E-5, f'{torch.max(torch.abs(B - C))}'
+        cprint('Test passed.', 'green')
