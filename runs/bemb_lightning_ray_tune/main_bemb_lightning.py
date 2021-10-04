@@ -238,20 +238,14 @@ class LitBEMBFlex(pl.LightningModule):
         return optimizer
 
     def train_dataloader(self):
-        train = create_data_loader(
-            dataset_list[0], batch_size=self.batch_size, shuffle=True, num_workers=8)
-        return train
+        return create_data_loader(dataset_list[0], batch_size=self.batch_size, shuffle=True, num_workers=8)
 
     def val_dataloader(self):
-        create_data_loader(
-            dataset_list[1], batch_size=self.batch_size, shuffle=True, num_workers=8)
-        return validation
+        return create_data_loader(dataset_list[1], batch_size=self.batch_size, shuffle=True, num_workers=8)
 
     def test_dataloader(self):
         # use smaller batch size for test, which takes more memory.
-        test = create_data_loader(
-            dataset_list[2], batch_size=10000, shuffle=False, num_workers=8)
-        return test
+        return create_data_loader(dataset_list[2], batch_size=10000, shuffle=False, num_workers=8)
 
 
 if __name__ == '__main__':
@@ -260,9 +254,9 @@ if __name__ == '__main__':
     # hyper parameter tuning.
     # ==============================================================================================
 
-    def train_tune(config, epochs=10, gpus=1):
-        model = LitBEMBFlex(config,
-                            utility_formula=configs.utility,
+    def train_tune(hparams, epochs=10, gpus=1):
+        model = LitBEMBFlex(hparams,
+                            utility_formula=hparams['utility_formula'],
                             num_users=configs.num_users,
                             num_items=configs.num_items,
                             num_sessions=configs.num_sessions,
@@ -289,14 +283,20 @@ if __name__ == '__main__':
     hparam_scope = {
         'learning_rate': tune.choice([0.01, 0.03, 0.1]),
         'num_seeds': tune.choice([1, 2, 4]),
-        'batch_size': tune.choice([100000, -1])
+        'batch_size': tune.choice([100000, -1]),
+        'utility_formula': tune.choice([
+            'lambda_item',
+            'lambda_item + theta_user * alpha_item',
+            # 'lambda_item + theta_user * alpha_item + zeta_user * item_obs',
+            'lambda_item + theta_user * alpha_item + gamma_user * beta_item * price_obs'
+        ])
     }
 
     reporter = CLIReporter(parameter_columns=list(hparam_scope.keys()),
                            metric_columns=list(callback._metrics.keys()))
 
     analysis = tune.run(
-        tune.with_parameters(train_tune, epochs=3, gpus=1),
+        tune.with_parameters(train_tune, epochs=10, gpus=1),
         metric='val_log_likelihood',
         mode='max',
         resources_per_trial={
@@ -305,6 +305,6 @@ if __name__ == '__main__':
         },
         config=hparam_scope,
         progress_reporter=reporter,
-        num_samples=5)
+        num_samples=10)
 
     print("Best hyperparameters found were: ", analysis.best_config)
