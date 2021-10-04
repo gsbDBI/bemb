@@ -10,6 +10,8 @@ from pytorch_lightning.callbacks import EarlyStopping
 from ray import tune
 from ray.tune import CLIReporter
 from ray.tune.integration.pytorch_lightning import TuneReportCallback
+from ray.tune.schedulers import ASHAScheduler
+from pytorch_lightning.loggers import TensorBoardLogger
 import torch
 import yaml
 from deepchoice.data import ChoiceDataset
@@ -249,10 +251,10 @@ class LitBEMBFlex(pl.LightningModule):
 
 
 if __name__ == '__main__':
-    cprint('Your are running an example script.', 'green')
-    # ==============================================================================================
-    # hyper parameter tuning.
-    # ==============================================================================================
+    num_samples = 10
+    num_epochs = 10
+
+    callback = TuneReportCallback({'val_log_likelihood': 'val_log_likelihood'}, on='validation_end')
 
     def train_tune(hparams, epochs=10, gpus=1):
         model = LitBEMBFlex(hparams,
@@ -273,14 +275,11 @@ if __name__ == '__main__':
             log_every_n_steps=1,
             gpus=gpus,
             progress_bar_refresh_rate=0,
+            logger=TensorBoardLogger(save_dir=tune.get_trial_dir(), name='', version='.'),
             callbacks=[callback])
         trainer.fit(model)
 
-    callback = TuneReportCallback(
-        {'val_log_likelihood': 'val_log_likelihood'},
-        on='validation_end')
-
-    hparam_scope = {
+    config = {
         'learning_rate': tune.choice([0.01, 0.03, 0.1]),
         'num_seeds': tune.choice([1, 2, 4]),
         'batch_size': tune.choice([100000, -1]),
@@ -292,19 +291,19 @@ if __name__ == '__main__':
         ])
     }
 
-    reporter = CLIReporter(parameter_columns=list(hparam_scope.keys()),
+    scheduler = ASHAScheduler(max_t=num_epochs, grace_period=1, reduction_factor=2)
+
+    reporter = CLIReporter(parameter_columns=list(config.keys()),
                            metric_columns=list(callback._metrics.keys()))
 
     analysis = tune.run(
-        tune.with_parameters(train_tune, epochs=10, gpus=1),
+        tune.with_parameters(train_tune, epochs=num_epochs, gpus=1),
         metric='val_log_likelihood',
         mode='max',
-        resources_per_trial={
-            'cpu': 16,
-            'gpu': 1
-        },
-        config=hparam_scope,
-        progress_reporter=reporter,
-        num_samples=10)
+        resources_per_trial={'cpu': 16, 'gpu': 1},
+        config=config,
+        num_samples=num_samples,
+        scheduler=scheduler,
+        progress_reporter=reporter)
 
     print("Best hyperparameters found were: ", analysis.best_config)
