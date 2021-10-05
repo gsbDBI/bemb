@@ -4,6 +4,37 @@ The `deepchoice` package offers a comperhensive `deepchoice.data.ChoiceDataset` 
 
 **NOTE**: we use the term *feature* and *observable* exchangably through this documentation.
 
+
+
+## Design Principle
+
+The ultimate goal of `deepchoice` is to estimate $U_{uit}$, the utility for user $u$ to choose item $i$ in session $t$ . Session is indexed by $t$ because the most common approach is defining session by time, however, we do allow for more general definition of sessions such as the intereaction between location and time. The dataset consists of the following components, they behave differently during mini-batching:
+
+### Raw Observables
+
+The raw observablea 
+
+### Item Availablity
+
+Item availability is a boolean-valued `price` feature with shape `(num_sessions, num_items)`. **NOTE**: even through `item_availablity`  has the prefix `item_`, it is a reserved attribute and will **not** be considered as an item-specific variable.
+
+### Index Tensors
+
+We support two types of index tensors, `user_index` and `session_index`, there is **no** `item_index` because we need to compute utilites for all items anyways for likelihoods and inclusive values. While computing $U_{uit}$  for a list of $(u, t)$, `{user, session}_index` are used to identify the corresponding user-specific features, session/price-sepcific features, as well as item availability.  While conducting mini-batching, the sampler does sampling over index-tensors. For example, to compute $U_{uit} = \beta X^{user:obs}_{u} + \gamma X^{price:obs}_{it} $ for $L$ pairs of user and session,  $(u_\ell, t_\ell)_{\ell=1}^L$, index tensors are constructed as the following:
+
+```python
+user_index = [u1, u2, ..., uL]
+session_index = [t1, t2, ..., tL]
+```
+
+Using those tensor indices, we can obtain the corresponding $X^{user:obs}_{u}$ and $X^{price:obs}_{it}$ by `user_obs[user_index, :]` and `price_obs[session_index, :, :]`.
+
+Naturally, suppose $L$ is too large and we wish to split $L$ into $B$ chunks (batches)
+
+### Label
+
+
+
 ## Build `ChoiceDataset` from Tensors
 
 **TODO**: add link to jupyter-noteook.
