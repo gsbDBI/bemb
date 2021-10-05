@@ -21,3 +21,5 @@ The `deepchoice` release can be installed (1) using `pip` package mangement (2) 
 
 ## Table of Content
 
+[Random Utility Models](./RUM.md)
+

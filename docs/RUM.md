@@ -51,7 +51,10 @@ The `category_to_item` keyword defines a dictionary of the mapping $k \mapsto B_
 
 The `{category, item}_coef_variation_dict` provides specification to $W_{ukt}$ and $Y_{uit}$ respectively, `deepchoice` allows for empty category level models by providing an empty dictionary (in this case, $W_{ukt} = \epsilon_{ukt}$) since the inclusive value term $\lambda_k I_{ukt}$ will be used to model the choice over categories. However, by specifying an empty second stage model ($Y_{uit} = \epsilon_{uit}$), the nested logit model reduces to a conditonal logit model of choices over categories. Hence, one should never use the `NestedLogitModel` class with an empty item-level model.
 
-
-
+Similar to the conditional logit model, `{category, item}_num_param_dict` specify the dimension (number of observables to be multiplied with the coefficient) of coefficients. The above code initalizes a simple model built upon item-time-specific observables $X_{it} \in \mathbb{R}^7$, 
+$$
+Y_{uit} = \beta^\top X_{it} + \epsilon_{uit} \\
+W_{ukt} = \epsilon_{ukt}
+$$
 The research may wish to enfoce the *elasiticity* $\lambda_k$ to be constant across categories, setting `shared_lambda=True` enforces $\lambda_k = \lambda\ \forall k \in [K]$.
 
