@@ -51,6 +51,13 @@ class ChoiceDataset(torch.utils.data.Dataset):
         self.label = label
         self.user_index = user_index
         self.session_index = session_index
+
+        if self.session_index is None:
+            if any([x.startswith('session_') or x.startswith('price_') for x in kwargs.keys()]):
+                # if any session sensitive observable is provided, but session index is not,
+                # infer each row in the dataset to be a session.
+                self.session_index = torch.arange(len(self.label)).long()
+
         self.item_availability = item_availability
 
         self.observable_prefix = ['user_', 'item_', 'session_', 'taste_', 'price_']
@@ -94,7 +101,7 @@ class ChoiceDataset(torch.utils.data.Dataset):
         # copy other keys.
         for key, val in self.__dict__.items():
             if key in new_dict.keys():
-                # ignore 'label', 'user_index', ''session_index' and 'item_availability' keys, already added.
+                # ignore 'label', 'user_index', 'session_index' and 'item_availability' keys, already added.
                 continue
             if torch.is_tensor(val):
                 new_dict[key] = val.clone()
@@ -256,43 +263,28 @@ class ChoiceDataset(torch.utils.data.Dataset):
         if any(self._is_session_attribute(x) or self._is_price_attribute(x) for x in self.__dict__.keys()):
             assert self.session_index is not None
 
+    def _expand_tensor(self, key: str, val: torch.Tensor) -> torch.Tensor:
+        # convert raw tensors into (len(self), num_items/num_category, num_params).
+        if not self._is_attribute(key):
+            # don't expand non-attribute tensors, if any.
+            return val
 
-    # def split(
-    #     self,
-    #     task: str = "node",
-    #     split_ratio: List[float] = None,
-    #     shuffle: bool = True
-    # ):
-    #     raise NotImplementedError
+        num_params = val.shape[-1]
+        if self._is_user_attribute(key):
+            # user_attribute (num_users, *)
+            out = val[self.user_index, :].view(len(self), 1, num_params).expand(-1, self.num_items, -1)
+        elif self._is_item_attribute(key):
+            # item_attribute (num_items, *)
+            out = val.view(1, self.num_items, num_params).expand(len(self), -1, -1)
+        elif self._is_session_attribute(key):
+            # session_attribute (num_sessions, *)
+            out = val[self.session_index, :].view(len(self), 1, num_params).expand(-1, self.num_items, -1)
+        elif self._is_taste_attribute(key):
+            # taste_attribute (num_users, num_items, *)
+            out = val[self.user_index, :, :]
+        elif self._is_price_attribute(key):
+            # price_attribute (num_sessions, num_items, *)
+            out = val[self.session_index, :, :]
 
-    # def _expand_tensor(self, key: str, val: torch.Tensor) -> torch.Tensor:
-    #     # convert raw tensors into (num_sessions, num_items/num_category, num_params).
-    #     if not self._is_attribute(key):
-    #         # don't expand non-attribute tensors, if any.
-    #         return val
-
-    #     num_params = val.shape[-1]
-    #     if self._is_user_attribute(key):
-    #         # user_attribute (num_users, *)
-    #         out = val[self.user_index].view(
-    #             self.num_sessions, 1, num_params).expand(-1, self.num_items, -1)
-    #     elif self._is_item_attribute(key):
-    #         # item_attribute (num_items, *)
-    #         out = val.view(1, self.num_items, num_params).expand(
-    #             self.num_sessions, -1, -1)
-    #     elif self._is_session_attribute(key):
-    #         # session_attribute (num_sessions, *)
-    #         out = val.view(self.num_sessions, 1,
-    #                        num_params).expand(-1, self.num_items, -1)
-    #     elif self._is_taste_attribute(key):
-    #         # taste_attribute (num_users, num_items, *)
-    #         out = val[self.user_index, :, :]
-    #     elif self._is_price_attribute(key):
-    #         # price_attribute (num_sessions, num_items, *)
-    #         out = val
-
-    #     assert out.shape == (self.num_sessions, self.num_items, num_params)
-    #     return out
-
-    # def variable_group():
-    #     pass
+        assert out.shape == (len(self), self.num_items, num_params)
+        return out
