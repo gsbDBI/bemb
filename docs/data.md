@@ -8,22 +8,22 @@ The `deepchoice` package offers a comperhensive `deepchoice.data.ChoiceDataset` 
 
 ## Design Principle
 
-The ultimate goal of `deepchoice` is to estimate $U_{uit}$, the utility for user $u$ to choose item $i$ in session $t$ . Session is indexed by $t$ because the most common approach is defining session by time, however, we do allow for more general definition of sessions such as the intereaction between location and time. The dataset consists of the following components, they behave differently during mini-batching.
+The ultimate goal of `deepchoice` is to estimate $$U_{uit}$$, the utility for user $$u$$ to choose item $$i$$ in session $$t$$ . Session is indexed by $$t$$ because the most common approach is defining session by time, however, we do allow for more general definition of sessions such as the intereaction between location and time. The dataset consists of the following components, they behave differently during mini-batching.
 
 ### Raw Observables
 
 Currently, the `deepchoice` package supports five types of observables, each type of observables depends on different elements from `{user, item, session}`.
 
-| (Vary by)  User $$u$$ | Item $$i$$ | Session $$t$$ | Variable Name Prefix | Raw Tensor Shape                                             | Definition                                                   |
-| --------------------- | ---------- | ------------- | -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| No                    | No         | No            | `intercept`          | N/A, the model automatically creates `torch.ones(num_sessions, num_items, 1)`  for intercepts. Do not create intercept dummies in the dataset. | N/A                                                          |
-| Yes                   | No         | No            | `user_xxx`           | `(num_users, *)`                                             | dataset of user-specific features. E.g., user's income.      |
-| No                    | Yes        | No            | `item_xxx`           | `(num_items, *)`                                             | dataset of item specific features that is constant over time/sessions. E.g., the quality of a product. |
-| No                    | No         | Yes           | `session_xxx`        | `(num_sessions, *)`                                          | dataset of session-specific features. E.g., the day of week when session was observed, modelling the day of week capturing seasonal effects. |
-| Yes                   | Yes        | No            | `taste_xxx`          | `(num_users, num_items, *)`                                  | dataset of features depending on both user and item. E.g., the interaction between user's income level and an indicator of luxury good. |
-| Yes                   | No         | Yes           | Not Allowed          | N/A                                                          | N/A                                                          |
-| No                    | Yes        | Yes           | `price_xxx`          | `(num_sessions, num_items, *)`                               | item-specific features that varying across session/time as well. E.g., the price of item. **NOTE**: researchers should add user-item-session-specific features, such as the ratio of user's income and itme's price, here. |
-| Yes                   | Yes        | Yes           | Now Allowed          | N/A                                                          | N/A                                                          |
+| (Vary by)  User (u) | Item (i) | Session (t) | Variable Name Prefix | Raw Tensor Shape                                             | Definition                                                   |
+| ------------------- | -------- | ----------- | -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| No                  | No       | No          | `intercept`          | N/A, the model automatically creates `torch.ones(num_sessions, num_items, 1)`  for intercepts. Do not create intercept dummies in the dataset. | N/A                                                          |
+| Yes                 | No       | No          | `user_xxx`           | `(num_users, *)`                                             | dataset of user-specific features. E.g., user's income.      |
+| No                  | Yes      | No          | `item_xxx`           | `(num_items, *)`                                             | dataset of item specific features that is constant over time/sessions. E.g., the quality of a product. |
+| No                  | No       | Yes         | `session_xxx`        | `(num_sessions, *)`                                          | dataset of session-specific features. E.g., the day of week when session was observed, modelling the day of week capturing seasonal effects. |
+| Yes                 | Yes      | No          | `taste_xxx`          | `(num_users, num_items, *)`                                  | dataset of features depending on both user and item. E.g., the interaction between user's income level and an indicator of luxury good. |
+| Yes                 | No       | Yes         | Not Allowed          | N/A                                                          | N/A                                                          |
+| No                  | Yes      | Yes         | `price_xxx`          | `(num_sessions, num_items, *)`                               | item-specific features that varying across session/time as well. E.g., the price of item. **NOTE**: researchers should add user-item-session-specific features, such as the ratio of user's income and itme's price, here. |
+| Yes                 | Yes      | Yes         | Now Allowed          | N/A                                                          | N/A                                                          |
 
 ### Item Availablity
 
