@@ -32,7 +32,7 @@ def pivot3d(df: pd.DataFrame, dim0: str, dim1: str, values: Union[str, List[str]
     return tensor
 
 
-def create_data_loader(dataset, batch_size, shuffle, num_workers: int=0):
+def create_data_loader(dataset, batch_size: int = -1, shuffle: bool = False, num_workers: int = 0):
     if batch_size == -1:
         # use full-batch.
         batch_size = len(dataset)
