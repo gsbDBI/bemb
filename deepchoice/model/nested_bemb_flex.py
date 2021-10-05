@@ -6,16 +6,14 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
-from torch.nn.functional import log_softmax
-from torch_scatter import scatter_max
-from torch_scatter.composite import scatter_log_softmax
 
-from deepchoice.model.gaussian import batch_factorized_gaussian_log_prob
-from deepchoice.model import BEMB
+from deepchoice.model import BEMBFlex
 
 
 class NestedBEMB(nn.Module):
     def __init__(self,
+                 item_level_args: dict,
+                 category_level_args: dict,
                  num_users: int,
                  num_items: int,
                  obs2prior_dict_item: dict,
@@ -32,7 +30,6 @@ class NestedBEMB(nn.Module):
                  num_price_obs: Optional[int]=None,
                  num_taste_obs: Optional[int]=None,
                  shared_lambda: bool=False):
-        # TODO: Is this safe?
         self.__dict__.update(locals())
         super(NestedBEMB, self).__init__()
         # read in args.
@@ -75,26 +72,19 @@ class NestedBEMB(nn.Module):
         else:
             self.lambda_weight = nn.Parameter(torch.ones(self.num_categories) / 2, requires_grad=True)
 
-        self.BEMB_item = BEMB(num_users=self.num_users,
-                              num_items=self.num_items,
-                              obs2prior_dict=self.obs2prior_dict_item,
-                              latent_dim=self.latent_dim_item,
-                              trace_log_q=self.trace_log_q_item,
-                              category_to_item=self.category_to_item,
-                              num_user_obs=self.num_user_obs,
-                              num_item_obs=self.num_item_obs,
-                              likelihood='within_category')
+        self.BEMB_item = BEMBFlex(**item_level_args)
+        self.BEMB_category = BEMBFlex(**category_level_args)
 
         # item maps to category in BEMB_category.
-        self.BEMB_category = BEMB(num_users=self.num_users,
-                                  num_items=self.num_categories,
-                                  obs2prior_dict=self.obs2prior_dict_category,
-                                  latent_dim=self.latent_dim_category,
-                                  trace_log_q=self.trace_log_q_category,
-                                  category_to_item=None,
-                                  num_user_obs=self.num_user_obs,
-                                  num_item_obs=self.num_category_obs,
-                                  likelihood='all')
+        # self.BEMB_category = BEMB(num_users=self.num_users,
+        #                           num_items=self.num_categories,
+        #                           obs2prior_dict=self.obs2prior_dict_category,
+        #                           latent_dim=self.latent_dim_category,
+        #                           trace_log_q=self.trace_log_q_category,
+        #                           category_to_item=None,
+        #                           num_user_obs=self.num_user_obs,
+        #                           num_item_obs=self.num_category_obs,
+        #                           likelihood='all')
 
     def forward(self, batch_item, batch_category):
         sample_dict_item = dict()
@@ -131,20 +121,18 @@ class NestedBEMB(nn.Module):
         # category-specific utilities (W).
         # NOTE: item_obs in batch_category is category observables indeed.
         # with return_logit=True, log_likelihood returns utility instead of likelihood.
-        # (num_seeds, num_sessions, self.num_category)
-        W = self.BEMB_category.log_likelihood(batch_category, sample_dict_category,
-                                              return_logit=True)
+        # (num_seeds, batch_size, self.num_category)
+        W = self.BEMB_category.log_likelihood(batch_category, sample_dict_category, return_logit=True)
 
         # item-specific utilities (Y).
-        # (num_seeds, num_sessions, self.num_items)
+        # (num_seeds, batch_size, self.num_items)
         # unavailable items are already masked out with -Inf utility given batch_item.item_availability.
-        Y = self.BEMB_item.log_likelihood(batch_item, sample_dict_item,
-                                          return_logit=True)
+        Y = self.BEMB_item.log_likelihood_all_items(batch_item, sample_dict_item, return_logit=True)
 
         # ==========================================================================================
         # compute the inclusive value of each category.
         # ==========================================================================================
-
+        # TODO: vectorize this operation.
         inclusive_value = dict()
         for k, Bk in self.category_to_item.items():
             # for nest k, divide the Y of all items in Bk by lambda_k.
