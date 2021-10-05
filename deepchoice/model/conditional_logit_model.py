@@ -103,45 +103,16 @@ class ConditionalLogitModel(nn.Module):
                 print('Variable Type: ', var_type)
                 print(coefficient.coef)
 
-    def forward(self, batch) -> torch.Tensor:
-        """
-        The forward function calls self._forward to make prediction, see docstring of self._forward for
-            more information.
-
-        Args:
-            batch ([type]): A choice dataset object.
-
-        Returns:
-            torch.Tensor: a tensor of shape (len(batch), batch.num_items), see docstring of self._forward
-                for more details.
-        """
-        return self._forward(x_dict=batch.x_dict,
-                             availability=batch.item_availability,
-                             user_index=batch.user_index)
-
-    def _forward(self,
-                 x_dict: Dict[str, torch.Tensor],
-                 availability: torch.BoolTensor = None,
-                 user_index: torch.Tensor = None,
-                 manual_coef_value_dict: Optional[Dict[str, torch.Tensor]] = None
-                 ) -> torch.Tensor:
+    def forward(self,
+                batch,
+                manual_coef_value_dict: Optional[Dict[str, torch.Tensor]] = None
+                ) -> torch.Tensor:
         """
         The forward function with explicit arguments, this forward function is for internal usages
         only, reserachers should use the forward() function insetad.
 
         Args:
-            x_dict (Dict[str, torch.Tensor]): a dictionary where keys are in {'u', 'i'} etc, and
-                values are tensors with shape (num_trips, num_items, num_params), where num_trips
-                and num_items are the same for all values but num_params may vary.
-            availability (torch.BoolTensor, optional): a boolean tensor with shape (num_trips, num_items)
-                where A[t, i] indicates the aviliability of item i in trip t. Utility of unavilable
-                items will be set to -inf. If not provided, the model assumes all items are aviliability.
-                Defaults to None.
-            user_index (torch.Tensor, optional): a tensor with shape (num_trips,), the t-th
-                entry of this tensor is the integer ID of the user who is involved in this trip.
-                user_index is required only if there exists user-specifc or user-item-specific coefficients
-                in the model.
-                Defaults to None.
+            batch:
             manual_coef_value_dict (Optional[Dict[str, torch.Tensor]], optional): a dictionary with
                 keys in {'u', 'i'} etc and tensors as values. If provided, the model will force
                 coefficient to be the provided values and compute utility conditioned on the provided
@@ -154,31 +125,26 @@ class ConditionalLogitModel(nn.Module):
             torch.Tensor: a tensor of shape (num_trips, num_items) whose (t, i) entry represents
                 the utility from item i in trip t for the user involved in that trip.
         """
-        # get input shapes.
-        for x in x_dict.values():
-            if x is not None:
-                device = x.device
-                batch_size = x.shape[0]
-                break
+        x_dict = batch.x_dict
 
         if 'intercept' in self.coef_variation_dict.keys():
             # intercept term has no input tensor, which has only 1 feature.
-            x_dict['intercept'] = torch.ones(batch_size, self.num_items, 1).to(device)
+            x_dict['intercept'] = torch.ones((len(batch), self.num_items, 1), device=batch.device)
 
         # compute the utility from each item in each choice session.
-        total_utility = torch.zeros(batch_size, self.num_items).to(device)
+        total_utility = torch.zeros((len(batch), self.num_items), device=batch.device)
         # for each type of variables, apply the corresponding coefficient to input x.
+
         for var_type, coef in self.coef_dict.items():
-            if manual_coef_value_dict is not None:
-                total_utility += coef(x_dict[var_type], user_index, manual_coef_value_dict[var_type])
-            else:
-                total_utility += coef(x_dict[var_type], user_index)
+            total_utility += coef(
+                x_dict[var_type], batch.user_index,
+                manual_coef_value=None if manual_coef_value_dict is None else manual_coef_value_dict[var_type])
 
-        assert total_utility.shape == (batch_size, self.num_items)
+        assert total_utility.shape == (len(batch), self.num_items)
 
-        if availability is not None:
+        if batch.item_availability is not None:
             # mask out unavilable items.
-            total_utility[~availability] = -1.0e20
+            total_utility[~batch.item_availability[batch.session_index, :]] = -1.0e20
         return total_utility
 
     @staticmethod
