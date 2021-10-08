@@ -151,9 +151,12 @@ class BEMBFlex(nn.Module):
         # Category ID to Category Size mapping.
         # Item ID to Category ID mapping.
         # ==========================================================================================
+        if self.category_to_item is None:
+            self.category_to_item = {0: list(np.arange(self.num_items))}
+
         self.num_categories = len(self.category_to_item)
 
-        max_category_size = max(len(x) for x in category_to_item.values())
+        max_category_size = max(len(x) for x in self.category_to_item.values())
         category_to_item_tensor = torch.full((self.num_categories, max_category_size), -1)
         category_to_size_tensor = torch.empty(self.num_categories)
 
