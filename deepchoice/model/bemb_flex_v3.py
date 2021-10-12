@@ -737,7 +737,7 @@ class BEMBFlex(nn.Module):
         if batch.item_availability is not None:
             # expand to the Monte Carlo sample dimension.
             A = batch.item_availability[session_index, relevant_item_index].unsqueeze(dim=0).expand(R, -1)
-            utility[~A] = -1.0e20
+            utility[~A] = - (torch.finfo(utility.dtype).max / 2)
 
         # compute log likelihood log p(choosing item i | user, item latents)
         if return_logit:
