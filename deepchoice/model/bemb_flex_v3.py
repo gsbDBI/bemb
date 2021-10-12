@@ -78,6 +78,7 @@ class BEMBFlex(nn.Module):
                  obs2prior_dict: Dict[str, bool],
                  coef_dim_dict: Dict[str, int],
                  num_items: int,
+                 prior_variance: Union[float, Dict[str, float]] = 1.0,
                  num_users: Optional[int] = None,
                  num_sessions: Optional[int] = None,
                  trace_log_q: bool = False,
@@ -113,6 +114,14 @@ class BEMBFlex(nn.Module):
                     the dim should be the latent dim multiplied by number of observables in price_obs.
 
             num_items (int): number of items.
+
+            prior_variance (Union[float, Dict[str, float]]): the variance of prior distribution for
+                coefficients. If a float is provided, all priors will be diagonal matrix with
+                prior_variance along the diagonal. If a dictionary is provided, keys of prior_variance
+                should be coefficient names, and the variance of prior of coef_name would be a diagional
+                matrix with prior_variance[coef_name] along the diagonal.
+                Defaults to 1.0, which means all prior have identity matrix as the covariance matrix.
+
             num_users (int, optional): number of users, required only if coefficient or observable
                 depending on user is in utitliy. Defaults to None.
             num_sessions (int, optional): number of sessions, required only if coefficient or
@@ -138,6 +147,7 @@ class BEMBFlex(nn.Module):
         self.utility_formula = utility_formula
         self.obs2prior_dict = obs2prior_dict
         self.coef_dim_dict = coef_dim_dict
+        self.prior_variance = prior_variance
 
         self.num_items = num_items
         self.num_users = num_users
@@ -204,11 +214,13 @@ class BEMBFlex(nn.Module):
         for additive_term in self.formula:
             for coef_name in additive_term['coefficient']:
                 variation = coef_name.split('_')[-1]
+                s2 = self.prior_variance[coef_name] if isinstance(self.prior_variance, dict) else self.prior_variance
                 coef_dict[coef_name] = BayesianCoefficient(variation=variation,
                                                            num_classes=variation_to_num_classes[variation],
                                                            obs2prior=self.obs2prior_dict[coef_name],
                                                            num_obs=self.num_obs_dict[variation],
-                                                           dim=self.coef_dim_dict[coef_name])
+                                                           dim=self.coef_dim_dict[coef_name],
+                                                           prior_variance=s2)
         self.coef_dict = nn.ModuleDict(coef_dict)
 
     def __str__(self):

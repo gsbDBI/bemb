@@ -14,6 +14,7 @@ class BayesianCoefficient(nn.Module):
                  obs2prior: bool,
                  num_obs: int=0,
                  dim: int=1,
+                 prior_variance: float=1.0
                  ):
         super(BayesianCoefficient, self).__init__()
         assert variation in ['item', 'user', 'constant']
@@ -25,6 +26,8 @@ class BayesianCoefficient(nn.Module):
         self.num_classes = num_classes
         self.num_obs = num_obs
         self.dim = dim  # the dimension of greek letter parameter.
+        self.prior_variance = prior_variance
+        assert self.prior_variance > 0
 
         # create prior distribution.
         if self.obs2prior:
@@ -41,7 +44,7 @@ class BayesianCoefficient(nn.Module):
         # self.prior_cov_factor = nn.Parameter(torch.zeros(num_classes, dim, 1), requires_grad=False)
         # self.prior_cov_diag = nn.Parameter(torch.ones(num_classes, dim), requires_grad=False)
         self.register_buffer('prior_cov_factor', torch.zeros(num_classes, dim, 1))
-        self.register_buffer('prior_cov_diag', torch.ones(num_classes, dim))
+        self.register_buffer('prior_cov_diag', torch.ones(num_classes, dim) * self.prior_variance)
 
         # create variational distribution.
         self.variational_mean = nn.Parameter(torch.randn(num_classes, dim), requires_grad=True)
@@ -61,7 +64,7 @@ class BayesianCoefficient(nn.Module):
 
     def __repr__(self) -> str:
         if self.obs2prior:
-            prior_str = f'prior=N({str(self.prior_H)}, I)'
+            prior_str = f'prior=N({str(self.prior_H)}, Ix{self.prior_variance})'
         else:
             prior_str = f'prior=N(0, I)'
         return f'BayesianCoefficient(num_classes={self.num_classes}, dimension={self.dim}, {prior_str})'
