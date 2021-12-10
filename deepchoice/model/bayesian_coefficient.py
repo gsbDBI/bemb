@@ -16,13 +16,19 @@ class BayesianCoefficient(nn.Module):
                  dim: int=1,
                  prior_variance: float=1.0
                  ):
+        """
+        The Bayesian coefficient object represents a learnable tensor mu_i in R^k, where i is from a family (e.g., user)
+        so there are num_classes * num_obs learnables.
+        """
         super(BayesianCoefficient, self).__init__()
+        # do we use this at all? TODO: drop self.variation.
         assert variation in ['item', 'user', 'constant']
 
         self.variation = variation
         self.obs2prior = obs2prior
         if variation == 'constant':
             assert not obs2prior
+
         self.num_classes = num_classes
         self.num_obs = num_obs
         self.dim = dim  # the dimension of greek letter parameter.
