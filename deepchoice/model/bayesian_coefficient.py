@@ -74,6 +74,7 @@ class BayesianCoefficient(nn.Module):
 
     def update_variational_mean_fixed(self, new_value: torch.Tensor):
         assert new_value.shape == self.variational_mean_flexible.shape
+        del self.variational_mean_fixed
         self.register_buffer('variational_mean_fixed', new_value)
 
     @property
