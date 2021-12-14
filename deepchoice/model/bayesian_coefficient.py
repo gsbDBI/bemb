@@ -39,12 +39,7 @@ class BayesianCoefficient(nn.Module):
         if self.obs2prior:
             # the mean of prior distribution depends on observables.
             self.prior_H = nn.Linear(num_obs, dim, bias=False)
-            # the same variance for all dimensions, fixed for now.
-            # self.prior_log_std = nn.Parameter(torch.ones(1), requires_grad=True)
-            # self.prior_log_std = torch.ones(1)
-            self.register_buffer('prior_log_std', torch.ones(1))
         else:
-            # self.prior_zero_mean = torch.zeros(num_classes, dim)
             self.register_buffer('prior_zero_mean', torch.zeros(num_classes, dim))
 
         # self.prior_cov_factor = nn.Parameter(torch.zeros(num_classes, dim, 1), requires_grad=False)
@@ -53,7 +48,7 @@ class BayesianCoefficient(nn.Module):
         self.register_buffer('prior_cov_diag', torch.ones(num_classes, dim) * self.prior_variance)
 
         # create variational distribution.
-        self.variational_mean = nn.Parameter(torch.randn(num_classes, dim), requires_grad=True)
+        self.variational_mean_flexible = nn.Parameter(torch.randn(num_classes, dim), requires_grad=True)
         self.variational_logstd = nn.Parameter(torch.randn(num_classes, dim), requires_grad=True)
 
         self.register_buffer('variational_cov_factor', torch.zeros(num_classes, dim, 1))
@@ -61,6 +56,8 @@ class BayesianCoefficient(nn.Module):
         # self.variational_distribution = LowRankMultivariateNormal(loc=self.variational_mean,
         #                                                           cov_factor=self.variational_cov_factor,
         #                                                           cov_diag=torch.exp(self.variational_logstd))
+
+        self.variational_mean_fixed = None
 
         self._check_args()
 
@@ -74,6 +71,17 @@ class BayesianCoefficient(nn.Module):
         else:
             prior_str = f'prior=N(0, I)'
         return f'BayesianCoefficient(num_classes={self.num_classes}, dimension={self.dim}, {prior_str})'
+
+    def update_variational_mean_fixed(self, new_value: torch.Tensor):
+        assert new_value.shape == self.variational_mean_flexible.shape
+        self.register_buffer('variational_mean_fixed', new_value)
+
+    @property
+    def variational_mean(self):
+        if self.variational_mean_fixed is None:
+            return self.variational_mean_flexible
+        else:
+            return self.variational_mean_fixed + self.variational_mean_flexible
 
     def log_prior(self, sample: torch.Tensor, x_obs: Optional[torch.Tensor]=None):
         # p(sample)
