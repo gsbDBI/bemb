@@ -25,6 +25,7 @@ class BayesianLinear(nn.Module):
                  bias: bool=True,
                  obs2prior: bool=False,
                  num_obs: Optional[int]=None,
+                 variational_weight_mean_fixed: Optional[torch.Tensor]=None,
                  device=None,
                  dtype=None):
         """Linear layer where weight and bias are modelled as distributions.
@@ -59,7 +60,14 @@ class BayesianLinear(nn.Module):
         # variational distributions for weight and bias.
         # ==============================================================================================================
         # TODO: optionally add initialization here.
-        self.variational_weight_mean = nn.Parameter(torch.randn(in_features, out_features), requires_grad=True)
+        if variational_weight_mean_fixed is None:
+            self.variational_weight_mean_fixed = None
+        else:
+            assert variational_weight_mean_fixed.shape == (in_features, out_features), \
+                f'variational_weight_mean_fixed tensor should have shape (in_features, out_features), got {variational_weight_mean_fixed.shape}'
+            self.register_buffer('variational_weight_mean_fixed', variational_weight_mean_fixed)
+
+        self.variational_weight_mean_flexible = nn.Parameter(torch.randn(in_features, out_features), requires_grad=True)
         self.variational_weight_logstd = nn.Parameter(torch.randn(in_features, out_features), requires_grad=True)
 
         if self.bias:
@@ -70,6 +78,12 @@ class BayesianLinear(nn.Module):
         if device is not None:
             self.to(device)
 
+    @property
+    def variational_weight_mean(self):
+        if self.variational_weight_mean_fixed is None:
+            return self.variational_weight_mean_flexible
+        else:
+            return self.variational_weight_mean_fixed + self.variational_weight_mean_flexible
 
     def _rsample_parameters(self, num_seeds: int=1):
         """sample weight and bias for forward() or lookup() method."""
