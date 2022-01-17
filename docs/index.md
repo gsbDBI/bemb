@@ -7,12 +7,15 @@ The package leverage GPU acceleration support using PyTorch and easily scale to 
 ## Installation
 The `deepchoice` release can be installed (1) using `pip` package management (2) from source code directly. Since we are still adding features to this project, we highly recommend users to install from source code directly.
 
-### To install the package from source
+### Install the package using pip
+**Not Available Now** We are currently finalizing the documentation and will submit `deepchoice` to pip later.
+
+### Install the package from source
 1. Clone the repository to your local machine or server.
 2. Install required dependencies (e.g., PyTorch and PyTorch-Lightning).
 3. Run `python3 ./setup.py develop` to add the package to your Python environment.
 4. Check installation by running `import deepchoice; print(deepchoice.__version__)` **in your Python terminal**.
 
 ## Table of Content
-[Random Utility Models](./RUM.md)
-[Bayesian Embedding (BEMB)](./BEMB.md)
+1. [Random Utility Models](./RUM.md)
+2. [Bayesian Embedding (BEMB)](./BEMB.md)
