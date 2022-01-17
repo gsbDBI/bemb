@@ -20,8 +20,5 @@ The `deepchoice` release can be installed (1) using `pip` package mangement (2) 
 
 
 ## Table of Content
-
-[Data Mangement](./data.md)
-
-[Random Utility Models](./RUM.md)
-
+[Tutorial: Random Utility Models](./RUM.md)
+[Tutorial: Bayesian Embedding (BEMB)](./BEMB.md)
