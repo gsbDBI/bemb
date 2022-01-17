@@ -1,24 +1,18 @@
-# Deep Choice
+# Deep Choice: Consumer Choice Modeling with PyTorch
+- Author: Tianyu Du (tianyudu@stanford.edu), Ayush Kanodia
+`Deepchoice` package is a PyTorch based package for modeling consumer choices. `deepchoice` provides a versatile interface for managing choice dataset, a range of baseline models, and Bayesian models for choice modeling. One example usage of this model is to predict shoppers’ purchasing decisions (**Add reference to the shopper paper**).
 
-`Deepchoice` package is a PyTorch based pacakge for modelling consumer choices. `deepchoice` provides a versatile interface for managing choice dataset, a range of baseline models, and Bayesian models for choice modelling.
-
-
-
-1. GPU support.
-2. Easily extended.
-
-
+The package leverage GPU acceleration support using PyTorch and easily scale to large dataset of millions of choice records. Beside, we provide easy-to-use PyTorch lightning wrapper of models to free researchers from the hassle from setting up PyTorch optimizers and training loops.
 
 ## Installation
+The `deepchoice` release can be installed (1) using `pip` package management (2) from source code directly. Since we are still adding features to this project, we highly recommend users to install from source code directly.
 
-The `deepchoice` release can be installed (1) using `pip` package mangement (2) from souce code directly.
-
-### Pip Installation
-
-### Install from Source
-
-
+### To install the package from source
+1. Clone the repository to your local machine or server.
+2. Install required dependencies (e.g., PyTorch and PyTorch-Lightning).
+3. Run `python3 ./setup.py develop` to add the package to your Python environment.
+4. Check installation by running `import deepchoice; print(deepchoice.__version__)` **in your Python terminal**.
 
 ## Table of Content
-[Tutorial: Random Utility Models](./RUM.md)
-[Tutorial: Bayesian Embedding (BEMB)](./BEMB.md)
+[Random Utility Models](./RUM.md)
+[Bayesian Embedding (BEMB)](./BEMB.md)
