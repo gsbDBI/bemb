@@ -248,6 +248,7 @@ class BEMBFlex(nn.Module):
                           a tensor of shape (len(batch),) if all_items is False.
         """
         # Use the means of variatioanl distributions as the sole MC sample.
+        # NOTE: here we don't need to sample the obs2prior weight H since we only compute the log-likelihood.
         sample_dict = dict()
         for coef_name, coef in self.coef_dict.items():
             sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
