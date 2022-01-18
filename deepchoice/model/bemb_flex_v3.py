@@ -557,7 +557,7 @@ class BEMBFlex(nn.Module):
             # expand to the Monte Carlo sample dimension.
             # (S, I) -> (P, I) -> (1, P, I) -> (R, P, I)
             A = batch.item_availability[session_index, :].unsqueeze(dim=0).expand(R, -1, -1)
-            utility[~A] = -1.0e20
+            utility[~A] = - (torch.finfo(utility.dtype).max / 2)
 
         utility = utility[:, inverse_indices, :]
         assert utility.shape == (R, len(batch), I)
