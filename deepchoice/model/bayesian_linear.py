@@ -8,14 +8,11 @@ For the current iteration, we assume each entry of the weight matrix follows ind
 TODO: might generalize this setting in the future.
 TODO: generalize this setting to arbitrary shape tensors.
 """
-from typing import Optional
+from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
-
-from torch.distributions.multivariate_normal import MultivariateNormal
 from torch.distributions.normal import Normal
-from torch.distributions.lowrank_multivariate_normal import LowRankMultivariateNormal
 
 
 class BayesianLinear(nn.Module):
@@ -23,11 +20,12 @@ class BayesianLinear(nn.Module):
                  in_features: int,
                  out_features: int,
                  bias: bool=True,
-                 obs2prior: bool=False,
-                 num_obs: Optional[int]=None,
-                 variational_weight_mean_fixed: Optional[torch.Tensor]=None,
+                 W_variational_mean_fixed: Optional[torch.Tensor]=None,
                  device=None,
-                 dtype=None):
+                 dtype=None,
+                 W_prior_variance: float=1.0,
+                 b_prior_variance: float=1.0
+                 ):
         """Linear layer where weight and bias are modelled as distributions.
         """
         if dtype is not None:
@@ -36,83 +34,58 @@ class BayesianLinear(nn.Module):
         self.in_features = in_features  # the same as number of classes before.
         self.out_features = out_features  # the same as latent dimension before.
         self.bias = bias
-        self.obs2prior = obs2prior
-        self.num_obs = num_obs  # used only if obs2prior is True.
 
         # ==============================================================================================================
         # prior distributions for mean and bias.
         # ==============================================================================================================
-        if self.obs2prior:
-            self.prior_H = BayesianLinear(self.num_obs, self.out_features, bias=False, obs2prior=False)
-            # TODO: optionally we make the std of prior learnable as well.
-            if self.bias:
-                raise NotImplementedError()
-        else:
-            # the prior of weights are gausssian distributions independent across in_feature dimensions.
-            self.register_buffer('prior_weight_mean', torch.zeros(in_features, out_features))
-            if self.bias:
-                raise NotImplementedError()
+        # the prior of weights are gausssian distributions independent across in_feature dimensions.
+        self.register_buffer('W_prior_mean', torch.zeros(in_features, out_features))
+        self.register_buffer('W_prior_logstd', torch.ones(in_features, out_features) * torch.log(W_prior_variance))
 
-        PRIOR_STD = 1.0  # TODO: add this to configuration.
-        self.register_buffer('prior_weight_logstd', torch.ones(in_features, out_features) * torch.log(PRIOR_STD))
+        if self.bias:
+            self.register_buffer('b_prior_mean', torch.zeros(in_features, out_features))
+            self.register_buffer('b_prior_logstd', torch.ones(in_features, out_features) * torch.log(b_prior_variance))
 
         # ==============================================================================================================
         # variational distributions for weight and bias.
         # ==============================================================================================================
-        # TODO: optionally add initialization here.
-        if variational_weight_mean_fixed is None:
-            self.variational_weight_mean_fixed = None
+        if W_variational_mean_fixed is None:
+            self.W_variational_mean_fixed = None
         else:
-            assert variational_weight_mean_fixed.shape == (in_features, out_features), \
-                f'variational_weight_mean_fixed tensor should have shape (in_features, out_features), got {variational_weight_mean_fixed.shape}'
-            self.register_buffer('variational_weight_mean_fixed', variational_weight_mean_fixed)
+            assert W_variational_mean_fixed.shape == (in_features, out_features), \
+                f'W_variational_mean_fixed tensor should have shape (in_features, out_features), got {W_variational_mean_fixed.shape}'
+            self.register_buffer('W_variational_mean_fixed', W_variational_mean_fixed)
 
-        self.variational_weight_mean_flexible = nn.Parameter(torch.randn(in_features, out_features), requires_grad=True)
-        self.variational_weight_logstd = nn.Parameter(torch.randn(in_features, out_features), requires_grad=True)
+        # TODO: optionally add customizable initialization here.
+        self.W_variational_mean_flexible = nn.Parameter(torch.randn(in_features, out_features), requires_grad=True)
+        self.W_variational_logstd = nn.Parameter(torch.randn(in_features, out_features), requires_grad=True)
 
         if self.bias:
-            raise NotImplementedError()
-            self.variational_bias_mean = nn.Parameter(torch.randn(out_features), requires_grad=True)
-            self.variational_bias_logstd = nn.Parameter(torch.randn(out_features), requires_grad=True)
+            self.b_variational_mean = nn.Parameter(torch.randn(out_features), requires_grad=True)
+            self.b_variational_logstd = nn.Parameter(torch.randn(out_features), requires_grad=True)
 
         if device is not None:
             self.to(device)
 
+        self.W_sample = None
+        self.b_sample = None
+
     @property
-    def variational_weight_mean(self):
-        if self.variational_weight_mean_fixed is None:
-            return self.variational_weight_mean_flexible
+    def W_variational_mean(self):
+        if self.W_variational_mean_fixed is None:
+            return self.W_variational_mean_flexible
         else:
-            return self.variational_weight_mean_fixed + self.variational_weight_mean_flexible
+            return self.W_variational_mean_fixed + self.W_variational_mean_flexible
 
-    def _rsample_parameters(self, num_seeds: int=1):
-        """sample weight and bias for forward() or lookup() method."""
-        # sample weight
-        w = self.weight_distribution.rsample(torch.Size([num_seeds]))
-        if self.bias:
-            b = self.bias_distribution.rsample(torch.Size([num_seeds]))
-        else:
-            b = None
-
-        return w, b
-
-    def rsample(self, num_seeds: int=1):
-        """sample all parameters using reparameterization trick."""
-        W = self.weight_distribution.rsample(torch.Size([num_seeds]))
+    def rsample(self, num_seeds: int=1) -> Optional[Tuple[torch.Tensor, Optional[torch.Tensor]]]:
+        """sample all parameters using re-parameterization trick.
+        """
+        self.W_sample = self.W_variational_distribution.rsample(torch.Size([num_seeds]))
 
         if self.bias:
-            raise NotImplementedError()
-            b = self.bias_distribution.rsample(torch.Size([num_seeds]))
-        else:
-            b = None
+            self.b_sample = self.b_variational_distribution.rsample(torch.Size([num_seeds]))
 
-        if self.obs2prior:
-            H, _, _ = self.prior_H.rsample(num_seeds)
-        else:
-            H = None
-
-        # TODO: should we return a dictionary instead?
-        return W, b, H
+        return self.W_sample, self.b_sample
 
     def forward(self, x, num_seeds: int=1, deterministic: bool=False, mode: str='multiply'):
         """
@@ -120,13 +93,16 @@ class BayesianLinear(nn.Module):
         in PyTorch, use the lookup() method.
         If deterministic, use the mean.
         mode in ['multiply', 'lookup']
+
+        output shape: (batch_size, out_features) if deterministic and (num_seeds, batch_size, out_features).
         """
         if deterministic:
-            # set num_seeds to 1 so that we can reuse code from the non-deterministic version.
             num_seeds = 1
-            raise NotImplementedError
+            self.W_sample = self.W_variational_mean.unsqueeze(dim=0)
+            if self.bias:
+                self.b_sample = self.b_variational_mean.unsqueeze(dim=0)
         else:
-            W, b, H = self.rsample(num_seeds)
+            assert self.W_sample is not None, 'run BayesianLinear.sample() first.'
 
         # if determinstic, num_seeds is set to 1.
         # w: (num_seeds, in_features=num_classes, out_features)
@@ -136,15 +112,14 @@ class BayesianLinear(nn.Module):
 
         if mode == 'multiply':
             x = x.view(1, -1, self.in_features).expand(num_seeds, -1, -1)  # (num_seeds, N, in_features)
-            out = x.bmm(W)  # (num_seeds, N, out_features)
+            out = x.bmm(self.W_sample)  # (num_seeds, N, out_features)
         elif mode == 'lookup':
-            out = W[:, x, :]  # (num_seeds, N, out_features)
+            out = self.W_sample[:, x, :]  # (num_seeds, N, out_features)
         else:
-            raise Exception
+            raise ValueError(f'mode={mode} is not allowed.')
 
         if self.bias:
-            raise NotImplementedError()
-            out += b.view(num_seeds, 1, self.out_features)
+            out += self.b_sample.view(num_seeds, 1, self.out_features)
 
         if deterministic:
             # (N, out_features)
@@ -154,59 +129,49 @@ class BayesianLinear(nn.Module):
             return out
 
     @property
-    def weight_distribution(self):
+    def W_variational_distribution(self):
         """the weight variational distribution."""
-        return Normal(loc=self.variational_weight_mean,
-                      scale=torch.exp(self.variational_weight_logstd))
+        return Normal(loc=self.W_variational_mean, scale=torch.exp(self.W_variational_logstd))
 
     @property
-    def bias_distribution(self):
-        raise NotImplementedError()
+    def b_variational_distribution(self):
+        return Normal(loc=self.b_variational_mean, scale=torch.exp(self.b_variational_logstd))
 
     @property
     def device(self) -> torch.device:
-        return self.variational_weight_mean.device
+        return self.W_variational_mean.device
 
-    def log_prior(self,
-                  W_sample: torch.Tensor,
-                  b_sample: Optional[torch.Tensor]=None,
-                  H_sample: Optional[torch.Tensor]=None,
-                  x_obs: Optional[torch.Tensor]=None):
+    def log_prior(self):
         """Evaluate the likelihood of the provided samples of parameter under the current prior distribution."""
-        if self.bias:
-            raise NotImplementedError()
-
-        num_seeds = W_sample.shape[0]
-        if self.obs2prior:
-            assert x_obs.shape == (self.in_features, self.num_obs)
-            # TODO: change deterministic to False and do the sampling here as well.
-            mu = self.prior_H(x_obs, determinstic=True, mode='multiply')  # (in_features, out_features)
-        else:
-            mu = self.prior_weight_mean
-
+        assert self.W_sample is not None, 'run BayesianLinear.sample() first.'
+        num_seeds = self.W_sample.shape[0]
         total_log_prob = torch.zeros(num_seeds, device=self.device)
         # log P(W_sample). shape = (num_seeds)
-        W_log_prob = Normal(loc=mu, scale=torch.exp(self.prior_weight_std)).log_prob(W_sample).sum(dim=[1, 2])
-        total_log_prob += W_log_prob
+        W_prior = Normal(loc=self.W_prior_mean, scale=torch.exp(self.W_prior_logstd))
+        total_log_prob += W_prior.log_prob(self.W_sample).sum(dim=[1, 2])
 
         # log P(b_sample) if applicable.
         if self.bias:
-            raise NotImplementedError()
-
-        # log P(H_sample) if applicable.
-        if self.obs2prior:
-            H_log_prob = self.prior_H.log_prior(W_sample=H_sample)
-            total_log_prob += H_log_prob
+            b_prior = Normal(loc=self.b_prior_mean, scale=torch.exp(self.b_prior_logstd))
+            total_log_prob += b_prior.log_prob(self.b_sample).sum(dim=1)
 
         assert total_log_prob.shape == (num_seeds)
         return total_log_prob
 
-    def log_variational(self,
-                        W_sample: torch.Tensor,
-                        b_sample: Optional[torch.Tensor]=None):
+    def log_variational(self):
         """Evaluate the likelihood of the provided samples of parameter under the current variational distribution."""
-        num_seeds = W_sample.shape[0]
-        W_log_prob = self.weight_distribution.log_prob(W_sample).sum(dim=[1, 2])
+        assert self.W_sample is not None, 'run BayesianLinear.sample() first.'
+        num_seeds = self.W_sample.shape[0]
+
+        total_log_prob = torch.zeros(num_seeds, device=self.device)
+        total_log_prob += self.W_variational_distribution.log_prob(self.W_sample).sum(dim=[1, 2])
         if self.bias:
-            raise NotImplementedError
-        assert W_log_prob.shape == (num_seeds)
+            total_log_prob += self.b_variational_distribution.log_prob(self.b_sample).sum(dim=1)
+        assert total_log_prob.shape == (num_seeds)
+        return total_log_prob
+
+    def __repr__(self):
+        prior_info = f'W_prior ~ N(mu={self.W_prior_mean}, logstd={self.W_prior_logstd})'
+        if self.bias:
+            prior_info += f'b_prior ~ N(mu={self.b_prior_mean}, logstd={self.b_prior_logstd})'
+        return f"BayesianLinear(in_features={self.in_features}, out_features={self.out_features}, bias={self.bias}, {prior_info})"
