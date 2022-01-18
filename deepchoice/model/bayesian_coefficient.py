@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union, Tuple
 
 import torch
 import torch.nn as nn
@@ -38,7 +38,10 @@ class BayesianCoefficient(nn.Module):
         # create prior distribution.
         if self.obs2prior:
             # the mean of prior distribution depends on observables.
-            self.prior_H = nn.Linear(num_obs, dim, bias=False)
+            # old: self.prior_H = nn.Linear(num_obs, dim, bias=False)
+            # initiate a Bayesian Coefficient with shape (dim, num_obs) standard Gaussian.
+            self.prior_H = BayesianCoefficient(variation='constant', num_classes=dim, obs2prior=False,
+                                               dim=num_obs, prior_variance=1.0)
         else:
             self.register_buffer('prior_zero_mean', torch.zeros(num_classes, dim))
 
@@ -67,7 +70,7 @@ class BayesianCoefficient(nn.Module):
 
     def __repr__(self) -> str:
         if self.obs2prior:
-            prior_str = f'prior=N({str(self.prior_H)}, Ix{self.prior_variance})'
+            prior_str = f'prior=N(H*X_obs(H shape={self.prior_H.prior_zero_mean.shape}, X_obs shape={self.prior_H.dim}), Ix{self.prior_variance})'
         else:
             prior_str = f'prior=N(0, I)'
         return f'BayesianCoefficient(num_classes={self.num_classes}, dimension={self.dim}, {prior_str})'
@@ -84,12 +87,33 @@ class BayesianCoefficient(nn.Module):
         else:
             return self.variational_mean_fixed + self.variational_mean_flexible
 
-    def log_prior(self, sample: torch.Tensor, x_obs: Optional[torch.Tensor]=None):
+    def log_prior(self, sample: torch.Tensor,
+                  H_sample: Optional[torch.Tensor]=None,
+                  x_obs: Optional[torch.Tensor]=None):
+        """
+
+        Args:
+            sample (torch.Tensor): Monte Carlo samples of the variable with shape (num_seeds, num_classes, dim).
+            H_sample (Optional[torch.Tensor], optional): Monte Carlo samples of the weight in obs2prior term, with shape
+                (num_seeds, dim, self.num_obs), only required if obs2prior == True. Defaults to None.
+            x_obs (Optional[torch.Tensor], optional): observables for obs2prior with shape (num_classes, num_obs),
+                only required if obs2prior == True. Defaults to None.
+
+        Returns:
+            [type]: [description]
+        """
         # p(sample)
         num_seeds, num_classes, dim = sample.shape
         # shape (num_seeds, num_classes)
         if self.obs2prior:
-            mu = self.prior_H(x_obs)
+            assert H_sample.shape == (num_seeds, dim, self.num_obs)
+            assert x_obs.shape == (num_classes, self.num_obs)
+            x_obs = x_obs.view(1, num_classes, self.num_obs).expand(num_seeds, -1, -1)
+            H_sample = torch.transpose(H_sample, 1, 2)
+            assert H_sample.shape == (num_seeds, self.num_obs, dim)
+            mu = torch.bmm(x_obs, H_sample)
+            assert mu.shape == (num_seeds, num_classes, dim)
+
         else:
             mu = self.prior_zero_mean
         # breakpoint()
@@ -109,12 +133,18 @@ class BayesianCoefficient(nn.Module):
         assert out.shape == (num_seeds, num_classes)
         return out
 
-    def reparameterize_sample(self, num_seeds: int=1):
+    def reparameterize_sample(self, num_seeds: int=1) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
         # self.variational_distribution = LowRankMultivariateNormal(loc=self.variational_mean,
         #                                                           cov_factor=self.variational_cov_factor,
         #                                                           cov_diag=torch.exp(self.variational_logstd))
         # shape (num_seeds, self.num_classes, self.dim).
-        return self.variational_distribution.rsample(torch.Size([num_seeds]))
+        value_sample = self.variational_distribution.rsample(torch.Size([num_seeds]))
+        if self.obs2prior:
+            # sample obs2prior H as well.
+            H_sample = self.prior_H.reparameterize_sample(num_seeds=num_seeds)
+            return (value_sample, H_sample)
+        else:
+            return value_sample
 
     @property
     def variational_distribution(self):

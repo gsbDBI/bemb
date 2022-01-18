@@ -389,7 +389,7 @@ class BEMBFlex(nn.Module):
                 latents to be the x-th Monte Carlo sample.
         """
         # assert we have sample for all coefficients.
-        assert sample_dict.keys() == self.coef_dict.keys()
+        # assert sample_dict.keys() == self.coef_dict.keys()
         for v in sample_dict.values():
             num_seeds = v.shape[0]
             break
@@ -601,7 +601,7 @@ class BEMBFlex(nn.Module):
                 conditioned on latents to be the x-th Monte Carlo sample.
         """
         # assert we have sample for all coefficients.
-        assert sample_dict.keys() == self.coef_dict.keys()
+        # assert sample_dict.keys() == self.coef_dict.keys()
         for v in sample_dict.values():
             num_seeds = v.shape[0]
             break
@@ -773,7 +773,7 @@ class BEMBFlex(nn.Module):
         """
         cprint('You are calling a debugging method', 'red')
         # assert we have sample for all coefficients.
-        assert sample_dict.keys() == self.coef_dict.keys()
+        # assert sample_dict.keys() == self.coef_dict.keys()
 
         for v in sample_dict.values():
             num_seeds = v.shape[0]
@@ -946,7 +946,7 @@ class BEMBFlex(nn.Module):
 
     def log_prior(self, batch, sample_dict: Dict[str, torch.Tensor]) -> torch.scalar_tensor:
         """Calculates the log-likelihood of Monte Carlo samples of Bayesian coefficients under their
-        prior distribution. This method assume coefficients are statistically independnet.
+        prior distribution. This method assume coefficients are statistically independent.
 
         Args:
             batch ([type]): a dataset object contains observables for computing the prior distribution
@@ -960,7 +960,7 @@ class BEMBFlex(nn.Module):
         Returns:
             torch.scalar_tensor: [description]
         """
-        assert sample_dict.keys() == self.coef_dict.keys()
+        # assert sample_dict.keys() == self.coef_dict.keys()
         for sample in sample_dict.values():
             num_seeds = sample.shape[0]
             break
@@ -975,15 +975,17 @@ class BEMBFlex(nn.Module):
                     x_obs = batch.user_obs
                 else:
                     raise ValueError(f'No observable found to support obs2prior for {coef_name}.')
-            else:
-                x_obs = None
 
-            # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
-            total += coef.log_prior(sample=sample_dict[coef_name], x_obs=x_obs).sum(dim=-1)
+                total += coef.log_prior(sample=sample_dict[coef_name],
+                                        H_sample=sample_dict[coef_name + '.H'],
+                                        x_obs=x_obs).sum(dim=-1)
+            else:
+                # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
+                total += coef.log_prior(sample=sample_dict[coef_name], H_sample=None, x_obs=None).sum(dim=-1)
         return total
 
     def log_variational(self, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
-        """Calculate the log-likelihood of smaples in sample_dict under the current variational
+        """Calculate the log-likelihood of samples in sample_dict under the current variational
         distribution.
 
         Args:
@@ -1005,7 +1007,7 @@ class BEMBFlex(nn.Module):
         """Computes the current ELBO.
 
         Args:
-            batch (ChoiceDataset): a ChoiceDataset containing necessary infromation.
+            batch (ChoiceDataset): a ChoiceDataset containing necessary information.
             num_seeds (int, optional): the number of Monte Carlo samples from variational distributions
                 to evaluate the expectation in ELBO.
                 Defaults to 1.
@@ -1017,7 +1019,16 @@ class BEMBFlex(nn.Module):
         # (num_seeds, num_classes, dim)
         sample_dict = dict()
         for coef_name, coef in self.coef_dict.items():
-            sample_dict[coef_name] = coef.reparameterize_sample(num_seeds)
+            s = coef.reparameterize_sample(num_seeds)
+            if coef.obs2prior:
+                # sample both obs2prior weight and realization of variable.
+                assert isinstance(s, tuple) and len(s) == 2
+                sample_dict[coef_name] = s[0]
+                sample_dict[coef_name + '.H'] = s[1]
+            else:
+                # only sample the realization of variable.
+                assert torch.is_tensor(s)
+                sample_dict[coef_name] = s
 
         # 2. compute log p(latent) prior.
         elbo = self.log_prior(batch, sample_dict).mean(dim=0)  # (num_seeds,) -> scalar.
