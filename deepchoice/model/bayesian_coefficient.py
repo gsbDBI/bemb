@@ -133,7 +133,7 @@ class BayesianCoefficient(nn.Module):
         assert out.shape == (num_seeds, num_classes)
         return out
 
-    def reparameterize_sample(self, num_seeds: int=1) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
+    def rsample(self, num_seeds: int=1) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
         # self.variational_distribution = LowRankMultivariateNormal(loc=self.variational_mean,
         #                                                           cov_factor=self.variational_cov_factor,
         #                                                           cov_diag=torch.exp(self.variational_logstd))
@@ -141,7 +141,7 @@ class BayesianCoefficient(nn.Module):
         value_sample = self.variational_distribution.rsample(torch.Size([num_seeds]))
         if self.obs2prior:
             # sample obs2prior H as well.
-            H_sample = self.prior_H.reparameterize_sample(num_seeds=num_seeds)
+            H_sample = self.prior_H.rsample(num_seeds=num_seeds)
             return (value_sample, H_sample)
         else:
             return value_sample

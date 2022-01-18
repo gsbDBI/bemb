@@ -1019,7 +1019,7 @@ class BEMBFlex(nn.Module):
         # (num_seeds, num_classes, dim)
         sample_dict = dict()
         for coef_name, coef in self.coef_dict.items():
-            s = coef.reparameterize_sample(num_seeds)
+            s = coef.rsample(num_seeds)
             if coef.obs2prior:
                 # sample both obs2prior weight and realization of variable.
                 assert isinstance(s, tuple) and len(s) == 2
