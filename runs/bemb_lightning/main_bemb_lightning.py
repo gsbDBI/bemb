@@ -1,4 +1,5 @@
 import argparse
+from doctest import Example
 import os
 import sys
 import time
@@ -14,6 +15,7 @@ from deepchoice.data.utils import create_data_loader
 from deepchoice.model.bemb_flex_lightning import LitBEMBFlex
 from sklearn.preprocessing import LabelEncoder
 from termcolor import cprint
+from example_customized_module import ExampleCustomizedModule
 
 
 def load_configs(yaml_file: str):
@@ -150,13 +152,17 @@ if __name__ == '__main__':
         # get the date (aka session_id in the raw dataset) of each row in the dataset, retrieve
         # the item availability information from that date.
 
+        # example day of week, random example.
+        session_day_of_week = torch.LongTensor(np.random.randint(0, 7, configs.num_sessions))
+
         choice_dataset = ChoiceDataset(label=label,
                                        user_index=user_index,
                                        session_index=session_index,
                                        item_availability=item_availability,
                                        user_obs=user_obs,
                                        item_obs=item_obs,
-                                       price_obs=price_obs)
+                                       price_obs=price_obs,
+                                       session_day_of_week=session_day_of_week)
 
         dataset_list.append(choice_dataset)
 
@@ -189,7 +195,7 @@ if __name__ == '__main__':
     item_groups = item_groups.groupby('category_id')['item_id'].apply(list)
     category_to_item = dict(zip(item_groups.index, item_groups.values))
     # ==============================================================================================
-    # pytorch-lighning training
+    # pytorch-lightning training
     # ==============================================================================================
     bemb = LitBEMBFlex(
         # trainings args.
@@ -206,13 +212,13 @@ if __name__ == '__main__':
         category_to_item=category_to_item,
         num_user_obs=configs.num_user_obs,
         num_item_obs=configs.num_item_obs,
-        num_price_obs=configs.num_price_obs
+        num_price_obs=configs.num_price_obs,
+        additional_modules=[ExampleCustomizedModule()]
     )
 
-    from pytorch_lightning.profiler import AdvancedProfiler
-    # profiler = AdvancedProfiler(output_filename='./profile.txt')
+    # bemb.model(dataset_list[2], return_logit=True, all_items=False)
 
-    trainer = pl.Trainer(gpus=1,
+    trainer = pl.Trainer(gpus=int(configs.device == 'cuda'),
                          max_epochs=configs.num_epochs,
                          check_val_every_n_epoch=1,
                          log_every_n_steps=1)
@@ -220,6 +226,7 @@ if __name__ == '__main__':
                          # auto_lr_find=True,
                          # callbacks=[EarlyStopping],
                          # profiler=profiler)
+
     train = create_data_loader(dataset_list[0],
                                batch_size=configs.batch_size,
                                shuffle=True,
