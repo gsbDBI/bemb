@@ -10,6 +10,7 @@ TODO: generalize this setting to arbitrary shape tensors.
 """
 from typing import Optional, Tuple
 
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.distributions.normal import Normal
@@ -28,6 +29,7 @@ class BayesianLinear(nn.Module):
                  ):
         """Linear layer where weight and bias are modelled as distributions.
         """
+        super().__init__()
         if dtype is not None:
             raise NotImplementedError('dtype is not Supported yet.')
 
@@ -40,11 +42,11 @@ class BayesianLinear(nn.Module):
         # ==============================================================================================================
         # the prior of weights are gausssian distributions independent across in_feature dimensions.
         self.register_buffer('W_prior_mean', torch.zeros(in_features, out_features))
-        self.register_buffer('W_prior_logstd', torch.ones(in_features, out_features) * torch.log(W_prior_variance))
+        self.register_buffer('W_prior_logstd', torch.ones(in_features, out_features) * np.log(W_prior_variance))
 
         if self.bias:
             self.register_buffer('b_prior_mean', torch.zeros(in_features, out_features))
-            self.register_buffer('b_prior_logstd', torch.ones(in_features, out_features) * torch.log(b_prior_variance))
+            self.register_buffer('b_prior_logstd', torch.ones(in_features, out_features) * np.log(b_prior_variance))
 
         # ==============================================================================================================
         # variational distributions for weight and bias.
@@ -80,6 +82,7 @@ class BayesianLinear(nn.Module):
     def rsample(self, num_seeds: int=1) -> Optional[Tuple[torch.Tensor, Optional[torch.Tensor]]]:
         """sample all parameters using re-parameterization trick.
         """
+        self.num_seeds = num_seeds
         self.W_sample = self.W_variational_distribution.rsample(torch.Size([num_seeds]))
 
         if self.bias:
@@ -87,22 +90,25 @@ class BayesianLinear(nn.Module):
 
         return self.W_sample, self.b_sample
 
-    def forward(self, x, num_seeds: int=1, deterministic: bool=False, mode: str='multiply'):
+    def dsample(self):
+        """Deterministic sample method, set (W, b) sample to the mean of variational distribution."""
+        self.num_seeds = 1
+        self.W_sample = self.W_variational_mean.unsqueeze(dim=0)
+        if self.bias:
+            self.b_sample = self.b_variational_mean.unsqueeze(dim=0)
+        return self.W_sample, self.b_sample
+
+    def forward(self, x, num_seeds: int=1, mode: str='multiply'):
         """
         Forward with weight sampling. Forward does out = XW + b, for forward() method behaves like the embedding layer
         in PyTorch, use the lookup() method.
-        If deterministic, use the mean.
+        To have determinstic results, call self.dsample() before executing.
+        To have stochastic results, call self.rsample() before executing.
         mode in ['multiply', 'lookup']
 
-        output shape: (batch_size, out_features) if deterministic and (num_seeds, batch_size, out_features).
+        output shape: (num_seeds, batch_size, out_features).
         """
-        if deterministic:
-            num_seeds = 1
-            self.W_sample = self.W_variational_mean.unsqueeze(dim=0)
-            if self.bias:
-                self.b_sample = self.b_variational_mean.unsqueeze(dim=0)
-        else:
-            assert self.W_sample is not None, 'run BayesianLinear.sample() first.'
+        assert self.W_sample is not None, 'run BayesianLinear.sample() first.'
 
         # if determinstic, num_seeds is set to 1.
         # w: (num_seeds, in_features=num_classes, out_features)
@@ -121,12 +127,8 @@ class BayesianLinear(nn.Module):
         if self.bias:
             out += self.b_sample.view(num_seeds, 1, self.out_features)
 
-        if deterministic:
-            # (N, out_features)
-            return out.view(x.shape[0], self.out_features)
-        else:
-            # (num_seeds, N, out_features)
-            return out
+        # (num_seeds, N, out_features)
+        return out
 
     @property
     def W_variational_distribution(self):
@@ -146,7 +148,7 @@ class BayesianLinear(nn.Module):
         assert self.W_sample is not None, 'run BayesianLinear.sample() first.'
         num_seeds = self.W_sample.shape[0]
         total_log_prob = torch.zeros(num_seeds, device=self.device)
-        # log P(W_sample). shape = (num_seeds)
+        # log P(W_sample). shape = (num_seeds,)
         W_prior = Normal(loc=self.W_prior_mean, scale=torch.exp(self.W_prior_logstd))
         total_log_prob += W_prior.log_prob(self.W_sample).sum(dim=[1, 2])
 
@@ -155,7 +157,7 @@ class BayesianLinear(nn.Module):
             b_prior = Normal(loc=self.b_prior_mean, scale=torch.exp(self.b_prior_logstd))
             total_log_prob += b_prior.log_prob(self.b_sample).sum(dim=1)
 
-        assert total_log_prob.shape == (num_seeds)
+        assert total_log_prob.shape == (num_seeds,)
         return total_log_prob
 
     def log_variational(self):
@@ -167,7 +169,7 @@ class BayesianLinear(nn.Module):
         total_log_prob += self.W_variational_distribution.log_prob(self.W_sample).sum(dim=[1, 2])
         if self.bias:
             total_log_prob += self.b_variational_distribution.log_prob(self.b_sample).sum(dim=1)
-        assert total_log_prob.shape == (num_seeds)
+        assert total_log_prob.shape == (num_seeds,)
         return total_log_prob
 
     def __repr__(self):
