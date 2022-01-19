@@ -13,7 +13,7 @@ The `deepchoice` release can be installed (1) using `pip` package management (2)
 1. Clone the repository to your local machine or server.
 2. Install required dependencies (e.g., PyTorch and PyTorch-Lightning).
 3. Run `python3 ./setup.py develop` to add the package to your Python environment.
-4. Check installation by running `import deepchoice; print(deepchoice.__version__)` **in your Python terminal**.
+4. Check installation by running `python3 -c "import deepchoice; print(deepchoice.__version__)".
 
 ## Table of Contents
 1. [Tutorial: Random Utility Models](./RUM.md)
