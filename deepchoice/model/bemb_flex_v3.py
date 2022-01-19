@@ -1,6 +1,6 @@
 """
 The Bayesian EMBedding (BEMB) model.
-(Version 3) A futher attempt to speed things up, split the (1) training step, only calculate utilitis for items
+(Version 3) A futher attempt to speed things up, split the (1) training step, only calculate utilities for items
 in categories bought during training (2) compute all utilities during the inference time.
 NOTE: release candidate, this version is sufficiently optimized for users.
 """
@@ -27,7 +27,7 @@ positive_integer = PositiveInteger()
 
 def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]]:
     """
-    A helper funciton parse utility string into a list of additive terms.
+    A helper function parse utility string into a list of additive terms.
 
     Example:
         utility_string = 'lambda_item + theta_user * alpha_item + gamma_user * beta_item * price_obs'
@@ -88,7 +88,9 @@ class BEMBFlex(nn.Module):
                  num_item_obs: Optional[int] = None,
                  num_session_obs: Optional[int] = None,
                  num_price_obs: Optional[int] = None,
-                 num_taste_obs: Optional[int] = None
+                 num_taste_obs: Optional[int] = None,
+                 # additional modules.
+                 additional_modules: Optional[Dict[str, nn.Module]] = None
                  ) -> None:
         """
         Args:
@@ -104,13 +106,13 @@ class BEMBFlex(nn.Module):
                 to a boolean indicating if observable (e.g., item_obs) enters the prior of the coefficient.
 
             coef_dim_dict (Dict[str, int]): a dictionary maps coefficient name (e.g., 'lambda_item')
-                to an integer indicating the dimension of coefficeint.
-                For standalone coefficients like U = lamdba_item, the dim should be 1.
+                to an integer indicating the dimension of coefficient.
+                For standalone coefficients like U = lambda_item, the dim should be 1.
                 For factorized coefficients like U = theta_user * alpha_item, the dim should be the
                     latent dimension of theta and alpha.
                 For coefficients multiplied with observables like U = zeta_user * item_obs, the dim
                     should be the number of observables in item_obs.
-                For factorized coefficient muplied with observables like U = gamma_user * beta_item * price_obs,
+                For factorized coefficient multiplied with observables like U = gamma_user * beta_item * price_obs,
                     the dim should be the latent dim multiplied by number of observables in price_obs.
 
             num_items (int): number of items.
@@ -118,16 +120,16 @@ class BEMBFlex(nn.Module):
             prior_variance (Union[float, Dict[str, float]]): the variance of prior distribution for
                 coefficients. If a float is provided, all priors will be diagonal matrix with
                 prior_variance along the diagonal. If a dictionary is provided, keys of prior_variance
-                should be coefficient names, and the variance of prior of coef_name would be a diagional
+                should be coefficient names, and the variance of prior of coef_name would be a diagonal
                 matrix with prior_variance[coef_name] along the diagonal.
                 Defaults to 1.0, which means all prior have identity matrix as the covariance matrix.
 
             num_users (int, optional): number of users, required only if coefficient or observable
-                depending on user is in utitliy. Defaults to None.
+                depending on user is in utility. Defaults to None.
             num_sessions (int, optional): number of sessions, required only if coefficient or
                 observable depending on session is in utility. Defaults to None.
 
-            trace_log_q (bool, optional): whether to trace the derivative of varitional likelihood logQ
+            trace_log_q (bool, optional): whether to trace the derivative of variational likelihood logQ
                 with respect to variational parameters in the ELBO while conducting gradient update.
                 Defaults to False.
 
@@ -223,11 +225,18 @@ class BEMBFlex(nn.Module):
                                                            prior_variance=s2)
         self.coef_dict = nn.ModuleDict(coef_dict)
 
+        # register additional modules.
+        if additional_modules is None:
+            self.additional_modules = dict()
+        else:
+            self.additional_modules = nn.ModuleDict(additional_modules)
+
     def __str__(self):
         return f'Bayesian EMBedding Model with U[user, item, session] = {self.raw_formula}\n' \
                + f'Total number of parameters: {self.num_params}.\n' \
                + 'With the following coefficients:\n' \
-               + str(self.coef_dict)
+               + str(self.coef_dict) + '\n' \
+               + str(self.additional_modules)
 
     def forward(self, batch, return_logit: bool = False, all_items: bool = True) -> torch.Tensor:
         """The combined method of computing utilities and log probability.
@@ -236,22 +245,26 @@ class BEMBFlex(nn.Module):
             batch ([type]): [description]
             return_logit (bool): return the logit (utility) if set to True, otherwise apply
                 category-wise log-softmax to compute the log-likelihood before returning.
-            all_items (bool): only reutrn the logit/log-P of the bought items if set to True,
+            all_items (bool): only return the logit/log-P of the bought items if set to True,
                 otherwise return the logit/log-P of all items.
                 Set all_items to False if only need to compute the log-likelihood for validation
                 purpose.
-                Set all_items to True only if you acutally need logits/log-P for all items, such
+                Set all_items to True only if you actually need logits/log-P for all items, such
                 as for computing inclusive values of categories.
 
         Returns:
             torch.Tensor: a tensor of shape (len(batch), num_items) if all_items is True.
                           a tensor of shape (len(batch),) if all_items is False.
         """
-        # Use the means of variatioanl distributions as the sole MC sample.
+        # Use the means of variational distributions as the sole MC sample.
         # NOTE: here we don't need to sample the obs2prior weight H since we only compute the log-likelihood.
         sample_dict = dict()
         for coef_name, coef in self.coef_dict.items():
             sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+
+        for module in self.additional_modules.values():
+            # deterministic sample.
+            module.dsample()
 
         # there is 1 random seed in this case.
         if all_items:
@@ -281,7 +294,7 @@ class BEMBFlex(nn.Module):
                                      label: torch.LongTensor) -> Dict[str, float]:
         """A helper function for computing prediction accuracy (i.e., all non-differential metrics)
         within category.
-        In particular, thie method calculates the accuracy, precision, recall and F1 score.
+        In particular, this method calculates the accuracy, precision, recall and F1 score.
 
 
         This method has the same functionality as the following peusodcode:
@@ -370,7 +383,7 @@ class BEMBFlex(nn.Module):
         Computes the log probability of choosing each item in each session based on current model
         parameters.
         This method allows for specifying {user, item}_latent_value for Monte Carlo estimation in ELBO.
-        For actual prediction tasks, use the forward() function, which will use means of varitional
+        For actual prediction tasks, use the forward() function, which will use means of variational
         distributions for user and item latents.
 
         Args:
@@ -386,7 +399,7 @@ class BEMBFlex(nn.Module):
 
         Returns:
             torch.Tensor: a tensor of shape (num_seeds, len(batch), self.num_items), where
-                out[x, y, z] is the proabbility of choosing item z in session y conditioned on
+                out[x, y, z] is the probability of choosing item z in session y conditioned on
                 latents to be the x-th Monte Carlo sample.
         """
         # assert we have sample for all coefficients.
@@ -451,7 +464,7 @@ class BEMBFlex(nn.Module):
         def reshape_observable(obs, name):
             # reshape observable to (R, P, I, *) so that it can be multiplied with monte carlo
             # samples of coefficients.
-            O = obs.shape[-1]  # numberof observables.
+            O = obs.shape[-1]  # number of observables.
             assert O == positive_integer
             if name.startswith('item_'):
                 assert obs.shape == (I, O)
@@ -562,6 +575,11 @@ class BEMBFlex(nn.Module):
         utility = utility[:, inverse_indices, :]
         assert utility.shape == (R, len(batch), I)
 
+        for module in self.additional_modules.values():
+            additive_term = module(batch, num_seeds)
+            assert additive_term.shape == (R, len(batch), 1)
+            utility += additive_term.view(-1, -1, I)
+
         if return_logit:
             # output shape: (num_seeds, num_purchases, num_items)
             return utility
@@ -583,7 +601,7 @@ class BEMBFlex(nn.Module):
         Computes the log probability of choosing each item in each session based on current model
         parameters.
         This method allows for specifying {user, item}_latent_value for Monte Carlo estimation in ELBO.
-        For actual prediction tasks, use the forward() function, which will use means of varitional
+        For actual prediction tasks, use the forward() function, which will use means of variational
         distributions for user and item latents.
 
         Args:
@@ -598,7 +616,7 @@ class BEMBFlex(nn.Module):
 
         Returns:
             torch.Tensor: a tensor of shape (num_seeds, len(batch)), where
-                out[x, y] is the proabbility of choosing item batch.item[y] in session y
+                out[x, y] is the probabilities of choosing item batch.item[y] in session y
                 conditioned on latents to be the x-th Monte Carlo sample.
         """
         # assert we have sample for all coefficients.
@@ -618,7 +636,7 @@ class BEMBFlex(nn.Module):
 
         # the first repeats[0] entries in relevant_item_index are for the category of label[0]
         repeats = self.category_to_size_tensor[cate_index]
-        # argwhere(reverse_indices == k) are positions in relevant_item_indexs for the category of label[k].
+        # argwhere(reverse_indices == k) are positions in relevant_item_index for the category of label[k].
         reverse_indices = torch.repeat_interleave(torch.arange(len(batch), device=self.device), repeats)
         # expand the user_index and session_index.
         user_index = torch.repeat_interleave(batch.user_index, repeats)
@@ -652,7 +670,7 @@ class BEMBFlex(nn.Module):
         def reshape_observable(obs, name):
             # reshape observable to (R, P, I, *) so that it can be multiplied with monte carlo
             # samples of coefficients.
-            O = obs.shape[-1]  # numberof observables.
+            O = obs.shape[-1]  # number of observables.
             assert O == positive_integer
             if name.startswith('item_'):
                 assert obs.shape == (I, O)
@@ -675,7 +693,7 @@ class BEMBFlex(nn.Module):
             return obs.unsqueeze(dim=0).expand(R, -1, -1)
 
         # ==========================================================================================
-        # Compute Components contigent to users and items only.
+        # Compute Components related to users and items only.
         # ==========================================================================================
         utility = torch.zeros(R, total_computation, device=self.device)
 
@@ -752,6 +770,16 @@ class BEMBFlex(nn.Module):
             A = batch.item_availability[session_index, relevant_item_index].unsqueeze(dim=0).expand(R, -1)
             utility[~A] = - (torch.finfo(utility.dtype).max / 2)
 
+        for module in self.additional_modules.values():
+            # current utility shape: (R, total_computation)
+            additive_term = module(batch, num_seeds)
+            assert additive_term.shape == (R, len(batch))
+            # expand to total number of computation, query by reverse_indices.
+            # reverse_indices has length total_computation, and reverse_indices[i] correspond to the row-id that this
+            # computation is responsible for.
+            additive_term = additive_term[:, reverse_indices]
+            assert additive_term.shape == (R, total_computation)
+
         # compute log likelihood log p(choosing item i | user, item latents)
         if return_logit:
             log_p = utility
@@ -770,7 +798,7 @@ class BEMBFlex(nn.Module):
                                        ) -> torch.Tensor:
         """
         This method is the old implementation of log-likelihood, which is relatively slow, but we
-        leave it here for santify check and debugging purpose.
+        leave it here for sanity check and debugging purpose.
         """
         cprint('You are calling a debugging method', 'red')
         # assert we have sample for all coefficients.
@@ -831,7 +859,7 @@ class BEMBFlex(nn.Module):
         def reshape_observable(obs, name):
             # reshape observable to (R, P, I, *) so that it can be multiplied with monte carlo
             # samples of coefficients.
-            O = obs.shape[-1]  # numberof observables.
+            O = obs.shape[-1]  # number of observables.
             assert O == positive_integer
             if name.startswith('item_'):
                 assert obs.shape == (I, O)
@@ -983,6 +1011,11 @@ class BEMBFlex(nn.Module):
             else:
                 # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
                 total += coef.log_prior(sample=sample_dict[coef_name], H_sample=None, x_obs=None).sum(dim=-1)
+
+        # TODO: apply customized modules here.
+        for module in self.additional_modules.values():
+            total += module.log_prior()
+
         return total
 
     def log_variational(self, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
@@ -1001,6 +1034,11 @@ class BEMBFlex(nn.Module):
         for coef_name, coef in self.coef_dict.items():
             # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
             total += coef.log_variational(sample_dict[coef_name]).sum(dim=-1)
+
+        # TODO: apply customized modules here.
+        for module in self.additional_modules.values():
+            # with shape (num_seeds,)
+            total += module.log_variational().sum()
 
         return total
 
@@ -1030,6 +1068,11 @@ class BEMBFlex(nn.Module):
                 # only sample the realization of variable.
                 assert torch.is_tensor(s)
                 sample_dict[coef_name] = s
+
+        # TODO: apply customized modules here.
+        for module in self.additional_modules.values():
+            # sample random weight for this module.
+            module.rsample(num_seeds)
 
         # 2. compute log p(latent) prior.
         elbo = self.log_prior(batch, sample_dict).mean(dim=0)  # (num_seeds,) -> scalar.
