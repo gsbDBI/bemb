@@ -71,6 +71,7 @@ class BayesianLinear(nn.Module):
 
         self.W_sample = None
         self.b_sample = None
+        self.num_seeds = None
 
     @property
     def W_variational_mean(self):
@@ -98,7 +99,7 @@ class BayesianLinear(nn.Module):
             self.b_sample = self.b_variational_mean.unsqueeze(dim=0)
         return self.W_sample, self.b_sample
 
-    def forward(self, x, num_seeds: int=1, mode: str='multiply'):
+    def forward(self, x, mode: str='multiply'):
         """
         Forward with weight sampling. Forward does out = XW + b, for forward() method behaves like the embedding layer
         in PyTorch, use the lookup() method.
@@ -108,7 +109,7 @@ class BayesianLinear(nn.Module):
 
         output shape: (num_seeds, batch_size, out_features).
         """
-        assert self.W_sample is not None, 'run BayesianLinear.sample() first.'
+        assert self.num_seeds is not None, 'run BayesianLinear.rsample() or dsample() first to sample weight and bias.'
 
         # if determinstic, num_seeds is set to 1.
         # w: (num_seeds, in_features=num_classes, out_features)
@@ -117,7 +118,7 @@ class BayesianLinear(nn.Module):
         # output: (num_seeds, N, out_features)
 
         if mode == 'multiply':
-            x = x.view(1, -1, self.in_features).expand(num_seeds, -1, -1)  # (num_seeds, N, in_features)
+            x = x.view(1, -1, self.in_features).expand(self.num_seeds, -1, -1)  # (num_seeds, N, in_features)
             out = x.bmm(self.W_sample)  # (num_seeds, N, out_features)
         elif mode == 'lookup':
             out = self.W_sample[:, x, :]  # (num_seeds, N, out_features)
@@ -125,7 +126,7 @@ class BayesianLinear(nn.Module):
             raise ValueError(f'mode={mode} is not allowed.')
 
         if self.bias:
-            out += self.b_sample.view(num_seeds, 1, self.out_features)
+            out += self.b_sample.view(self.num_seeds, 1, self.out_features)
 
         # (num_seeds, N, out_features)
         return out
@@ -145,7 +146,7 @@ class BayesianLinear(nn.Module):
 
     def log_prior(self):
         """Evaluate the likelihood of the provided samples of parameter under the current prior distribution."""
-        assert self.W_sample is not None, 'run BayesianLinear.sample() first.'
+        assert self.num_seeds is not None, 'run BayesianLinear.rsample() or dsample() first to sample weight and bias.'
         num_seeds = self.W_sample.shape[0]
         total_log_prob = torch.zeros(num_seeds, device=self.device)
         # log P(W_sample). shape = (num_seeds,)
@@ -162,7 +163,7 @@ class BayesianLinear(nn.Module):
 
     def log_variational(self):
         """Evaluate the likelihood of the provided samples of parameter under the current variational distribution."""
-        assert self.W_sample is not None, 'run BayesianLinear.sample() first.'
+        assert self.num_seeds is not None, 'run BayesianLinear.rsample() or dsample() first to sample weight and bias.'
         num_seeds = self.W_sample.shape[0]
 
         total_log_prob = torch.zeros(num_seeds, device=self.device)
