@@ -576,7 +576,7 @@ class BEMBFlex(nn.Module):
         assert utility.shape == (R, len(batch), I)
 
         for module in self.additional_modules:
-            additive_term = module(batch, num_seeds)
+            additive_term = module(batch)
             assert additive_term.shape == (R, len(batch), 1)
             utility += additive_term.view(-1, -1, I)
 
@@ -772,7 +772,7 @@ class BEMBFlex(nn.Module):
 
         for module in self.additional_modules:
             # current utility shape: (R, total_computation)
-            additive_term = module(batch, num_seeds)
+            additive_term = module(batch)
             assert additive_term.shape == (R, len(batch))
             # expand to total number of computation, query by reverse_indices.
             # reverse_indices has length total_computation, and reverse_indices[i] correspond to the row-id that this
