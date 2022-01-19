@@ -22,7 +22,7 @@ class ChoiceDataset(torch.utils.data.Dataset):
             user_index (Optional[torch.LongTensor], optional): used only if there are multiple users
                 in the dataset, a tensor of shape num_purchases (batch_size) indicating the ID of the
                 user who purchased. This tensor is used to select the corresponding user observables and
-                coefficients tighted to the user (like theta_user) for making prediction for that
+                coefficients assigned to the user (like theta_user) for making prediction for that
                 purchase.
                 Defaults to None.
             session_index (Optional[torch.LongTensor], optional): used only if there are multiple
@@ -60,7 +60,8 @@ class ChoiceDataset(torch.utils.data.Dataset):
 
         self.item_availability = item_availability
 
-        self.observable_prefix = ['user_', 'item_', 'session_', 'taste_', 'price_']
+        self.observable_prefix = [
+            'user_', 'item_', 'session_', 'taste_', 'price_']
         for key, item in kwargs.items():
             if any(key.startswith(prefix) for prefix in self.observable_prefix):
                 setattr(self, key, item)
@@ -272,13 +273,16 @@ class ChoiceDataset(torch.utils.data.Dataset):
         num_params = val.shape[-1]
         if self._is_user_attribute(key):
             # user_attribute (num_users, *)
-            out = val[self.user_index, :].view(len(self), 1, num_params).expand(-1, self.num_items, -1)
+            out = val[self.user_index, :].view(
+                len(self), 1, num_params).expand(-1, self.num_items, -1)
         elif self._is_item_attribute(key):
             # item_attribute (num_items, *)
-            out = val.view(1, self.num_items, num_params).expand(len(self), -1, -1)
+            out = val.view(1, self.num_items, num_params).expand(
+                len(self), -1, -1)
         elif self._is_session_attribute(key):
             # session_attribute (num_sessions, *)
-            out = val[self.session_index, :].view(len(self), 1, num_params).expand(-1, self.num_items, -1)
+            out = val[self.session_index, :].view(
+                len(self), 1, num_params).expand(-1, self.num_items, -1)
         elif self._is_taste_attribute(key):
             # taste_attribute (num_users, num_items, *)
             out = val[self.user_index, :, :]
