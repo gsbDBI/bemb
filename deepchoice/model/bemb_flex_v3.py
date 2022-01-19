@@ -90,7 +90,7 @@ class BEMBFlex(nn.Module):
                  num_price_obs: Optional[int] = None,
                  num_taste_obs: Optional[int] = None,
                  # additional modules.
-                 additional_modules: Optional[Dict[str, nn.Module]] = None
+                 additional_modules: Optional[List[nn.Module]] = None
                  ) -> None:
         """
         Args:
@@ -227,9 +227,9 @@ class BEMBFlex(nn.Module):
 
         # register additional modules.
         if additional_modules is None:
-            self.additional_modules = dict()
+            self.additional_modules = []
         else:
-            self.additional_modules = nn.ModuleDict(additional_modules)
+            self.additional_modules = nn.ModuleList(additional_modules)
 
     def __str__(self):
         return f'Bayesian EMBedding Model with U[user, item, session] = {self.raw_formula}\n' \
@@ -262,7 +262,7 @@ class BEMBFlex(nn.Module):
         for coef_name, coef in self.coef_dict.items():
             sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
 
-        for module in self.additional_modules.values():
+        for module in self.additional_modules:
             # deterministic sample.
             module.dsample()
 
@@ -575,7 +575,7 @@ class BEMBFlex(nn.Module):
         utility = utility[:, inverse_indices, :]
         assert utility.shape == (R, len(batch), I)
 
-        for module in self.additional_modules.values():
+        for module in self.additional_modules:
             additive_term = module(batch, num_seeds)
             assert additive_term.shape == (R, len(batch), 1)
             utility += additive_term.view(-1, -1, I)
@@ -770,7 +770,7 @@ class BEMBFlex(nn.Module):
             A = batch.item_availability[session_index, relevant_item_index].unsqueeze(dim=0).expand(R, -1)
             utility[~A] = - (torch.finfo(utility.dtype).max / 2)
 
-        for module in self.additional_modules.values():
+        for module in self.additional_modules:
             # current utility shape: (R, total_computation)
             additive_term = module(batch, num_seeds)
             assert additive_term.shape == (R, len(batch))
@@ -1013,7 +1013,7 @@ class BEMBFlex(nn.Module):
                 total += coef.log_prior(sample=sample_dict[coef_name], H_sample=None, x_obs=None).sum(dim=-1)
 
         # TODO: apply customized modules here.
-        for module in self.additional_modules.values():
+        for module in self.additional_modules:
             total += module.log_prior()
 
         return total
@@ -1036,7 +1036,7 @@ class BEMBFlex(nn.Module):
             total += coef.log_variational(sample_dict[coef_name]).sum(dim=-1)
 
         # TODO: apply customized modules here.
-        for module in self.additional_modules.values():
+        for module in self.additional_modules:
             # with shape (num_seeds,)
             total += module.log_variational().sum()
 
@@ -1070,7 +1070,7 @@ class BEMBFlex(nn.Module):
                 sample_dict[coef_name] = s
 
         # TODO: apply customized modules here.
-        for module in self.additional_modules.values():
+        for module in self.additional_modules:
             # sample random weight for this module.
             module.rsample(num_seeds)
 
