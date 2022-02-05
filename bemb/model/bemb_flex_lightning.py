@@ -3,7 +3,7 @@ PyTorch lightning wrapper for the BEMB Flex model.
 """
 import torch
 import pytorch_lightning as pl
-from deepchoice.model import BEMBFlex
+from bemb.model import BEMBFlex
 
 
 class LitBEMBFlex(pl.LightningModule):
