@@ -9,9 +9,9 @@ README = (HERE / "README.md").read_text()
 
 # This call to setup() does all the work
 setup(
-    name="deepchoice",
+    name="bemb",
     version="0.0.1",
-    description="A Pytorch Backend Library for Choice Modelling",
+    description="A Pytorch Backend Library for Choice Modelling with Bayesian Matrix Factorization",
     long_description=README,
     long_description_content_type="text/markdown",
     url="",
@@ -23,7 +23,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",
     ],
-    packages=["deepchoice"],
+    packages=["bemb"],
     include_package_data=True,
     # install_requires=["torch"],
     # entry_points={
