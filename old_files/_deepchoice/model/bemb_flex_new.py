@@ -8,7 +8,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from _deepchoice.model.bayesian_coefficient import BayesianCoefficient
-from _deepchoice.model.bayesian_linear import BayesianLinear
+from bemb.model.bayesian_linear import BayesianLinear
 from termcolor import cprint
 from torch_scatter import scatter_max
 from torch_scatter.composite import scatter_log_softmax
