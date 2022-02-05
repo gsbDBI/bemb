@@ -3,6 +3,7 @@
 </script>
 
 # Random Utility Model (RUM) in PyTorch
+This section of the documentation is devoted to cover the theory behind and usage of the two RUM baseline model provided by the package. We also provided Jupyter notebooks tutorials as supplementary materials.
 
 ## Conditional Logit Model
 
@@ -25,7 +26,7 @@ $$
 
 The utility for user $$u$$ to choose item $$i$$ at time $$t$$ (i.e., the corresponding session) is modelled as $$U_{ijt}$$ above. The `deepchoice` allows the option of enforcing coefficient for one item to be zero, the variation of $$\beta^3$$ is specified as `item-full` which indicates 4 values of $$\beta^3$$ is learned. In contrast, $$\beta^0, \beta^2$$ are specified to have variation `item` instead of `item-full`. In this case, the $$\beta$$ correspond to the frist item (i.e., the baseline item, which is encoded as 0 in the label tensor) is force to be zero.
 
-The model needs to know the dimension of each individual $$\beta_i$$ (for item-specific coefficients) and $$\beta$$ (for coefficient constant across items). 
+The model needs to know the dimension of each individual $$\beta_i$$ (for item-specific coefficients) and $$\beta$$ (for coefficient constant across items).
 
 ## Nested Logit Model
 
@@ -38,7 +39,7 @@ model = NestedLogitModel(category_to_item=category_to_item,
                          shared_lambda=True)
 ```
 
-The nested logit model decompoes the utility of choosing item $$i$$ into the (1) item-specific values and (2) category specify values.  For simplicity, suppose item $i$  belongs to category $$k \in \{1, \dots, K\}$$: $$i \in B_k$$. 
+The nested logit model decompoes the utility of choosing item $$i$$ into the (1) item-specific values and (2) category specify values.  For simplicity, suppose item $i$  belongs to category $$k \in \{1, \dots, K\}$$: $$i \in B_k$$.
 $$
 U_{uit} = W_{ukt} + Y_{uit}
 $$
@@ -55,7 +56,7 @@ The `category_to_item` keyword defines a dictionary of the mapping $$k \mapsto B
 
 The `{category, item}_coef_variation_dict` provides specification to $$W_{ukt}$$ and $$Y_{uit}$$ respectively, `deepchoice` allows for empty category level models by providing an empty dictionary (in this case, $$W_{ukt} = \epsilon_{ukt}$$) since the inclusive value term $$\lambda_k I_{ukt}$$ will be used to model the choice over categories. However, by specifying an empty second stage model ($$Y_{uit} = \epsilon_{uit}$$), the nested logit model reduces to a conditonal logit model of choices over categories. Hence, one should never use the `NestedLogitModel` class with an empty item-level model.
 
-Similar to the conditional logit model, `{category, item}_num_param_dict` specify the dimension (number of observables to be multiplied with the coefficient) of coefficients. The above code initalizes a simple model built upon item-time-specific observables $$X_{it} \in \mathbb{R}^7$$, 
+Similar to the conditional logit model, `{category, item}_num_param_dict` specify the dimension (number of observables to be multiplied with the coefficient) of coefficients. The above code initalizes a simple model built upon item-time-specific observables $$X_{it} \in \mathbb{R}^7$$,
 $$
 Y_{uit} = \beta^\top X_{it} + \epsilon_{uit} \\
 W_{ukt} = \epsilon_{ukt}
