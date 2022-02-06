@@ -16,8 +16,6 @@ We have provided a Jupyter notebook version of this tutorial [here](https://gith
 ## Load Required Dependencies
 We first load required dependencies for this tutorial.
 ```python
-import argparse
-
 import numpy as np
 import pandas as pd
 import torch
@@ -39,15 +37,6 @@ else:
 ```
     CUDA device used: NVIDIA GeForce RTX 3090
 
-
-
-```python
-args = argparse.Namespace(data_path='./',
-                          batch_size=-1,  # full-batch.
-                          shuffle=False,
-                          num_epochs=5000,
-                          device='cuda' if torch.cuda.is_available() else 'cpu')
-```
 
 ## Load the Travel Mode Dataset
 This tutorial uses the `ModeCanada` dataset for people's choice on travelling methods.
@@ -221,7 +210,6 @@ print(f"{label=:}")
 ```python
 price_cost_freq_ovt = utils.pivot3d(df, dim0='case', dim1='alt',
                                     values=['cost', 'freq', 'ovt'])
-# session_income = torch.Tensor(df[['income']].values).view(-1, 1)
 session_income = df.groupby('case')['income'].first()
 session_income = torch.Tensor(session_income.values).view(-1, 1)
 price_ivt = utils.pivot3d(df, dim0='case', dim1='alt', values='ivt')
@@ -234,7 +222,6 @@ dataset= ChoiceDataset(label=label,
                        session_income=session_income,
                        price_ivt=price_ivt
                        ).to(device)
-# data_loader = utils.create_data_loader(dataset, batch_size=-1, shuffle=True)
 ```
 
 
