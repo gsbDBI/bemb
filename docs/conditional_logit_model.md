@@ -3,8 +3,39 @@
 </script>
 
 # Random Utility Model (RUM) Part I: Conditional Logit Model
-## Basic Usage
-This section of the documentation is devoted to cover the theory behind and usage of the two RUM baseline model provided by the package.
+The first part of random utility model (RUM) documentation covers the conditional logit model and provides an example usage of the conditional logit model.
+This documentation assumes the reader has already went through the [data management tutorial](./data_management.md).
+
+This tutorial is adopted from the [Random utility model and the multinomial logit model](https://cran.r-project.org/web/packages/mlogit/vignettes/c3.rum.html) in th documentation of `mlogit` package in R.
+Please refer to this tutorial for a complete treatment on the mathematical theory behind the conditional logit model.
+
+Please note that the dataset involved in this example is relatively small (2,779 choice records), so we don't expect the performance to be faster than the R implementation. We provide this tutorial mainly to check the correctness of our prediction. The fully potential of PyTorch is better exploited on much larger dataset.
+
+We have provided a Jupyter notebook version of this tutorial [here](https://github.com/gsbDBI/torch-choice/blob/main/tutorials/conditional_logit_model_mode_canada.ipynb) as well.
+
+## Load Required Dependencies
+We first load required dependencies for this tutorial.
+```python
+import argparse
+
+import numpy as np
+import pandas as pd
+import torch
+import torch.nn.functional as F
+
+from torch_choice.data import ChoiceDataset, utils
+from torch_choice.model import ConditionalLogitModel
+
+from torch_choice.utils.run_helper import run
+```
+
+Now we check if there's any CUDA-compatible hardware installed.
+```python
+if torch.cuda.is_available():
+    print(f'CUDA device used: {torch.cuda.get_device_name()}')
+```
+    CUDA device used: NVIDIA GeForce RTX 3090
+
 
 ```python
 model = ConditionalLogitModel(coef_variation_dict={'price_cost_freq_ovt': 'constant',
@@ -27,34 +58,6 @@ The utility for user $u$ to choose item $$i$$ at time $$t$$ (i.e., the correspon
 
 The model needs to know the dimension of each individual $$\beta_i$$ (for item-specific coefficients) and $$\beta$$ (for coefficient constant across items).
 
-## Example of the Conditional Logit Model on ModeCanada Dataset
-This tutorial is adopted from the [Random utility model and the multinomial logit model](https://cran.r-project.org/web/packages/mlogit/vignettes/c3.rum.html) in th documentation of `mlogit` package in R.
-Please note that the dataset involved in this example is relatively small (2,779 choice records), so we don't expect the performance to be faster than the R implementation. We provide this tutorial mainly to check the correctness of our prediction. The fully potential of PyTorch is better exploited on much larger dataset.
-
-```python
-import argparse
-
-import numpy as np
-import pandas as pd
-import torch
-import torch.nn.functional as F
-
-from torch_choice.data import ChoiceDataset, utils
-from torch_choice.model import ConditionalLogitModel
-
-from torch_choice.utils.run_helper import run
-```
-
-
-```python
-if torch.cuda.is_available():
-    print(f'CUDA device used: {torch.cuda.get_device_name()}')
-```
-
-    CUDA device used: NVIDIA GeForce RTX 3090
-
-
-
 ```python
 args = argparse.Namespace(data_path='./',
                           batch_size=-1,  # full-batch.
@@ -63,8 +66,8 @@ args = argparse.Namespace(data_path='./',
                           device='cuda' if torch.cuda.is_available() else 'cpu')
 ```
 
-### Load Dataset
-
+## Load the Travel Mode Dataset
+This tutorial uses the `ModeCanada` dataset for people's choice on travelling methods.
 
 ```python
 df = pd.read_csv('./public_datasets/ModeCanada.csv', index_col=0)
@@ -262,9 +265,22 @@ dataset
     ChoiceDataset(label=[2779], user_index=[], session_index=[2779], item_availability=[], observable_prefix=[5], price_cost_freq_ovt=[2779, 4, 3], session_income=[2779, 1], price_ivt=[2779, 4, 1], device=cuda:0)
 
 
+The `ChoiceDataset` constructed contains 2779 choice records. Since the original dataset did not reveal the identity of each decision maker, we consider all 2779 choices were made by a single user but in 2779 different sessions to handle variations.
 
-### Create the Model
+In this case, the `cost`, `freq` and `ovt` are observables depending on both sessions and items, we created a `price_cost_freq_ovt` tensor with shape `(num_sessions, num_items, 3) = (2779, 4, 3)` to contain these variables.
+In contrast, the `income` information depends only on session but not on items, hence we create the `session_income` tensor to store it.
 
+Because we wish to fit item-specific coefficients for the `ivt` variable, which varies by both sessions and items as well, we create another `price_ivt` tensor in addition to the `price_cost_freq_ovt` tensor.
+
+## Create the Model
+We now initialize the `ConditionalLogitModel` to predict choices from the dataset. Please see the documentation [here](./torch_choice.model.conditional_logit_model.md) for a complete description of the `ConditionalLogitModel` class.
+
+The `ConditionalLogitModel` constructor requires four components:
+1. `coef_variation_dict` is a dictionary with variable names (defined above while constructing the dataset) as keys and values from `{constant, user, item, item-full}`. For instance, since we wish to have constant coefficients for `cost`, `freq` and `ovt` observables, and these three observables are stored in the `price_cost_freq_ovt` tensor of the choice dataset, we set `coef_variation_dict['price_cost_freq_ovt'] = 'constant'`. The researcher needs to declare `intercept` (as shown below) manually for the model to fit an intercept as well, otherwise the model assumes zero intercept term.
+2. `num_param_dict` is a dictionary with keys exactly the same as the `coef_variation_dict`. Each of dictionary values tells the dimension of the corresponding observables (hence the dimension of the coefficient). For example, the `price_cost_freq_ovt` consists of three observables and we set the corresponding to three.
+   Even the model can infer `num_param_dict['intercept'] = 1`, but we recommend the research to include it for completeness.
+3. `num_items` informs the model how many alternatives users are choosing from.
+4. `num_users` is an optional integer informing the model how many users there are in the dataset. However, in this example we implicitly assume there is only one user making all the decisions and we do not have any `user_obs` involved, hence `num_users` argument is not supplied.
 
 ```python
 model = ConditionalLogitModel(coef_variation_dict={'price_cost_freq_ovt': 'constant',
@@ -279,7 +295,8 @@ model = ConditionalLogitModel(coef_variation_dict={'price_cost_freq_ovt': 'const
 
 model = model.to(args.device)
 ```
-
+## Fit the Model
+We provide an easy-to-use model runner for both `ConditionalLogitModel` and `NestedLogitModel` instances.
 
 ```python
 run(model, dataset, num_epochs=10000)
@@ -341,10 +358,9 @@ run(model, dataset, num_epochs=10000)
     | intercept_2           |   3.07506    |  0.625779   |
 
 
-### Train the Model
-The model takes in a `ChoiceDataset` object in and return predicted potentials for each alternatives. The shape of output would be `len(dataset) X num_items`.
 
-### R Output
+## R Output
+The following is the R-output from the `mlogit` implementation, the estimation, standard error, and log-likelihood from our `torch_choice` implementation is the same as the result from `mlogit` implementation.
 ```r
 install.packages("mlogit")
 library("mlogit")
