@@ -246,7 +246,6 @@ item_dataset = ChoiceDataset(label=label, price_obs=price_obs).to(device)
 
 # combine dataets
 dataset = JointDataset(category=category_dataset, item=item_dataset)
-# data_loader = utils.create_data_loader(dataset)
 ```
 
 # Example 1
