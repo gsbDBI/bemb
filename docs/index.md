@@ -31,8 +31,13 @@ We are still adding features and finalizing the codebase, we highly recommend us
 4. [Bayesian Embedding Model (BEMB)](./bemb.md)
 
 ## Compatibility Check List
+We have tested the tutorials using the following environments, please let us know if there is any issue with our packages on other systems.
 
-| Tutorial | Platform Versions    | CPU | GPU | Device |
+| Tutorial | Platform Versions    | CPU | GPU | Device Tested |
 | ----------- | ----------- | ----------- | ----------- | ----------- |
-| [Data Management](./data_management.md) | MacOS 12.2 Python 3.9 PyTorch 1.10.0 | M1 Max | N/A | cpu |
+| [Data Management](./data_management.md) | MacOS 12.2 Python 3.9.7 PyTorch 1.10.0 | M1 Max | N/A | cpu |
+| [Data Management](./data_management.md) | Ubuntu 20.04 Python 3.8.10 PyTorch 1.10.1 CUDA 11.3 | 11700F | RTX3090 | cpu and cuda |
 | [Conditional Logit Model](./conditional_logit_model.md) | MacOS 12.2 Python 3.9 PyTorch 1.10.0 | M1 Max | N/A | cpu |
+| [Conditional Logit Model](./conditional_logit_model.md) | Ubuntu 20.04 Python 3.8.10 PyTorch 1.10.1 CUDA 11.3 | 11700F | RTX3090 | cpu and cuda |
+| [Nested Logit Model](./nested_logit_model.md) | MacOS 12.2 Python 3.9.7 PyTorch 1.10.0 | M1 Max | N/A | cpu |
+| [Nested Logit Model](./nested_logit_model.md)| Ubuntu 20.04 Python 3.8.10 PyTorch 1.10.1 CUDA 11.3 | 11700F | RTX3090 | cpu and cuda |
