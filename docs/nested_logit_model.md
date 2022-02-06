@@ -326,6 +326,7 @@ run(model, dataset, num_epochs=10000)
 
 
 ## R Output
+**Note**: the `iv` (inclusive value) term in the `R` output corresponds to our `lambda_weight` term.
 ```
 ##
 ## Call:
