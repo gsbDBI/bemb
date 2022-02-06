@@ -3,7 +3,7 @@
 The `torch_choice` and `bemb` packages share the `ChoiceDataset` data structure for managing choice histories.
 The `ChoiceDataset` is an instance of the PyTorch dataset object, which allows for easy training with mini-batch sampling.
 
-We provided a Jupyter notebook for this tutorial as well.
+We provided a Jupyter notebook for this tutorial as well, you can find the notebook located at `/tutorials/data_management.ipynb` in the
 
 ## Setup the Choice-Dataset
 The BEMB model was initially designed for predicting consumers’ purchasing choices from the supermarket purchase dataset, we use the same setup in this tutorial. However, one can easily adopt the `ChoiceDataset` data structure to other use cases.
