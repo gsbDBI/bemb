@@ -25,12 +25,7 @@ We are still adding features and finalizing the codebase, we highly recommend us
 
 ## User Guide
 ### Table of Contents
-1.[Data Management](./data_management.md)
-2. [Tutorial: Random Utility Models](./RUM.md)
-3. [Tutorial: Bayesian Embedding (BEMB)](./BEMB.md)
-<!-- 3. [API Reference: Dataset](./data.choice_dataset.md)
-1. [API Reference: BEMB PyTorch Implementation](./model.bemb_flex_v3.md)
-2. [API Reference: BEMB PyTorch Lightning Wrapper](./model.bemb_lightning.md)
-3. [API Reference: Bayesian Coefficient](./model.bayesian_coefficient.md)
-4. [Jupyter Notebook Example: Conditional Logit Model](../examples/conditional_logit_model_mode_canada.ipynb)
-5. [Jupyter Notebook Example: Nested Logit Model](../examples/nested_logit_model_HC.ipynb) -->
+1. [Data Management](./data_management.md)
+2. [Random Utility Model (RUM) 1: Conditional Logit Model](./conditional_logit_model.md)
+3. [Random Utility Model (RUM) 2: Nested Logit Model](./nested_logit_model.md)
+4. [Bayesian Embedding Model (BEMB)](./bemb.md)
