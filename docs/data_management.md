@@ -3,7 +3,7 @@
 The `torch_choice` and `bemb` packages share the `ChoiceDataset` data structure for managing choice histories.
 The `ChoiceDataset` is an instance of the PyTorch dataset object, which allows for easy training with mini-batch sampling.
 
-We provided a Jupyter notebook for this tutorial as well, you can find the notebook located at `/tutorials/data_management.ipynb` in the
+We provided a Jupyter notebook for this tutorial as well, you can find the notebook [here](https://github.com/gsbDBI/torch-choice/blob/main/tutorials/data_management.ipynb)
 
 ## Setup the Choice-Dataset
 The BEMB model was initially designed for predicting consumers’ purchasing choices from the supermarket purchase dataset, we use the same setup in this tutorial. However, one can easily adopt the `ChoiceDataset` data structure to other use cases.
@@ -258,6 +258,9 @@ print(dataset.item_obs[0, 0])
 ```
 
 ## Chaining Multiple Datasets: `JointDataset` Examples
+The `JointDataset` class chains multiple `ChoiceDataset` objects together and is particularly useful for nested logit models, in which we have a dataset for item-level information and another dataset for category-level information.
+To construct `JointDataset`, the researcher needs to supply each `ChoiceDataset` as a keyword argument, the joint dataset object internally keeps these `ChoiceDataset` as a dictionary.
+
 ```python
 dataset1 = dataset.clone()
 dataset2 = dataset.clone()
