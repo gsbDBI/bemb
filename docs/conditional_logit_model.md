@@ -33,6 +33,9 @@ Now we check if there's any CUDA-compatible hardware installed.
 ```python
 if torch.cuda.is_available():
     print(f'CUDA device used: {torch.cuda.get_device_name()}')
+    device = 'cuda'
+else:
+    device = 'cpu'
 ```
     CUDA device used: NVIDIA GeForce RTX 3090
 
@@ -230,7 +233,7 @@ dataset= ChoiceDataset(label=label,
                        price_cost_freq_ovt=price_cost_freq_ovt,
                        session_income=session_income,
                        price_ivt=price_ivt
-                       ).to(args.device)
+                       ).to(device)
 # data_loader = utils.create_data_loader(dataset, batch_size=-1, shuffle=True)
 ```
 
@@ -280,7 +283,7 @@ model = ConditionalLogitModel(coef_variation_dict={'price_cost_freq_ovt': 'const
                                               'intercept': 1},
                               num_items=4)
 
-model = model.to(args.device)
+model = model.to(device)
 ```
 ## Fit the Model
 We provide an easy-to-use model runner for both `ConditionalLogitModel` and `NestedLogitModel` instances.
