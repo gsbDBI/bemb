@@ -1,4 +1,11 @@
 <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+<script>
+    renderMathInElement(document.body,{delimiters: [
+    					{left: "$", right: "$", display: false},
+					  {left: "$$", right: "$$", display: true}
+]});
+
+</script>
 # Data Management
 The `torch_choice` and `bemb` packages share the `ChoiceDataset` data structure for managing choice histories.
 The `ChoiceDataset` is an instance of the PyTorch dataset object, which allows for easy training with mini-batch sampling.
