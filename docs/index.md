@@ -29,3 +29,10 @@ We are still adding features and finalizing the codebase, we highly recommend us
 2. [Random Utility Model (RUM) 1: Conditional Logit Model](./conditional_logit_model.md)
 3. [Random Utility Model (RUM) 2: Nested Logit Model](./nested_logit_model.md)
 4. [Bayesian Embedding Model (BEMB)](./bemb.md)
+
+## Compatibility Check List
+
+| Tutorial | Platform Versions    | CPU | GPU | Device |
+| ----------- | ----------- | ----------- | ----------- | ----------- |
+| [Data Management](./data_management.md) | MacOS 12.2 Python 3.9 PyTorch 1.10.0 | M1 Max | N/A | cpu |
+| [Conditional Logit Model](./conditional_logit_model.md) | MacOS 12.2 Python 3.9 PyTorch 1.10.0 | M1 Max | N/A | cpu |
