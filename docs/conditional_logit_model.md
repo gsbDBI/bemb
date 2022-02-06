@@ -4,7 +4,7 @@
 
 # Random Utility Model (RUM) Part I: Conditional Logit Model
 The first part of random utility model (RUM) documentation covers the conditional logit model and provides an example usage of the conditional logit model.
-This documentation assumes the reader has already went through the [data management tutorial](./data_management.md).
+This documentation assumes the reader has already gone through the [data management tutorial](./data_management.md).
 
 This tutorial is adopted from the [Random utility model and the multinomial logit model](https://cran.r-project.org/web/packages/mlogit/vignettes/c3.rum.html) in th documentation of `mlogit` package in R.
 Please refer to this tutorial for a complete treatment on the mathematical theory behind the conditional logit model.
