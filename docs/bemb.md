@@ -122,3 +122,27 @@ If `category_to_item` is not provided (or `None` is provided), the probability o
 $$
 P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i'=1}^I e^{\mathcal{U}(u, i', s)}}
 $$
+
+### Last Step: Create the `LitBEMBFlex` wrapper
+The last step is to create the `LitBEMBFlex` object which contains all information we gathered above. You will also need to provide a `learning_rate` for the the optimizer and a `num_seeds` for the Monte-Carlo estimator of gradient in ELBO.
+```python
+model = bemb.model.LitBEMBFlex(
+    learning_rate=0.01,
+    num_seeds=4,
+    utility_formula=utility_formula,
+    num_users=num_users,
+    num_items=num_items,
+    num_sessions=num_sessions,
+    obs2prior_dict=obs2prior_dict,
+    coef_dim_dict=coef_dim_dict,
+    category_to_item=category_to_item,
+    num_user_obs=num_user_obs,
+    num_item_obs=num_item_obs,
+)
+```
+
+## Training the Model
+```python
+model = model.to('cuda')  # only if GPU is installed
+model = bemb.utils.run_helper.run(model, dataset_list, batch_size=32, num_epochs=10)
+```
