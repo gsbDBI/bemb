@@ -1,0 +1,42 @@
+device: cuda
+data_dir: /home/tianyudu/Data/PSID_V1/latest/
+# data_dir: /home/tianyudu/Data/PSID_V1/latest/
+# data_dir: /home/tianyudu/Data/PSID_V1/fewer_states/
+# utility: lambda_item + theta_user * beta_item + kappa_constant * session_year_emb # formulation 1.
+# utility: lambda_item + theta_user * beta_item + delta_item * session_obs # formulation 1.
+# utility: theta_user * beta_item  # formulation 1.
+# utility: lambda_item + theta_user * beta_item  # formulation 2.
+utility: lambda_item + theta_user * beta_item + delta_constant * session_obs + kappa_constant * session_year_emb # formulation 3.
+# utility: lambda_item + theta_user * beta_item # formulation 3.
+# utility: lambda_item + theta_user * beta_item # formulation 3.
+# utility: lambda_item + theta_user * beta_item + xi_item * user_obs + delta_item * session_obs  # formulation 3.
+# utility: lambda_item + theta_user * beta_item + delta_item * session_obs
+# utility: lambda_item + theta_user * beta_item + kappa_constant * session_year_emb
+# model configuration.
+obs2prior_dict:
+  lambda_item: True
+  theta_user: True
+  beta_item: True
+  kappa_constant: False
+  delta_constant: False
+coef_dim_dict:
+  lambda_item: 1
+  theta_user: 10
+  beta_item: 10
+  kappa_constant: 1
+prior_variance: 10
+# prior_variance_dict:
+#   lambda_item: 1
+#   theta_user: 0.1
+#   beta_item: 0.1
+  # xi_item: 4
+  # kappa_constant: 4
+  # delta_item: 20
+#### optimization.
+trace_log_q: False
+shuffle: True
+batch_size: 1000
+num_epochs: 10
+num_mc_seeds: 1
+learning_rate: 0.1
+gamma: 0.9999
