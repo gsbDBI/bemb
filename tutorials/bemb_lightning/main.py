@@ -1,20 +1,17 @@
 import argparse
 import os
 import sys
-import time
 
 import numpy as np
 import pandas as pd
-import pytorch_lightning as pl
-from pytorch_lightning.callbacks import EarlyStopping
 import torch
 import yaml
 from sklearn.preprocessing import LabelEncoder
 from termcolor import cprint
 from example_customized_module import ExampleCustomizedModule
 from torch_choice.data import ChoiceDataset
-from torch_choice.data.utils import create_data_loader
 from bemb.model import LitBEMBFlex
+from bemb.utils.run_helper import run
 
 
 def load_configs(yaml_file: str):
@@ -215,32 +212,14 @@ if __name__ == '__main__':
         additional_modules=[ExampleCustomizedModule()]
     )
 
-    # bemb.model(dataset_list[2], return_logit=True, all_items=False)
+    bemb = bemb.to(configs.device)
+    bemb = run(bemb, dataset_list, batch_size=configs.batch_size, num_epochs=configs.num_epochs)
 
-    trainer = pl.Trainer(gpus=int(configs.device == 'cuda'),
-                         max_epochs=configs.num_epochs,
-                         check_val_every_n_epoch=1,
-                         log_every_n_steps=1)
-                         # auto_scale_batch_size='power',
-                         # auto_lr_find=True,
-                         # callbacks=[EarlyStopping],
-                         # profiler=profiler)
-
-    train = create_data_loader(dataset_list[0],
-                               batch_size=configs.batch_size,
-                               shuffle=True,
-                               num_workers=8)
-    validation = create_data_loader(dataset_list[1],
-                                    batch_size=configs.batch_size,
-                                    shuffle=False,
-                                    num_workers=8)
-
-    test = create_data_loader(dataset_list[2],
-                              batch_size=10000,  # use smaller batch size for test, which takes more mem.
-                              shuffle=False,
-                              num_workers=8)
-
-    start_time = time.time()
-    trainer.fit(bemb, train, validation)
-    trainer.test(bemb, test)
-    cprint(f'time taken: {time.time() - start_time}', 'red')
+    # ==============================================================================================
+    # inference example
+    # ==============================================================================================
+    with torch.no_grad():
+        # disable gradient tracking to save computational cost.
+        utility_chosen = bemb.model(dataset_list[2], return_logit=True, all_items=False)
+        # uses much higher memory!
+        utility_all = bemb.model(dataset_list[2], return_logit=True, all_items=True)
