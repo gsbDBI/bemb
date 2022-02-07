@@ -12,8 +12,8 @@ class ExampleCustomizedModule(nn.Module):
         # return the utility level.
         day_of_week = batch.session_day_of_week[batch.session_index]
         utility = self.layer(day_of_week, mode='lookup')
-        # assert utility.shape == (num_seeds, len(batch), 1)
-        return utility.view(self.num_seeds, len(batch))
+        assert utility.shape == (self.num_seeds, len(batch), 1)
+        return utility
 
     def log_prior(self):
         return self.layer.log_prior()

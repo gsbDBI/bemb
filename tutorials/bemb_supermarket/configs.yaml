@@ -24,8 +24,7 @@ coef_dim_dict:
 #### optimization.
 trace_log_q: False
 shuffle: False
-batch_size: 10000
-batch_size_test: 10000
-num_epochs: 100
+batch_size: 100000
+num_epochs: 3
 learning_rate: 0.03
 num_mc_seeds: 1
