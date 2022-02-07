@@ -3,7 +3,7 @@
 </script>
 # BEMB Tutorial
 This tutorial assumes the reader has ready gone through the [Data Management](./data_management.md) tutorial.
-Through this tutorial, we use Greek letters (except for $$\varepsilon$$ as error term) to denote learnable parameters of the model.
+Through this tutorial, we use Greek letters (except for $$\varepsilon$$ as error term) to denote learnable coefficients of the model. However, researchers are not restricted to use Greek letters in practice.
 
 Bayesian EMBedding (BEMB) is a hierarchical Bayesian model for modelling consumer choices.
 The model can naturally extend to other use cases which can be formulated into the consumer choice framework.
@@ -28,9 +28,9 @@ For simplicity, we assume that item/user/session/price observables are named as 
 
 You will be constructing the `LitBEMBFlex` class, which is a PyTorch-lightning wrapper of the BEMB model implemented in plain PyTorch. The lighting wrapper free researchers from complications such as setting up the training loop and optimizers.
 
-To initialize the `LitBEMBFlex` class, the researcher needs to provide it with the following components. We recommend the research to encompass all arguments in a separate yaml file. Most of these arguments should be self explanatory, Please refer to the doc string of `BEMBFlex.__init__()` for a detailed elaboration.
+To initialize the `LitBEMBFlex` class, the researcher needs to provide it with the following arguments. We recommend the research to encompass all arguments in a separate yaml file. Most of these arguments should be self explanatory, Please refer to the doc string of `BEMBFlex.__init__()` for a detailed elaboration.
 
-### Utility Formula `utility_formula`
+### Utility Formula: `utility_formula`
 **Note**: for the string parsing to work correctly, please **do** add spaces around `+` and `*`.
 This section covers how to convert the utility representation in a choice problem into the `utility_formula` argument of the `BEMBFlex` model and `LitBEMBFlex` wrapper.
 
@@ -40,7 +40,7 @@ $$
 P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i' \in I_c} e^{\mathcal{U}(u, i', s)}}
 $$
 where $$I_c$$ is the set of items in the same category of item $$i$$.
-If there is no category information, the model considers all items to be in the same category, i.e., $$I_c = \{1, 2, \dots I}$$.
+If there is no category information, the model considers all items to be in the same category, i.e., $$I_c = \{1, 2, \dots I\}$$.
 
 The BEMB admits a **linear additive form** of utility formula.
 
@@ -51,10 +51,10 @@ $$
 $$
 
 The `utility_formula` consists of two classes of objects:
-1. **Learnable Parameters** (i.e., Greek letters): the string-parser identifies learnable parameters by looking at their suffix. These variables can be (1) constant across all items and users, (2) user-specific, or (3) item-specific. For example, the $$\lambda_i$$ term above is item-specific intercept and it is presented as `item_item` in the `utility_formula`. To ensure the string-parsing is working properly, learnable parameters **must** ends with one of `{_item, _user, _constant}`.
+1. **learnable coefficients** (i.e., Greek letters): the string-parser identifies learnable coefficients by looking at their suffix. These variables can be (1) constant across all items and users, (2) user-specific, or (3) item-specific. For example, the $$\lambda_i$$ term above is item-specific intercept and it is presented as `item_item` in the `utility_formula`. To ensure the string-parsing is working properly, learnable coefficients **must** ends with one of `{_item, _user, _constant}`.
 2. **Observable Tensors** are identified by their prefix, which tells whether they are item-specific (with `item_` prefix), user-specific (with `user_` prefix), session-specific (with `session_` prefix), or session-and-item-specific (with `price_` prefix) observables. Each of these observables should present in the `ChoiceDataset` data structure constructed.
 
-**Warning**: the `utility_formula` parser identifies learnable parameters as using suffix and observables using prefix, the researcher should **never** name things with both prefix in `{user_, item_, session_, price_}` and suffix `{_constant, _user, _item}` such as `item_quality_user`.
+**Warning**: the `utility_formula` parser identifies learnable coefficients as using suffix and observables using prefix, the researcher should **never** name things with both prefix in `{user_, item_, session_, price_}` and suffix `{_constant, _user, _item}` such as `item_quality_user`.
 
 Overall, there are four types of additive component, except the error term $$\epsilon$$, in the utility representation:
 
@@ -72,9 +72,34 @@ In this case, the researcher should use separate tensors `item_obs_part1` and `i
 
 With the above four cases as building blocks, the researcher can specify all kinds of utility functions.
 
-## Incorporating Observables to the Bayesian Prior
+### Number of Users/Items/Sessions `num_{users, items, sessions}`
+The researcher is responsible for providing the size of the prediction problem.
+For every model, the `num_items` is **required**.
+However, `num_users` and `num_sessions` are required only if there is any user/session-specific observables or parameters involved in the `utility_formula`.
 
-BEMB is a Bayesian factorization model trained by optimizing the evidence lower bound (ELBO). Each parameter (i.e., these with `_item, _user, _constant` suffix.) in the BEMB model carries a prior distribution, which is set to $$\mathcal{N}(\mathbf{0}, \mathbf{I})$$ by default. Beyond this baseline case, the hierarchical nature of BEMB allows the mean of the prior distribution to depend on observables, for example:
+### `coef_dim_dict` dictionary
+To correctly initialize the model, the constructor needs to know the shape of each learnable coefficients (i.e., Greek letters above). For item/user-specific parameters, the value of `coef_dim_dict` is the number of parameters for **each** user/item, not the total number of parameters.
+1. For standalone coefficients like `lambda_item`, `coef_dim_dict['lambda_item']` = 1 always.
+2. For matrix factorization coefficients like `theta_user` and `alpha_item`, `coef_dim_dict['theta_user'] = coef_dim_dict[alpha_item] = L`, where `L` is the desired latent dimension. For the inner product between $$\alpha_i$$ and $$\theta_u$$ to work properly, `coef_dim_dict['theta_user'] == coef_dim_dict['alpha_item']`.
+3. For terms like $$\zeta_u^\top X^{item}_i$$, `coef_dim_dict['zeta_user']` needs to be the dimension of $$X^{item}_i$$.
+4. For matrix factorization coefficients, the dimension needs to be the latent dimension multiplied by the number of observables. For example, if you have a 3-dimensional feature $$X = (x_1, x_2, x_3)$$, the utility is $$\mathcal{U}(u, i, s) = \zeta_{u, i}^\top X$$, and $$\zeta_{u, i}$$ needs to be factorized into two an user-specific and item-specific part (both in $$\mathbb{R}^L$$) as below
+$$
+\mathcal{U}(u, i, s) = \sum_{k=1}^3 (\gamma_u^{k\top} \beta_i^k) x_k
+$$
+  then `coef_dim_dict[gamma_user] = coef_dim_dict[beta_item] = 3 * L`.
+
+**TODO**: sounds like a lot of work? we are currently developing helper function to infer all these information from the `ChoiceDataset`, but we will still provide researchers with the full control over the configuration.
+
+### Specifying Variance of Coefficient Prior Distributions with `prior_variance`
+The `prior_variance` term can be either a scalar or a dictionary with the same keys of `coef_dim_dict`, which provides the variance of prior distribution for each learnable coefficients.
+If a float is provided, all priors will be Gaussian distribution with diagonal covariance matrix with `prior_variance` along the diagonal.
+If a dictionary is provided, keys of `prior_variance` should be coefficient names, and the prior of each `coef_name` would be a Gaussian with diagonal covariance matrix with `prior_variance[coef_name]` along the diagonal.
+This value is default to be `1.0`, which means priors of all coefficients are standard Gaussian distributions.
+
+### Incorporating Observables to the Bayesian Prior with `obs2prior_dict`
+BEMB is a Bayesian factorization model trained by optimizing the evidence lower bound (ELBO). Each parameter (i.e., these with `_item, _user, _constant` suffix.) in the BEMB model carries a prior distribution, which is set to $$\mathcal{N}(\mathbf{0}, \mathbf{I})$$ by default. With `prior_variance` argument described above, one can specify different scales/variances for different learnable coefficients.
+
+Beyond this baseline case, the hierarchical nature of BEMB allows the mean of the prior distribution to depend on observables as a (learnable) linear mapping. For example:
 
 $$
 \theta_{i} \overset{prior}{\sim} \mathcal{N}(HX^{item}_i, \mathbf{I})
@@ -83,5 +108,17 @@ $$
 where the prior mean is a linear transformation of the item observable and $$H: \mathbb{R}^{K_{item}} \to \mathbb{R}^L$$.
 
 To enable the observable-to-prior feature, one needs to set `obs2prior_dict['theta_item']=True`.
+In order to leverage obs-to-prior for item-specific coefficients like `theta_item`, the researchers need to include `item_obs` tensor to the `ChoiceDataset`, *the attribute name needs to be exactly `item_obs`, just with `item_` prefix is **not** sufficient.* Similarly, `user_obs` are required if obs-to-prior is turned on for **any** of user-specific coefficients.
 
-## Advanced Topics: Additional Modules
+### `category_to_item`
+In some cases the researcher wishes to provide additional guidance to the model by providing the category of the bought item in teach purchasing record.
+In this case, the probability of purchasing each $$i$$ will be normalized only across other items from the same category rather than all items.
+The `category_to_item` argument provides a dictionary with category id or name as keys, and `category_to_item[C]` contains the list of item ids belonging to category `C`.
+With `category_to_item` provided, for the probability of purchasing item $$i$$ by user $$u$$ in session, let $I_c$ denote the set of items belonging to the same category $$i$$, the probability of purchasing is
+$$
+P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i' \in I_c} e^{\mathcal{U}(u, i', s)}}
+$$
+If `category_to_item` is not provided (or `None` is provided), the probability of purchasing item $$i$$ by user $$u$$ in session $$s$$ is (note the difference in summation scope, this is computed as if all items are from the same category):
+$$
+P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i'=1}^I e^{\mathcal{U}(u, i', s)}}
+$$
