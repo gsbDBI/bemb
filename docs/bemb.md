@@ -77,7 +77,7 @@ The researcher is responsible for providing the size of the prediction problem.
 For every model, the `num_items` is **required**.
 However, `num_users` and `num_sessions` are required only if there is any user/session-specific observables or parameters involved in the `utility_formula`.
 
-### `coef_dim_dict` dictionary
+### Specifying the Dimensions of Coefficients with the `coef_dim_dict` dictionary
 To correctly initialize the model, the constructor needs to know the shape of each learnable coefficients (i.e., Greek letters above). For item/user-specific parameters, the value of `coef_dim_dict` is the number of parameters for **each** user/item, not the total number of parameters.
 1. For standalone coefficients like `lambda_item`, `coef_dim_dict['lambda_item']` = 1 always.
 2. For matrix factorization coefficients like `theta_user` and `alpha_item`, `coef_dim_dict['theta_user'] = coef_dim_dict[alpha_item] = L`, where `L` is the desired latent dimension. For the inner product between $$\alpha_i$$ and $$\theta_u$$ to work properly, `coef_dim_dict['theta_user'] == coef_dim_dict['alpha_item']`.
@@ -110,7 +110,7 @@ where the prior mean is a linear transformation of the item observable and $$H: 
 To enable the observable-to-prior feature, one needs to set `obs2prior_dict['theta_item']=True`.
 In order to leverage obs-to-prior for item-specific coefficients like `theta_item`, the researchers need to include `item_obs` tensor to the `ChoiceDataset`, *the attribute name needs to be exactly `item_obs`, just with `item_` prefix is **not** sufficient.* Similarly, `user_obs` are required if obs-to-prior is turned on for **any** of user-specific coefficients.
 
-### `category_to_item`
+### Grouping Items into Categories with `category_to_item`
 In some cases the researcher wishes to provide additional guidance to the model by providing the category of the bought item in teach purchasing record.
 In this case, the probability of purchasing each $$i$$ will be normalized only across other items from the same category rather than all items.
 The `category_to_item` argument provides a dictionary with category id or name as keys, and `category_to_item[C]` contains the list of item ids belonging to category `C`.
@@ -142,7 +142,19 @@ model = bemb.model.LitBEMBFlex(
 ```
 
 ## Training the Model
+We provide a ready-to-use scrip to train the model, where `dataset_list` is a list consists of three `ChoiceDataset` objects (see the [Data Management](./data_management.md) tutorial for splitting datasets), the training, validation, and testing dataset.
 ```python
 model = model.to('cuda')  # only if GPU is installed
 model = bemb.utils.run_helper.run(model, dataset_list, batch_size=32, num_epochs=10)
+```
+
+## Inference
+Lastly, to get the utilities (i.e., the logit) of the item bought for each row of the test dataset, the `model.model.forward()` method does the trick.
+You can either compute the utility for the purchased item or for all items, we put significant effort on optimizing the pipeline for estimating utility of the bought item, so it's much faster than computing utilities of all items.
+```python
+with torch.no_grad():
+    # disable gradient tracking to save computational cost.
+    utility_chosen = model.model.forward(dataset_list[2], return_logit=True, all_items=False)
+    # uses much higher memory!
+    utility_all = model.model.forward(dataset_list[2], return_logit=True, all_items=True)
 ```
