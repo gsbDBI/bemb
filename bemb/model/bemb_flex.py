@@ -578,7 +578,7 @@ class BEMBFlex(nn.Module):
         for module in self.additional_modules:
             additive_term = module(batch)
             assert additive_term.shape == (R, len(batch), 1)
-            utility += additive_term.view(-1, -1, I)
+            utility += additive_term.expand(-1, -1, I)
 
         if return_logit:
             # output shape: (num_seeds, num_purchases, num_items)
@@ -773,7 +773,11 @@ class BEMBFlex(nn.Module):
         for module in self.additional_modules:
             # current utility shape: (R, total_computation)
             additive_term = module(batch)
-            assert additive_term.shape == (R, len(batch))
+            assert additive_term.shape == (R, len(batch)) or additive_term.shape == (R, len(batch), 1)
+            if additive_term.shape == (R, len(batch), 1):
+                # TODO: need to make this consistent with log_likelihood_all.
+                # be tolerant for some customized module with BayesianLinear that returns (R, len(batch), 1).
+                additive_term = additive_term.view(R, len(batch))
             # expand to total number of computation, query by reverse_indices.
             # reverse_indices has length total_computation, and reverse_indices[i] correspond to the row-id that this
             # computation is responsible for.
