@@ -208,7 +208,7 @@ if __name__ == '__main__':
         category_to_item=category_to_item,
         num_user_obs=configs.num_user_obs,
         num_item_obs=configs.num_item_obs,
-        num_price_obs=configs.num_price_obs,
+        # num_price_obs=configs.num_price_obs,
         additional_modules=[ExampleCustomizedModule()]
     )
 
