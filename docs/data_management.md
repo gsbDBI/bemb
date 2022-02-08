@@ -26,7 +26,7 @@ Overall, each row (i.e., purchasing record) in the dataset is characterized by a
 When there are multiple items bought by the same user in the same session, there will be multiple rows in the dataset with the same $$(u, s)$$.
 
 ### Sessions
-Our data structure encompasses *where and when* using a notion called **session** indexed by $$s \in \{1,2,\dots, For example, of session $$s$$ is the date of purchase.
+Our data structure encompasses *where and when* using a notion called **session** indexed by $$s \in \{1,2,\dots, S\}$$, For example, of session $$s$$ is the date of purchase.
 Another example is that we have the purchase record from different stores, the session $$s$$ can be defined as a pair of *(date, store)* instead.
 If the researcher does not wish to handle records from different sessions differently, the researcher can assign the same session ID to all rows of the dataset.
 
