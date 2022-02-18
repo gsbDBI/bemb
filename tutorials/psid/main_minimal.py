@@ -5,7 +5,6 @@ import argparse
 import os
 import sys
 import time
-from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -16,12 +15,6 @@ from torch_choice.data import ChoiceDataset
 from torch_choice.data.utils import create_data_loader
 from bemb.model import BEMBFlex
 import torch.nn as nn
-from pytorch_lightning.callbacks import EarlyStopping
-from pytorch_lightning.loggers import TensorBoardLogger
-from ray import tune
-from ray.tune import CLIReporter
-from ray.tune.integration.pytorch_lightning import TuneReportCallback
-from ray.tune.schedulers import ASHAScheduler
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 from termcolor import cprint
@@ -339,118 +332,17 @@ def train_model():
     return bemb
 
 
-def tune_model():
-    # ==============================================================================================
-    # Hyper-parameter Tuning
-    # ==============================================================================================
-    num_samples = 50
-    num_epochs = 200
-
-    callback1 = TuneReportCallback({
-        'val_LL': 'val_LL',
-        'val_accuracy': 'val_accuracy',
-        'val_precision': 'val_precision',
-        'val_recall': 'val_recall',
-        'val_f1score': 'val_f1score',
-        'train_LL': 'train_LL',
-        'train_elbo': 'train_elbo',
-        'test_LL': 'test_LL',
-        'test_accuracy': 'test_accuracy'}, on='validation_end')
-
-    def train_tune(hparams, epochs=10, gpus=1):
-        model = LitBEMBFlex(hparams,
-                            # datasets
-                            train_dataset = dataset_mover_splits[0],
-                            val_dataset = dataset_mover_splits[1],
-                            test_dataset=dataset_mover_splits[2],
-                            prior_variance=hparams['prior_variance'],
-                            utility_formula=hparams['utility_formula'],
-                            num_users=configs.num_users,
-                            num_items=configs.num_items,
-                            num_sessions=configs.num_sessions,
-                            obs2prior_dict=configs.obs2prior_dict,
-                            coef_dim_dict=configs.coef_dim_dict,
-                            trace_log_q=configs.trace_log_q,
-                            num_user_obs=configs.num_user_obs,
-                            num_item_obs=configs.num_item_obs)
-
-        trainer = pl.Trainer(
-            max_epochs=epochs,
-            check_val_every_n_epoch=1,
-            log_every_n_steps=1,
-            gpus=gpus,
-            progress_bar_refresh_rate=0,
-            logger=TensorBoardLogger(save_dir=tune.get_trial_dir(), name='', version='.'),
-            callbacks=[callback1, EarlyStopping(monitor='val_LL', patience=5, mode='max')])
-        trainer.fit(model)
-        trainer.test(model)
-
-    config = {
-        'learning_rate': tune.choice([0.01, 0.03, 0.1, 0.3]),
-        'prior_variance': tune.choice([0.1, 1.0, 3.0, 10, 30, 100]),
-        'K': tune.choice([10, 15, 20, 30]),
-        'num_seeds': tune.choice([8, 32]),
-        'batch_size': tune.choice([1000]),
-        'utility_formula': tune.grid_search([
-            'lambda_item',
-            'theta_user * beta_item',
-            'lambda_item + theta_user * beta_item',
-            'lambda_item + theta_user * beta_item + delta_item * session_obs',
-            'lambda_item + theta_user * beta_item + kappa_constant * session_year_emb',
-            'lambda_item + theta_user * beta_item + delta_item * session_obs + kappa_constant * session_year_emb'
-        ])
-    }
-
-    scheduler = ASHAScheduler(max_t=num_epochs, grace_period=1, reduction_factor=2)
-
-    reporter = CLIReporter(parameter_columns=list(config.keys()),
-                           metric_columns=list(callback1._metrics.keys()))
-    analysis = tune.run(
-        tune.with_parameters(train_tune, epochs=num_epochs, gpus=1),
-        metric='val_LL',
-        mode='max',
-        resources_per_trial={'cpu': 16, 'gpu': 1},
-        config=config,
-        num_samples=num_samples,
-        scheduler=scheduler,
-        progress_reporter=reporter)
-
-    print("Best hyperparameters found were: ", analysis.best_config)
-    analysis.results_df.to_csv('./ray_tune_results_' + str(datetime.now()) + '.csv')
-
-
-def markov_baseline():
-    # for reference.
-    prob_matrix = torch.zeros(configs.num_users, configs.num_items)
-    for i in range(len(dataset_mover_splits[0])):
-        user = dataset_mover_splits[0].user_index[i]
-        item = dataset_mover_splits[0].label[i]
-        prob_matrix[user, item] += 1
-
-    out_deg = prob_matrix.sum(dim=1)
-    out_deg[out_deg == 0] = 1
-    prob_matrix /= out_deg.view(-1, 1)
-
-    d = dataset_mover_splits[2]  # test set.
-    pred = prob_matrix[d.user_index].argmax(dim=1)
-    acc = (pred == d.label).float().mean()
-    ll = prob_matrix[d.user_index, d.label].mean()
-    print(f'accuracy={acc}, LL={torch.log(ll)}')
-
 
 if __name__ == '__main__':
-    if sys.argv[2] == 'train':
-        bemb = train_model()
-        theta_user = bemb.model.coef_dict['theta_user'].variational_mean.detach().numpy()
-        beta_item = bemb.model.coef_dict['beta_item'].variational_mean.detach().numpy()
+    bemb = train_model()
+    theta_user = bemb.model.coef_dict['theta_user'].variational_mean.detach().numpy()
+    beta_item = bemb.model.coef_dict['beta_item'].variational_mean.detach().numpy()
 
-        pd.DataFrame(theta_user, index=list(state_encoder.classes_)).to_csv('./theta_user.csv')
-        pd.DataFrame(beta_item, index=list(state_encoder.classes_)).to_csv('./beta_item.csv')
-        # compute the utility.
-        # U = bemb.model(dataset_all, return_logit=True).detach().numpy()
-        # df_utility = pd.DataFrame(data=U, columns=list(state_encoder.classes_))
-        # df_utility['user_id'] = data_mover_stayer['user_id'].values
-        # df_utility['item_id'] = data_mover_stayer['item_id'].values
-        # df_utility.to_csv('./utility.csv')
-    elif sys.argv[2] == 'tune':
-        tune_model()
+    pd.DataFrame(theta_user, index=list(state_encoder.classes_)).to_csv('./theta_user.csv')
+    pd.DataFrame(beta_item, index=list(state_encoder.classes_)).to_csv('./beta_item.csv')
+    # compute the utility.
+    # U = bemb.model(dataset_all, return_logit=True).detach().numpy()
+    # df_utility = pd.DataFrame(data=U, columns=list(state_encoder.classes_))
+    # df_utility['user_id'] = data_mover_stayer['user_id'].values
+    # df_utility['item_id'] = data_mover_stayer['item_id'].values
+    # df_utility.to_csv('./utility.csv')
