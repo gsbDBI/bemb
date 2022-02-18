@@ -18,6 +18,9 @@ class LitBEMBFlex(pl.LightningModule):
     def __str__(self) -> str:
         return str(self.model)
 
+    def forward(self, args, kwargs):
+        return self.model(*args, **kwargs)
+
     def training_step(self, batch, batch_idx):
         elbo = self.model.elbo(batch, num_seeds=self.num_needs)
         self.log('train_elbo', elbo)
@@ -27,6 +30,10 @@ class LitBEMBFlex(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         LL = self.model.forward(batch, return_logit=False, all_items=False).mean()
         self.log('val_log_likelihood', LL, prog_bar=True)
+        pred = self.model(batch)
+        performance = self.model.get_within_category_accuracy(pred, batch.label)
+        for key, val in performance.items():
+            self.log('val_' + key, val, prog_bar=True)
 
     def test_step(self, batch, batch_idx):
         LL = self.model.forward(batch, return_logit=False, all_items=False).mean()

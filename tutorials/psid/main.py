@@ -25,7 +25,6 @@ from ray.tune.schedulers import ASHAScheduler
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 from termcolor import cprint
-from bemb.model.bayesian_linear import BayesianLinear
 
 
 np.random.seed(42)
