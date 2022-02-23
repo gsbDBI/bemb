@@ -1,12 +1,5 @@
 """
 Bayesian tensor object.
-Objective: this is a generalization of the Bayesian Coefficient object.
-The Bayesian Tensor is designed to be hierarchical, so it's more than a single tensor, it's a module.
-TODO: might change to Bayesian Layer or other name.
-
-For the current iteration, we assume each entry of the weight matrix follows independent normal distributions.
-TODO: might generalize this setting in the future.
-TODO: generalize this setting to arbitrary shape tensors.
 """
 from typing import Optional, Tuple
 
