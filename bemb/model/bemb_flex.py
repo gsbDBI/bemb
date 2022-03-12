@@ -1033,7 +1033,8 @@ class BEMBFlex(nn.Module):
         Returns:
             torch.Tensor: [description]
         """
-        total = torch.zeros(1, device=self.device)
+        num_seeds = list(sample_dict.values())[0].shape[0]
+        total = torch.zeros(num_seeds, device=self.device)
 
         for coef_name, coef in self.coef_dict.items():
             # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
