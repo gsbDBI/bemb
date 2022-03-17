@@ -4,14 +4,15 @@ The Bayesian EMBedding (BEMB) model.
 in categories bought during training (2) compute all utilities during the inference time.
 NOTE: release candidate, this version is sufficiently optimized for users.
 """
-from typing import Dict, List, Optional, Union
 from pprint import pprint
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import torch
 import torch.nn as nn
 from bemb.model.bayesian_coefficient import BayesianCoefficient
 from termcolor import cprint
+from torch_choice.data import ChoiceDataset
 from torch_scatter import scatter_max
 from torch_scatter.composite import scatter_log_softmax
 
@@ -78,6 +79,7 @@ class BEMBFlex(nn.Module):
                  obs2prior_dict: Dict[str, bool],
                  coef_dim_dict: Dict[str, int],
                  num_items: int,
+                 pred_item: bool,
                  prior_variance: Union[float, Dict[str, float]] = 1.0,
                  num_users: Optional[int] = None,
                  num_sessions: Optional[int] = None,
@@ -117,6 +119,15 @@ class BEMBFlex(nn.Module):
 
             num_items (int): number of items.
 
+            pred_item (bool): there are two use cases of this model, suppose we have `user_index[i]` and `item_index[i]`
+                for the i-th observation in the dataset.
+                Case 1: which item among all items user `user_index[i]` is going to purchase, the prediction label
+                    is therefore `item_index[i]`. Equivalently, we can ask what's the likelihood for user `user_index[i]`
+                    to purchase `item_index[i]`.
+                Case 2: what rating would user `user_index[i]` assign to item `item_index[i]`? In this case, the dataset
+                    object needs to contain a separate label.
+                    NOTE: for now, we only support binary labels.
+
             prior_variance (Union[float, Dict[str, float]]): the variance of prior distribution for
                 coefficients. If a float is provided, all priors will be diagonal matrix with
                 prior_variance along the diagonal. If a dictionary is provided, keys of prior_variance
@@ -151,6 +162,8 @@ class BEMBFlex(nn.Module):
         self.coef_dim_dict = coef_dim_dict
         self.prior_variance = prior_variance
 
+        self.pred_item = pred_item
+
         self.num_items = num_items
         self.num_users = num_users
         self.num_sessions = num_sessions
@@ -164,7 +177,14 @@ class BEMBFlex(nn.Module):
         # Item ID to Category ID mapping.
         # ==========================================================================================
         if self.category_to_item is None:
-            self.category_to_item = {0: list(np.arange(self.num_items))}
+            if self.pred_item:
+                # assign all items to the same category if predicting items.
+                self.category_to_item = {0: list(np.arange(self.num_items))}
+            else:
+                # otherwise, for the j-th observation in the dataset, the label[j]
+                # only depends on user_index[j] and item_index[j], so we put each
+                # item to its own category.
+                self.category_to_item = {i: [i] for i in range(self.num_items)}
 
         self.num_categories = len(self.category_to_item)
 
@@ -238,42 +258,105 @@ class BEMBFlex(nn.Module):
                + str(self.coef_dict) + '\n' \
                + str(self.additional_modules)
 
-    def forward(self, batch, return_logit: bool = False, all_items: bool = True) -> torch.Tensor:
-        """The combined method of computing utilities and log probability.
+    def forward(self, batch: ChoiceDataset,
+                return_type: str,
+                return_scope: str,
+                deterministic: bool = True,
+                sample_dict: Optional[Dict[str, torch.Tensor]] = None,
+                num_seeds: Optional[int] = None
+                ) -> torch.Tensor:
+        """A combined method for inference with the model.
 
         Args:
-            batch ([type]): [description]
-            return_logit (bool): return the logit (utility) if set to True, otherwise apply
-                category-wise log-softmax to compute the log-likelihood before returning.
-            all_items (bool): only return the logit/log-P of the bought items if set to True,
-                otherwise return the logit/log-P of all items.
-                Set all_items to False if only need to compute the log-likelihood for validation
-                purpose.
-                Set all_items to True only if you actually need logits/log-P for all items, such
-                as for computing inclusive values of categories.
-
+            batch (ChoiceDataset): batch data containing choice information.
+            return_type (str): either 'log_prob' or 'utility'.
+                'log_prob': return the log-probability (by within-category log-softmax) for items
+                'utility': return the utility value of items.
+            return_scope (str): either 'item_index' or 'all_items'.
+                'item_index': for each observation i, return log-prob/utility for the chosen item batch.item_index[i] only.
+                'all_items': for each observation i, return log-prob/utility for all items.
+            deterministic (bool, optional):
+                True: expectations of parameter variational distributions are used for inference.
+                False: the user needs to supply a dictionary of sampled parameters for inference.
+                Defaults to True.
+            sample_dict (Optional[Dict[str, torch.Tensor]], optional): sampled parameters for inference task.
+                This is not needed when `deterministic` is True.
+                When `deterministic` is False, the user can supply a `sample_dict`. If `sample_dict` is not provided,
+                this method will create `num_seeds` samples.
+                Defaults to None.
+            num_seeds (Optional[int]): the number of random samples of parameters to construct. This is only required
+                if `deterministic` is False (i.e., stochastic mode) and `sample_dict` is not provided.
+                Defaults to None.
         Returns:
-            torch.Tensor: a tensor of shape (len(batch), num_items) if all_items is True.
-                          a tensor of shape (len(batch),) if all_items is False.
+            torch.Tensor: a tensor of log-probabilities or utilities, depending on `return_type`.
+                The shape of the returned tensor depends on `return_scope` and `deterministic`.
+                -------------------------------------------------------------------------
+                | `return_scope` | `deterministic` |         Output shape               |
+                -------------------------------------------------------------------------
+                |   'item_index` |      True       | (len(batch),)                      |
+                -------------------------------------------------------------------------
+                |   'all_items'  |      True       | (len(batch), num_items)            |
+                -------------------------------------------------------------------------
+                |   'item_index' |      False      | (num_seeds, len(batch))            |
+                -------------------------------------------------------------------------
+                |   'all_items'  |      False      | (num_seeds, len(batch), num_items) |
+                -------------------------------------------------------------------------
         """
-        # Use the means of variational distributions as the sole MC sample.
-        # NOTE: here we don't need to sample the obs2prior weight H since we only compute the log-likelihood.
-        sample_dict = dict()
-        for coef_name, coef in self.coef_dict.items():
-            sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+        # ==============================================================================================================
+        # check arguments.
+        # ==============================================================================================================
+        assert return_type in ['log_prob', 'utility'], "return_type must be either 'log_prob' or 'utility'."
+        assert return_scope in ['item_index', 'all_items'], "return_scope must be either 'item_index' or 'all_items'."
+        assert deterministic in [True, False]
+        if (not deterministic) and (sample_dict is None):
+            assert num_seeds >= 1, "A positive interger `num_seeds` is required if `deterministic` is False and no `sample_dict` is provided."
 
+        # when pred_item is true, the model is predicting which item is bought (specified by item_index).
+        if self.pred_item:
+            batch.label = batch.item_index
+
+        # ==============================================================================================================
+        # get sample_dict ready.
+        # ==============================================================================================================
+        if deterministic:
+            num_seeds = 1
+            # Use the means of variational distributions as the sole deterministic MC sample.
+            # NOTE: here we don't need to sample the obs2prior weight H since we only compute the log-likelihood.
+            # TODO: is this correct?
+            sample_dict = dict()
+            for coef_name, coef in self.coef_dict.items():
+                sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+        else:
+            if sample_dict is None:
+                # sample stochastic parameters.
+                sample_dict = self.sample_coefficient_dictionary(num_seeds)
+            else:
+                # use the provided sample_dict.
+                num_seeds = list(sample_dict.values())[0].shape[0]
+
+        # ==============================================================================================================
+        # call the sampling method of additional modules.
+        # ==============================================================================================================
         for module in self.additional_modules:
             # deterministic sample.
-            module.dsample()
+            if deterministic:
+                module.dsample()
+            else:
+                module.rsample(num_seeds=num_seeds)
 
-        # there is 1 random seed in this case.
-        if all_items:
-            # (num_seeds=1, len(batch), num_items)
-            out = self.log_likelihood_all_items(batch, sample_dict, return_logit)
-        else:
-            # (num_seeds=1, len(batch))
-            out = self.log_likelihood(batch, sample_dict, return_logit)
-        return out.squeeze(dim=0)  # (len(batch), num_items) or (len(batch),)
+        return_logit = (return_type == 'utility')  # if utility is requested, don't run log-softmax, simply return logit.
+        if return_scope == 'all_items':
+            # (num_seeds, len(batch), num_items)
+            out = self.log_likelihood_all_items(batch=batch, sample_dict=sample_dict, return_logit=return_logit)
+        elif return_scope == 'item_index':
+            # (num_seeds, len(batch))
+            out = self.log_likelihood_item_index(batch=batch, sample_dict=sample_dict, return_logit=return_logit)
+
+        if deterministic:
+            # drop the first dimension, which has size of `num_seeds` (equals 1 in the deterministic case).
+            return out.squeeze(dim=0)  # (len(batch), num_items) or (len(batch),)
+
+        return out
 
     @property
     def num_params(self) -> int:
@@ -287,11 +370,34 @@ class BEMBFlex(nn.Module):
     # ==============================================================================================
     # Helper functions.
     # ==============================================================================================
+    def sample_coefficient_dictionary(self, num_seeds: int) -> Dict[str, torch.Tensor]:
+        """A helper function to sample parameters from coefficients.
+
+        Args:
+            num_seeds (int): number of random samples.
+
+        Returns:
+            Dict[str, torch.Tensor]: a dictionary maps coefficient names to tensor of sampled coefficient parameters,
+                where the first dimension of the sampled tensor has size `num_seeds`.
+                Each sample tensor has shape (num_seeds, num_classes, dim).
+        """
+        sample_dict = dict()
+        for coef_name, coef in self.coef_dict.items():
+            s = coef.rsample(num_seeds)
+            if coef.obs2prior:
+                # sample both obs2prior weight and realization of variable.
+                assert isinstance(s, tuple) and len(s) == 2
+                sample_dict[coef_name] = s[0]
+                sample_dict[coef_name + '.H'] = s[1]
+            else:
+                # only sample the realization of variable.
+                assert torch.is_tensor(s)
+                sample_dict[coef_name] = s
+        return sample_dict
+
 
     @torch.no_grad()
-    def get_within_category_accuracy(self,
-                                     log_p_all_items: torch.Tensor,
-                                     label: torch.LongTensor) -> Dict[str, float]:
+    def get_within_category_accuracy(self, log_p_all_items: torch.Tensor, label: torch.LongTensor) -> Dict[str, float]:
         """A helper function for computing prediction accuracy (i.e., all non-differential metrics)
         within category.
         In particular, this method calculates the accuracy, precision, recall and F1 score.
@@ -371,14 +477,10 @@ class BEMBFlex(nn.Module):
     # ==============================================================================================
     # Methods for terms in the ELBO: prior, likelihood, and variational.
     # ==============================================================================================
-    def log_likelihood_all_items(self,
-                                 batch,
-                                 sample_dict: Dict[str, torch.Tensor],
-                                 return_logit: bool = False
-                                 ) -> torch.Tensor:
+    def log_likelihood_all_items(self, batch: ChoiceDataset, return_logit: bool, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
         """
         NOTE: this method computes utilities for all items available, this is relatively slow, for
-        training purpose, use self.log_likelihood() instead.
+        training purpose, use self.log_likelihood_item_index() instead.
 
         Computes the log probability of choosing each item in each session based on current model
         parameters.
@@ -388,6 +490,7 @@ class BEMBFlex(nn.Module):
 
         Args:
             batch (ChoiceDataset): a ChoiceDataset object containing relevant information.
+            return_logit(bool): if set to True, return the log-probability, otherwise return the logit/utility.
             sample_dict(Dict[str, torch.Tensor]): Monte Carlo samples for model coefficients
                 (i.e., those Greek letters).
                 sample_dict.keys() should be the same as keys of self.obs2prior_dict, i.e., those
@@ -395,7 +498,6 @@ class BEMBFlex(nn.Module):
                 The value of sample_dict should be tensors of shape (num_seeds, num_classes, dim)
                 where num_classes in {num_users, num_items, 1}
                 and dim in {latent_dim(K), num_item_obs, num_user_obs, 1}.
-            return_logit(bool): if set to True, return the probability, otherwise return the log-P.
 
         Returns:
             torch.Tensor: a tensor of shape (num_seeds, len(batch), self.num_items), where
@@ -590,13 +692,9 @@ class BEMBFlex(nn.Module):
         # output shape: (num_seeds, len(batch), num_items)
         return log_p
 
-    def log_likelihood(self,
-                       batch,
-                       sample_dict: Dict[str, torch.Tensor],
-                       return_logit: bool = False
-                       ) -> torch.Tensor:
+    def log_likelihood_item_index(self, batch: ChoiceDataset, return_logit: bool, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
         """
-        NOTE: this method is more efficient only computes log-likelihood for bought items.
+        NOTE: this method is more efficient only but computes log-likelihood/logit(utility) for item in item_index.
 
         Computes the log probability of choosing each item in each session based on current model
         parameters.
@@ -606,6 +704,7 @@ class BEMBFlex(nn.Module):
 
         Args:
             batch (ChoiceDataset): a ChoiceDataset object containing relevant information.
+            return_logit(bool): if set to True, return the log-probability, otherwise return the logit/utility.
             sample_dict(Dict[str, torch.Tensor]): Monte Carlo samples for model coefficients
                 (i.e., those Greek letters).
                 sample_dict.keys() should be the same as keys of self.obs2prior_dict, i.e., those
@@ -626,7 +725,7 @@ class BEMBFlex(nn.Module):
             break
 
         # get category id of the item bought in each row of batch.
-        cate_index = self.item_to_category_tensor[batch.label]
+        cate_index = self.item_to_category_tensor[batch.item_index]
 
         # get item ids of all items from the same category of each item bought.
         relevant_item_index = self.category_to_item_tensor[cate_index, :]
@@ -634,14 +733,15 @@ class BEMBFlex(nn.Module):
         # index were padded with -1's, drop those dummy entries.
         relevant_item_index = relevant_item_index[relevant_item_index != -1]
 
-        # the first repeats[0] entries in relevant_item_index are for the category of label[0]
+        # the first repeats[0] entries in relevant_item_index are for the category of item_index[0]
         repeats = self.category_to_size_tensor[cate_index]
-        # argwhere(reverse_indices == k) are positions in relevant_item_index for the category of label[k].
+        # argwhere(reverse_indices == k) are positions in relevant_item_index for the category of item_index[k].
         reverse_indices = torch.repeat_interleave(torch.arange(len(batch), device=self.device), repeats)
         # expand the user_index and session_index.
         user_index = torch.repeat_interleave(batch.user_index, repeats)
         session_index = torch.repeat_interleave(batch.session_index, repeats)
-        label_expanded = torch.repeat_interleave(batch.label, repeats)
+        # duplicate the item focused to match.
+        item_index_expanded = torch.repeat_interleave(batch.item_index, repeats)
 
         # short-hands for easier shape check.
         R = num_seeds
@@ -791,16 +891,16 @@ class BEMBFlex(nn.Module):
             # compute the log probability from logits/utilities.
             log_p = scatter_log_softmax(utility, reverse_indices, dim=-1)
         # select the log-P of the item actually bought.
-        log_p = log_p[:, label_expanded == relevant_item_index]
+        log_p = log_p[:, item_index_expanded == relevant_item_index]
         # output shape: (num_seeds, num_purchases, num_items)
         return log_p
 
-    def log_prior(self, batch, sample_dict: Dict[str, torch.Tensor]) -> torch.scalar_tensor:
+    def log_prior(self, batch: ChoiceDataset, sample_dict: Dict[str, torch.Tensor]) -> torch.scalar_tensor:
         """Calculates the log-likelihood of Monte Carlo samples of Bayesian coefficients under their
         prior distribution. This method assume coefficients are statistically independent.
 
         Args:
-            batch ([type]): a dataset object contains observables for computing the prior distribution
+            batch (ChoiceDataset): a dataset object contains observables for computing the prior distribution
                 if obs2prior is True.
             sample_dict (Dict[str, torch.Tensor]): a dictionary coefficient names to Monte Carlo
                 samples.
@@ -865,8 +965,8 @@ class BEMBFlex(nn.Module):
 
         return total
 
-    def elbo(self, batch, num_seeds: int = 1) -> torch.Tensor:
-        """Computes the current ELBO.
+    def elbo(self, batch: ChoiceDataset, num_seeds: int = 1) -> torch.Tensor:
+        """A combined method to computes the current ELBO given a batch, this method is used for training the model.
 
         Args:
             batch (ChoiceDataset): a ChoiceDataset containing necessary information.
@@ -877,37 +977,47 @@ class BEMBFlex(nn.Module):
         Returns:
             torch.Tensor: a scalar tensor of the ELBO estimated from num_seeds Monte Carlo samples.
         """
+        # ==============================================================================================================
         # 1. sample latent variables from their variational distributions.
-        # (num_seeds, num_classes, dim)
-        sample_dict = dict()
-        for coef_name, coef in self.coef_dict.items():
-            s = coef.rsample(num_seeds)
-            if coef.obs2prior:
-                # sample both obs2prior weight and realization of variable.
-                assert isinstance(s, tuple) and len(s) == 2
-                sample_dict[coef_name] = s[0]
-                sample_dict[coef_name + '.H'] = s[1]
-            else:
-                # only sample the realization of variable.
-                assert torch.is_tensor(s)
-                sample_dict[coef_name] = s
+        # ==============================================================================================================
+        sample_dict = self.sample_coefficient_dictionary(num_seeds)
 
-        # TODO: apply customized modules here.
-        for module in self.additional_modules:
-            # sample random weight for this module.
-            module.rsample(num_seeds)
-
+        # ==============================================================================================================
         # 2. compute log p(latent) prior.
-        elbo = self.log_prior(batch, sample_dict).mean(dim=0)  # (num_seeds,) -> scalar.
+        elbo = self.log_prior(batch, sample_dict).mean(dim=0)  # (num_seeds,) --mean--> scalar.
+        # ==============================================================================================================
 
-        # self.__check_log_likelihood(batch, sample_dict)
-
+        # ==============================================================================================================
         # 3. compute the log likelihood log p(obs|latent).
-        # sum over independent purchase decision for individual items, mean over MC seeds.
-        # (num_sessions, num_relevant_items) -> scalar.
-        elbo += self.log_likelihood(batch, sample_dict).sum(dim=1).mean(dim=0)
+        # sum over independent purchase decision for individual observations, mean over MC seeds.
+        # the forward() function calls module.rsample(num_seeds) for module in self.additional_modules.
+        # ==============================================================================================================
+        if self.pred_item:
+            # the prediction target is item_index.
+            elbo += self.forward(batch,
+                                 return_type='log_prob',
+                                 return_scope='item_index',
+                                 deterministic=False,
+                                 sample_dict=sample_dict).sum(dim=1).mean(dim=0)  # (num_seeds, len(batch)) --> scalar.
+        else:
+            utility = self.forward(batch,
+                                   return_type='utility',
+                                   return_scope='item_index',
+                                   deterministic=False,
+                                   sample_dict=sample_dict)  # (num_seeds, len(batch))
 
+            # compute the log-likelihood for binary label.
+            y_stacked = torch.stack([batch.label] * num_seeds).float()  # (num_seeds, len(batch))
+            assert y_stacked.shape == utility.shape
+            bce = nn.BCELoss(reduction='none')
+            ll = - bce(torch.sigmoid(utility), y_stacked).sum(dim=1).mean(dim=0)  # scalar.
+            elbo += ll
+
+        # print('Ratio:', 1 - ll/elbo, ll/elbo)
+
+        # ==============================================================================================================
         # 4. optionally add log likelihood under variational distributions q(latent).
+        # ==============================================================================================================
         if self.trace_log_q:
             elbo -= self.log_variational(sample_dict).mean(dim=0)
 
