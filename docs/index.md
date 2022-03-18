@@ -25,8 +25,8 @@ We are still adding features and finalizing the codebase, we highly recommend us
 
 ## User Guide
 ### Table of Contents
-1. [Data Management](./data_management.md)
-2. [Random Utility Model (RUM) 1: Conditional Logit Model](./conditional_logit_model.md)
+1. [Data Management](https://github.com/gsbDBI/torch-choice/blob/main/tutorials/data_management.ipynb)
+2. [Random Utility Model (RUM) 1: Conditional Logit Model](https://github.com/gsbDBI/torch-choice/blob/main/tutorials/conditional_logit_model_mode_canada.ipynb)
 3. [Random Utility Model (RUM) 2: Nested Logit Model](./nested_logit_model.md)
 4. [Bayesian Embedding Model (BEMB)](./bemb.md)
 
