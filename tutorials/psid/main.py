@@ -25,6 +25,7 @@ from ray.tune.schedulers import ASHAScheduler
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 from termcolor import cprint
+from sklearn import metrics
 
 
 np.random.seed(42)
@@ -169,9 +170,9 @@ else:
 # create datasets, split into train, validation and test sets with ratio 0.8:0.15:0.15.
 # ==============================================================================================
 user_index = torch.LongTensor(state_encoder.transform(data_all['user_id'].values))
-label = torch.LongTensor(state_encoder.transform(data_all['item_id'].values))
+item_index = torch.LongTensor(state_encoder.transform(data_all['item_id'].values))
 
-dataset_mover_stayer = ChoiceDataset(label=label,
+dataset_mover_stayer = ChoiceDataset(item_index=item_index,
                                      user_index=user_index,
                                      session_index=session_index,
                                      item_availability=item_availability,
@@ -182,7 +183,7 @@ dataset_mover_stayer = ChoiceDataset(label=label,
 
 print('Number of MOVER+STAYER observations:', len(dataset_mover_stayer))
 
-dataset_mover = dataset_mover_stayer[dataset_mover_stayer.label != dataset_mover_stayer.user_index]
+dataset_mover = dataset_mover_stayer[dataset_mover_stayer.item_index != dataset_mover_stayer.user_index]
 print('Number of MOVER observations:', len(dataset_mover))
 
 # shuffle the dataset.
@@ -230,7 +231,7 @@ class LitBEMBFlex(pl.LightningModule):
             kwargs['coef_dim_dict']['theta_user'] = hparams['K']
             kwargs['coef_dim_dict']['beta_item'] = hparams['K']
 
-        self.model = BEMBFlex(**kwargs)
+        self.model = BEMBFlex(pred_item=True, **kwargs)
         self.num_needs = hparams['num_seeds']
         self.learning_rate = hparams['learning_rate']
         self.batch_size = hparams['batch_size']
@@ -238,43 +239,28 @@ class LitBEMBFlex(pl.LightningModule):
     def __str__(self) -> str:
         return str(self.model)
 
-    def training_step(self, batch, batch_idx):
-        if self.year_embedding is not None:
-            batch = self.year_embedding(batch)
-        LL = self.model.forward(batch, return_logit=False, all_items=False).mean()
-        self.log('train_LL', LL, prog_bar=True)
+    @torch.no_grad()
+    def performance_dict(self, batch):
+        log_prob = self.model(batch, return_type='log_prob', return_scope='all_items', deterministic=True).cpu().numpy()
+        num_classes = log_prob.shape[1]
+        pred_prob = np.exp(log_prob)
+        y_pred = np.argmax(log_prob, axis=1)
+        y_true = batch.item_index.cpu().numpy()
+        performance = {'acc': metrics.accuracy_score(y_true=y_true, y_pred=y_pred.astype(int)),
+                       'll': - metrics.log_loss(y_true=y_true, y_pred=pred_prob, eps=1E-5, labels=np.arange(num_classes))}
+        return performance
 
+    def training_step(self, batch, batch_idx):
+        self.log_dict({'train_'+key: val for (key, val) in self.performance_dict(batch).items()}, prog_bar=True)
         elbo = self.model.elbo(batch, num_seeds=self.num_needs)
         self.log('train_elbo', elbo)
-        loss = - elbo
-        return loss
+        return - elbo
 
     def validation_step(self, batch, batch_idx):
-        if self.year_embedding is not None:
-            batch = self.year_embedding(batch)
-        LL = self.model.forward(batch, return_logit=False, all_items=False).mean()
-        self.log('val_LL', LL, prog_bar=True)
-
-        pred = self.model(batch)
-        performance = self.model.get_within_category_accuracy(
-            pred, batch.label)
-        for key, val in performance.items():
-            self.log('val_' + key, val, prog_bar=True)
-
-        self.test_step(batch, batch_idx)
+        self.log_dict({'val_'+key: val for (key, val) in self.performance_dict(batch).items()}, prog_bar=True)
 
     def test_step(self, batch, batch_idx):
-        if self.year_embedding is not None:
-            batch = self.year_embedding(batch)
-        LL = self.model.forward(
-            batch, return_logit=False, all_items=False).mean()
-        self.log('test_LL', LL)
-
-        pred = self.model(batch)
-        performance = self.model.get_within_category_accuracy(
-            pred, batch.label)
-        for key, val in performance.items():
-            self.log('test_' + key, val, prog_bar=True)
+        self.log_dict({'test_'+key: val for (key, val) in self.performance_dict(batch).items()}, prog_bar=True)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
@@ -424,7 +410,7 @@ def markov_baseline():
     prob_matrix = torch.zeros(configs.num_users, configs.num_items)
     for i in range(len(dataset_mover_splits[0])):
         user = dataset_mover_splits[0].user_index[i]
-        item = dataset_mover_splits[0].label[i]
+        item = dataset_mover_splits[0].item_index[i]
         prob_matrix[user, item] += 1
 
     out_deg = prob_matrix.sum(dim=1)
@@ -433,19 +419,20 @@ def markov_baseline():
 
     d = dataset_mover_splits[2]  # test set.
     pred = prob_matrix[d.user_index].argmax(dim=1)
-    acc = (pred == d.label).float().mean()
-    ll = prob_matrix[d.user_index, d.label].mean()
+    acc = (pred == d.item_index).float().mean()
+    ll = prob_matrix[d.user_index, d.item_index].mean()
     print(f'accuracy={acc}, LL={torch.log(ll)}')
 
 
 if __name__ == '__main__':
     if sys.argv[2] == 'train':
         bemb = train_model()
-        theta_user = bemb.model.coef_dict['theta_user'].variational_mean.detach().numpy()
-        beta_item = bemb.model.coef_dict['beta_item'].variational_mean.detach().numpy()
+        # Optionally save the model.
+        # theta_user = bemb.model.coef_dict['theta_user'].variational_mean.detach().numpy()
+        # beta_item = bemb.model.coef_dict['beta_item'].variational_mean.detach().numpy()
 
-        pd.DataFrame(theta_user, index=list(state_encoder.classes_)).to_csv('./theta_user.csv')
-        pd.DataFrame(beta_item, index=list(state_encoder.classes_)).to_csv('./beta_item.csv')
+        # pd.DataFrame(theta_user, index=list(state_encoder.classes_)).to_csv('./theta_user.csv')
+        # pd.DataFrame(beta_item, index=list(state_encoder.classes_)).to_csv('./beta_item.csv')
         # compute the utility.
         # U = bemb.model(dataset_all, return_logit=True).detach().numpy()
         # df_utility = pd.DataFrame(data=U, columns=list(state_encoder.classes_))
