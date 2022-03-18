@@ -27,7 +27,7 @@ We are still adding features and finalizing the codebase, we highly recommend us
 ### Table of Contents
 1. [Data Management](https://github.com/gsbDBI/torch-choice/blob/main/tutorials/data_management.ipynb)
 2. [Random Utility Model (RUM) 1: Conditional Logit Model](https://github.com/gsbDBI/torch-choice/blob/main/tutorials/conditional_logit_model_mode_canada.ipynb)
-3. [Random Utility Model (RUM) 2: Nested Logit Model](./nested_logit_model.md)
+3. [Random Utility Model (RUM) 2: Nested Logit Model](https://github.com/gsbDBI/torch-choice/blob/main/tutorials/nested_logit_model_house_cooling.ipynb)
 4. [Bayesian Embedding Model (BEMB)](./bemb.md)
 
 ## Compatibility Check List
@@ -35,9 +35,9 @@ We have tested the tutorials using the following environments, please let us kno
 
 | Tutorial | Platform Versions    | CPU | GPU | Device Tested |
 | ----------- | ----------- | ----------- | ----------- | ----------- |
-| [Data Management](./data_management.md) | MacOS 12.2 Python 3.9.7 PyTorch 1.10.0 | M1 Max | N/A | cpu |
-| [Data Management](./data_management.md) | Ubuntu 20.04 Python 3.8.10 PyTorch 1.10.1 CUDA 11.3 | 11700F | RTX3090 | cpu and cuda |
-| [Conditional Logit Model](./conditional_logit_model.md) | MacOS 12.2 Python 3.9 PyTorch 1.10.0 | M1 Max | N/A | cpu |
-| [Conditional Logit Model](./conditional_logit_model.md) | Ubuntu 20.04 Python 3.8.10 PyTorch 1.10.1 CUDA 11.3 | 11700F | RTX3090 | cpu and cuda |
-| [Nested Logit Model](./nested_logit_model.md) | MacOS 12.2 Python 3.9.7 PyTorch 1.10.0 | M1 Max | N/A | cpu |
-| [Nested Logit Model](./nested_logit_model.md)| Ubuntu 20.04 Python 3.8.10 PyTorch 1.10.1 CUDA 11.3 | 11700F | RTX3090 | cpu and cuda |
+| [Data Management](https://github.com/gsbDBI/torch-choice/blob/main/tutorials/data_management.ipynb) | MacOS 12.2 Python 3.9.7 PyTorch 1.10.0 | M1 Max | N/A | cpu |
+| [Data Management](https://github.com/gsbDBI/torch-choice/blob/main/tutorials/data_management.ipynb) | Ubuntu 20.04 Python 3.8.10 PyTorch 1.10.1 CUDA 11.3 | 11700F | RTX3090 | cpu and cuda |
+| [Conditional Logit Model](https://github.com/gsbDBI/torch-choice/blob/main/tutorials/conditional_logit_model_mode_canada.ipynb) | MacOS 12.2 Python 3.9 PyTorch 1.10.0 | M1 Max | N/A | cpu |
+| [Conditional Logit Model](https://github.com/gsbDBI/torch-choice/blob/main/tutorials/conditional_logit_model_mode_canada.ipynb) | Ubuntu 20.04 Python 3.8.10 PyTorch 1.10.1 CUDA 11.3 | 11700F | RTX3090 | cpu and cuda |
+| [Nested Logit Model](https://github.com/gsbDBI/torch-choice/blob/main/tutorials/nested_logit_model_house_cooling.ipynb) | MacOS 12.2 Python 3.9.7 PyTorch 1.10.0 | M1 Max | N/A | cpu |
+| [Nested Logit Model](https://github.com/gsbDBI/torch-choice/blob/main/tutorials/nested_logit_model_house_cooling.ipynb)| Ubuntu 20.04 Python 3.8.10 PyTorch 1.10.1 CUDA 11.3 | 11700F | RTX3090 | cpu and cuda |
