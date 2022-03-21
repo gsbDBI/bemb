@@ -1,0 +1,19 @@
+device: cuda
+utility: theta_user * alpha_item
+out_dir: ./output/
+# model configuration.
+obs2prior_dict:
+  # lambda_item: True
+  theta_user: True
+  alpha_item: True
+coef_dim_dict:
+  # lambda_item: 1
+  theta_user: 5
+  alpha_item: 5
+#### optimization.
+trace_log_q: False
+shuffle: False
+batch_size: 128
+num_epochs: 20
+learning_rate: 0.03
+num_mc_seeds: 1
