@@ -3,8 +3,13 @@ This package is a [PyTorch](https://pytorch.org)-based package for, but not limi
 With the growing size of choice datasets available, existing implementations of consumer choice modelling does not easily scale up modern datasets of millions of records.
 Our objective is to provides a versatile interface for managing choice dataset, a range of baseline models (the `torch_choice` part), and a Bayesian Embedding (i.e., BEMB) models for choice modeling that handle large-scale consumer choice datasets in modern research projects.
 
-The package leverage GPU acceleration using PyTorch and easily scale to large dataset of millions of choice records. You can rest assure that the package runs flawlessly when no GPU is used as well.
-For those without much experience in model PyTorch development, setting up optimizers and training loops can be frustrating. We provide easy-to-use [PyTorch lightning](https://www.pytorchlightning.ai) wrapper of models to free researchers from the hassle from setting up PyTorch optimizers and training loops.
+## Main Components and Features
+1. The package includes a data management tool based on `PyTorch`'s dataset called `ChoiceDataset`. Our dataset implementation allows users to easily move data between CPU and GPU.
+2. The package provides a conditional logit model for consumer choice modelling.
+3. The package provides a nested logit model for consumer choice modelling.
+4. The package provides a Bayesian Embedding (also known as probabilistic matrix factorization) model that builds latents for customers and items.
+5. The package leverage GPU acceleration using PyTorch and easily scale to large dataset of millions of choice records. All models are trained using state-of-the-art optimizers by in PyTorch. These optimization algorithms are tested to be scalable by modern machine learning practitioners. However, you can rest assure that the package runs flawlessly when no GPU is used as well.
+6. For those without much experience in model PyTorch development, setting up optimizers and training loops can be frustrating. We provide easy-to-use [PyTorch lightning](https://www.pytorchlightning.ai) wrapper of models to free researchers from the hassle from setting up PyTorch optimizers and training loops.
 
 ## Installation
 There are two parts of this project: the `torch_choice` library consisting of data management modules, logit and nested-logit models for consumer choice modelling. The `torch_choice` package offers based
