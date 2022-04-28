@@ -1,5 +1,8 @@
 """
 The core class of the Bayesian EMBedding (BEMB) model.
+
+Author: Tianyu Du
+Update: Apr. 28, 2022
 """
 from pprint import pprint
 from typing import Dict, List, Optional, Union
