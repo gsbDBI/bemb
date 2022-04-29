@@ -19,6 +19,8 @@ from bemb.model.bayesian_coefficient import BayesianCoefficient
 # ======================================================================================================================
 # helper functions.
 # ======================================================================================================================
+
+
 class PositiveInteger(object):
     # A helper wildcard class for shape matching.
     def __eq__(self, other):
@@ -77,6 +79,7 @@ def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]
 # ======================================================================================================================
 # core class of the BEMB model.
 # ======================================================================================================================
+
 
 class BEMBFlex(nn.Module):
     # ==================================================================================================================
@@ -196,20 +199,25 @@ class BEMBFlex(nn.Module):
         self.num_categories = len(self.category_to_item)
 
         max_category_size = max(len(x) for x in self.category_to_item.values())
-        category_to_item_tensor = torch.full((self.num_categories, max_category_size), -1)
+        category_to_item_tensor = torch.full(
+            (self.num_categories, max_category_size), -1)
         category_to_size_tensor = torch.empty(self.num_categories)
 
         for c, item_in_c in self.category_to_item.items():
-            category_to_item_tensor[c, :len(item_in_c)] = torch.LongTensor(item_in_c)
+            category_to_item_tensor[c, :len(
+                item_in_c)] = torch.LongTensor(item_in_c)
             category_to_size_tensor[c] = torch.scalar_tensor(len(item_in_c))
 
-        self.register_buffer('category_to_item_tensor', category_to_item_tensor.long())
-        self.register_buffer('category_to_size_tensor', category_to_size_tensor.long())
+        self.register_buffer('category_to_item_tensor',
+                             category_to_item_tensor.long())
+        self.register_buffer('category_to_size_tensor',
+                             category_to_size_tensor.long())
 
         item_to_category_tensor = torch.zeros(self.num_items)
         for c, items_in_c in self.category_to_item.items():
             item_to_category_tensor[items_in_c] = c
-        self.register_buffer('item_to_category_tensor', item_to_category_tensor.long())
+        self.register_buffer('item_to_category_tensor',
+                             item_to_category_tensor.long())
 
         # ==============================================================================================================
         # Create Bayesian Coefficient Objects
@@ -243,7 +251,8 @@ class BEMBFlex(nn.Module):
         for additive_term in self.formula:
             for coef_name in additive_term['coefficient']:
                 variation = coef_name.split('_')[-1]
-                s2 = self.prior_variance[coef_name] if isinstance(self.prior_variance, dict) else self.prior_variance
+                s2 = self.prior_variance[coef_name] if isinstance(
+                    self.prior_variance, dict) else self.prior_variance
                 coef_dict[coef_name] = BayesianCoefficient(variation=variation,
                                                            num_classes=variation_to_num_classes[variation],
                                                            obs2prior=self.obs2prior_dict[coef_name],
@@ -258,7 +267,8 @@ class BEMBFlex(nn.Module):
         if additional_modules is None:
             self.additional_modules = []
         else:
-            raise NotImplementedError('Additional modules are temporarily disabled for further development.')
+            raise NotImplementedError(
+                'Additional modules are temporarily disabled for further development.')
             self.additional_modules = nn.ModuleList(additional_modules)
 
     def __str__(self):
@@ -315,8 +325,10 @@ class BEMBFlex(nn.Module):
         # ==============================================================================================================
         # check arguments.
         # ==============================================================================================================
-        assert return_type in ['log_prob', 'utility'], "return_type must be either 'log_prob' or 'utility'."
-        assert return_scope in ['item_index', 'all_items'], "return_scope must be either 'item_index' or 'all_items'."
+        assert return_type in [
+            'log_prob', 'utility'], "return_type must be either 'log_prob' or 'utility'."
+        assert return_scope in [
+            'item_index', 'all_items'], "return_scope must be either 'item_index' or 'all_items'."
         assert deterministic in [True, False]
         if (not deterministic) and (sample_dict is None):
             assert num_seeds >= 1, "A positive interger `num_seeds` is required if `deterministic` is False and no `sample_dict` is provided."
@@ -335,7 +347,8 @@ class BEMBFlex(nn.Module):
             # TODO: is this correct?
             sample_dict = dict()
             for coef_name, coef in self.coef_dict.items():
-                sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+                sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(
+                    dim=0)  # (1, num_*, dim)
         else:
             if sample_dict is None:
                 # sample stochastic parameters.
@@ -354,17 +367,21 @@ class BEMBFlex(nn.Module):
             else:
                 module.rsample(num_seeds=num_seeds)
 
-        return_logit = (return_type == 'utility')  # if utility is requested, don't run log-softmax, simply return logit.
+        # if utility is requested, don't run log-softmax, simply return logit.
+        return_logit = (return_type == 'utility')
         if return_scope == 'all_items':
             # (num_seeds, len(batch), num_items)
-            out = self.log_likelihood_all_items(batch=batch, sample_dict=sample_dict, return_logit=return_logit)
+            out = self.log_likelihood_all_items(
+                batch=batch, sample_dict=sample_dict, return_logit=return_logit)
         elif return_scope == 'item_index':
             # (num_seeds, len(batch))
-            out = self.log_likelihood_item_index(batch=batch, sample_dict=sample_dict, return_logit=return_logit)
+            out = self.log_likelihood_item_index(
+                batch=batch, sample_dict=sample_dict, return_logit=return_logit)
 
         if deterministic:
             # drop the first dimension, which has size of `num_seeds` (equals 1 in the deterministic case).
-            return out.squeeze(dim=0)  # (len(batch), num_items) or (len(batch),)
+            # (len(batch), num_items) or (len(batch),)
+            return out.squeeze(dim=0)
 
         return out
 
@@ -404,7 +421,6 @@ class BEMBFlex(nn.Module):
                 assert torch.is_tensor(s)
                 sample_dict[coef_name] = s
         return sample_dict
-
 
     @torch.no_grad()
     def get_within_category_accuracy(self, log_p_all_items: torch.Tensor, label: torch.LongTensor) -> Dict[str, float]:
@@ -448,7 +464,8 @@ class BEMBFlex(nn.Module):
 
         # pred[t] = the item with highest utility from the category item label[t] belongs to.
         # (num_sessions,)
-        pred_from_category = argmax_by_category[torch.arange(len(label)), category_purchased]
+        pred_from_category = argmax_by_category[torch.arange(
+            len(label)), category_purchased]
 
         within_category_accuracy = (
             pred_from_category == label).float().mean().item()
@@ -518,9 +535,11 @@ class BEMBFlex(nn.Module):
         num_seeds = next(iter(sample_dict.values())).shape[0]
 
         # avoid repeated work when user purchased several items in the same session.
-        user_session_index = torch.stack([batch.user_index, batch.session_index])
+        user_session_index = torch.stack(
+            [batch.user_index, batch.session_index])
         assert user_session_index.shape == (2, len(batch))
-        unique_user_sess, inverse_indices = torch.unique(user_session_index, dim=1, return_inverse=True)
+        unique_user_sess, inverse_indices = torch.unique(
+            user_session_index, dim=1, return_inverse=True)
 
         user_index = unique_user_sess[0, :]
         session_index = unique_user_sess[1, :]
@@ -612,7 +631,8 @@ class BEMBFlex(nn.Module):
             if len(term['coefficient']) == 1 and term['observable'] is None:
                 # E.g., lambda_item or lambda_user
                 coef_name = term['coefficient'][0]
-                coef_sample = reshape_coef_sample(sample_dict[coef_name], coef_name)
+                coef_sample = reshape_coef_sample(
+                    sample_dict[coef_name], coef_name)
                 assert coef_sample.shape == (R, P, I, 1)
                 additive_term = coef_sample.view(R, P, I)
 
@@ -621,17 +641,21 @@ class BEMBFlex(nn.Module):
                 coef_name_0 = term['coefficient'][0]
                 coef_name_1 = term['coefficient'][1]
 
-                coef_sample_0 = reshape_coef_sample(sample_dict[coef_name_0], coef_name_0)
-                coef_sample_1 = reshape_coef_sample(sample_dict[coef_name_1], coef_name_1)
+                coef_sample_0 = reshape_coef_sample(
+                    sample_dict[coef_name_0], coef_name_0)
+                coef_sample_1 = reshape_coef_sample(
+                    sample_dict[coef_name_1], coef_name_1)
 
-                assert coef_sample_0.shape == coef_sample_1.shape == (R, P, I, positive_integer)
+                assert coef_sample_0.shape == coef_sample_1.shape == (
+                    R, P, I, positive_integer)
 
                 additive_term = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
             # Type III: single coefficient multiplied by observable, e.g., theta_user * x_obs_item.
             elif len(term['coefficient']) == 1 and term['observable'] is not None:
                 coef_name = term['coefficient'][0]
-                coef_sample = reshape_coef_sample(sample_dict[coef_name], coef_name)
+                coef_sample = reshape_coef_sample(
+                    sample_dict[coef_name], coef_name)
                 assert coef_sample.shape == (R, P, I, positive_integer)
 
                 obs_name = term['observable']
@@ -645,9 +669,12 @@ class BEMBFlex(nn.Module):
             elif len(term['coefficient']) == 2 and term['observable'] is not None:
                 coef_name_0, coef_name_1 = term['coefficient'][0], term['coefficient'][1]
 
-                coef_sample_0 = reshape_coef_sample(sample_dict[coef_name_0], coef_name_0)
-                coef_sample_1 = reshape_coef_sample(sample_dict[coef_name_1], coef_name_1)
-                assert coef_sample_0.shape == coef_sample_1.shape == (R, P, I, positive_integer)
+                coef_sample_0 = reshape_coef_sample(
+                    sample_dict[coef_name_0], coef_name_0)
+                coef_sample_1 = reshape_coef_sample(
+                    sample_dict[coef_name_1], coef_name_1)
+                assert coef_sample_0.shape == coef_sample_1.shape == (
+                    R, P, I, positive_integer)
                 num_obs_times_latent_dim = coef_sample_0.shape[-1]
 
                 obs_name = term['observable']
@@ -658,8 +685,10 @@ class BEMBFlex(nn.Module):
                 assert (num_obs_times_latent_dim % num_obs) == 0
                 latent_dim = num_obs_times_latent_dim // num_obs
 
-                coef_sample_0 = coef_sample_0.view(R, P, I, num_obs, latent_dim)
-                coef_sample_1 = coef_sample_1.view(R, P, I, num_obs, latent_dim)
+                coef_sample_0 = coef_sample_0.view(
+                    R, P, I, num_obs, latent_dim)
+                coef_sample_1 = coef_sample_1.view(
+                    R, P, I, num_obs, latent_dim)
                 # compute the factorized coefficient with shape (R, P, I, O).
                 coef = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
@@ -678,7 +707,8 @@ class BEMBFlex(nn.Module):
         if batch.item_availability is not None:
             # expand to the Monte Carlo sample dimension.
             # (S, I) -> (P, I) -> (1, P, I) -> (R, P, I)
-            A = batch.item_availability[session_index, :].unsqueeze(dim=0).expand(R, -1, -1)
+            A = batch.item_availability[session_index, :].unsqueeze(
+                dim=0).expand(R, -1, -1)
             utility[~A] = - (torch.finfo(utility.dtype).max / 2)
 
         utility = utility[:, inverse_indices, :]
@@ -695,7 +725,8 @@ class BEMBFlex(nn.Module):
         else:
             # compute log likelihood log p(choosing item i | user, item latents)
             # compute log softmax separately within each category.
-            log_p = scatter_log_softmax(utility, self.item_to_category_tensor, dim=-1)
+            log_p = scatter_log_softmax(
+                utility, self.item_to_category_tensor, dim=-1)
             # output shape: (num_seeds, len(batch), num_items)
             return log_p
 
@@ -742,16 +773,19 @@ class BEMBFlex(nn.Module):
         # the first repeats[0] entries in relevant_item_index are for the category of item_index[0]
         repeats = self.category_to_size_tensor[cate_index]
         # argwhere(reverse_indices == k) are positions in relevant_item_index for the category of item_index[k].
-        reverse_indices = torch.repeat_interleave(torch.arange(len(batch), device=self.device), repeats)
+        reverse_indices = torch.repeat_interleave(
+            torch.arange(len(batch), device=self.device), repeats)
         # expand the user_index and session_index.
         user_index = torch.repeat_interleave(batch.user_index, repeats)
         session_index = torch.repeat_interleave(batch.session_index, repeats)
         # duplicate the item focused to match.
-        item_index_expanded = torch.repeat_interleave(batch.item_index, repeats)
+        item_index_expanded = torch.repeat_interleave(
+            batch.item_index, repeats)
 
         # short-hands for easier shape check.
         R = num_seeds
-        total_computation = len(session_index)  # total number of relevant items.
+        # total number of relevant items.
+        total_computation = len(session_index)
         S = self.num_sessions
         U = self.num_users
         I = self.num_items
@@ -809,7 +843,8 @@ class BEMBFlex(nn.Module):
             if len(term['coefficient']) == 1 and term['observable'] is None:
                 # E.g., lambda_item or lambda_user
                 coef_name = term['coefficient'][0]
-                coef_sample = reshape_coef_sample(sample_dict[coef_name], coef_name)
+                coef_sample = reshape_coef_sample(
+                    sample_dict[coef_name], coef_name)
                 assert coef_sample.shape == (R, total_computation, 1)
                 additive_term = coef_sample.view(R, total_computation)
 
@@ -818,18 +853,23 @@ class BEMBFlex(nn.Module):
                 coef_name_0 = term['coefficient'][0]
                 coef_name_1 = term['coefficient'][1]
 
-                coef_sample_0 = reshape_coef_sample(sample_dict[coef_name_0], coef_name_0)
-                coef_sample_1 = reshape_coef_sample(sample_dict[coef_name_1], coef_name_1)
+                coef_sample_0 = reshape_coef_sample(
+                    sample_dict[coef_name_0], coef_name_0)
+                coef_sample_1 = reshape_coef_sample(
+                    sample_dict[coef_name_1], coef_name_1)
 
-                assert coef_sample_0.shape == coef_sample_1.shape == (R, total_computation, positive_integer)
+                assert coef_sample_0.shape == coef_sample_1.shape == (
+                    R, total_computation, positive_integer)
 
                 additive_term = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
             # Type III: single coefficient multiplied by observable, e.g., theta_user * x_obs_item.
             elif len(term['coefficient']) == 1 and term['observable'] is not None:
                 coef_name = term['coefficient'][0]
-                coef_sample = reshape_coef_sample(sample_dict[coef_name], coef_name)
-                assert coef_sample.shape == (R, total_computation, positive_integer)
+                coef_sample = reshape_coef_sample(
+                    sample_dict[coef_name], coef_name)
+                assert coef_sample.shape == (
+                    R, total_computation, positive_integer)
 
                 obs_name = term['observable']
                 obs = reshape_observable(getattr(batch, obs_name), obs_name)
@@ -841,9 +881,12 @@ class BEMBFlex(nn.Module):
             # e.g., gamma_user * beta_item * price_obs.
             elif len(term['coefficient']) == 2 and term['observable'] is not None:
                 coef_name_0, coef_name_1 = term['coefficient'][0], term['coefficient'][1]
-                coef_sample_0 = reshape_coef_sample(sample_dict[coef_name_0], coef_name_0)
-                coef_sample_1 = reshape_coef_sample(sample_dict[coef_name_1], coef_name_1)
-                assert coef_sample_0.shape == coef_sample_1.shape == (R, total_computation, positive_integer)
+                coef_sample_0 = reshape_coef_sample(
+                    sample_dict[coef_name_0], coef_name_0)
+                coef_sample_1 = reshape_coef_sample(
+                    sample_dict[coef_name_1], coef_name_1)
+                assert coef_sample_0.shape == coef_sample_1.shape == (
+                    R, total_computation, positive_integer)
                 num_obs_times_latent_dim = coef_sample_0.shape[-1]
 
                 obs_name = term['observable']
@@ -854,8 +897,10 @@ class BEMBFlex(nn.Module):
                 assert (num_obs_times_latent_dim % num_obs) == 0
                 latent_dim = num_obs_times_latent_dim // num_obs
 
-                coef_sample_0 = coef_sample_0.view(R, total_computation, num_obs, latent_dim)
-                coef_sample_1 = coef_sample_1.view(R, total_computation, num_obs, latent_dim)
+                coef_sample_0 = coef_sample_0.view(
+                    R, total_computation, num_obs, latent_dim)
+                coef_sample_1 = coef_sample_1.view(
+                    R, total_computation, num_obs, latent_dim)
                 # compute the factorized coefficient with shape (R, P, I, O).
                 coef = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
@@ -873,13 +918,15 @@ class BEMBFlex(nn.Module):
 
         if batch.item_availability is not None:
             # expand to the Monte Carlo sample dimension.
-            A = batch.item_availability[session_index, relevant_item_index].unsqueeze(dim=0).expand(R, -1)
+            A = batch.item_availability[session_index, relevant_item_index].unsqueeze(
+                dim=0).expand(R, -1)
             utility[~A] = - (torch.finfo(utility.dtype).max / 2)
 
         for module in self.additional_modules:
             # current utility shape: (R, total_computation)
             additive_term = module(batch)
-            assert additive_term.shape == (R, len(batch)) or additive_term.shape == (R, len(batch), 1)
+            assert additive_term.shape == (
+                R, len(batch)) or additive_term.shape == (R, len(batch), 1)
             if additive_term.shape == (R, len(batch), 1):
                 # TODO: need to make this consistent with log_likelihood_all.
                 # be tolerant for some customized module with BayesianLinear that returns (R, len(batch), 1).
@@ -929,14 +976,16 @@ class BEMBFlex(nn.Module):
                 elif coef_name.endswith('_user'):
                     x_obs = batch.user_obs
                 else:
-                    raise ValueError(f'No observable found to support obs2prior for {coef_name}.')
+                    raise ValueError(
+                        f'No observable found to support obs2prior for {coef_name}.')
 
                 total += coef.log_prior(sample=sample_dict[coef_name],
                                         H_sample=sample_dict[coef_name + '.H'],
                                         x_obs=x_obs).sum(dim=-1)
             else:
                 # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
-                total += coef.log_prior(sample=sample_dict[coef_name], H_sample=None, x_obs=None).sum(dim=-1)
+                total += coef.log_prior(
+                    sample=sample_dict[coef_name], H_sample=None, x_obs=None).sum(dim=-1)
 
         for module in self.additional_modules:
             raise NotImplementedError()
@@ -989,7 +1038,8 @@ class BEMBFlex(nn.Module):
 
         # ==============================================================================================================
         # 2. compute log p(latent) prior.
-        elbo = self.log_prior(batch, sample_dict).mean(dim=0)  # (num_seeds,) --mean--> scalar.
+        # (num_seeds,) --mean--> scalar.
+        elbo = self.log_prior(batch, sample_dict).mean(dim=0)
         # ==============================================================================================================
 
         # ==============================================================================================================
@@ -1014,10 +1064,13 @@ class BEMBFlex(nn.Module):
                                    sample_dict=sample_dict)  # (num_seeds, len(batch))
 
             # compute the log-likelihood for binary label.
-            y_stacked = torch.stack([batch.label] * num_seeds).float()  # (num_seeds, len(batch))
+            # (num_seeds, len(batch))
+            y_stacked = torch.stack([batch.label] * num_seeds).float()
             assert y_stacked.shape == utility.shape
             bce = nn.BCELoss(reduction='none')
-            ll = - bce(torch.sigmoid(utility), y_stacked).sum(dim=1).mean(dim=0)  # scalar.
+            # scalar.
+            ll = - bce(torch.sigmoid(utility),
+                       y_stacked).sum(dim=1).mean(dim=0)
             elbo += ll
 
         # ==============================================================================================================
