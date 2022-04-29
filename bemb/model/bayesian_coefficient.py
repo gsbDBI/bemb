@@ -16,9 +16,9 @@ class BayesianCoefficient(nn.Module):
                  variation: str,
                  num_classes: int,
                  obs2prior: bool,
-                 num_obs: Optional[int]=None,
-                 dim: int=1,
-                 prior_variance: float=1.0
+                 num_obs: Optional[int] = None,
+                 dim: int = 1,
+                 prior_variance: float = 1.0
                  ) -> None:
         """The Bayesian coefficient object represents a learnable tensor mu_i in R^k, where i is from a family (e.g., user, item)
             so there are num_classes * num_obs learnable weights in total.
@@ -68,18 +68,24 @@ class BayesianCoefficient(nn.Module):
             self.prior_H = BayesianCoefficient(variation='constant', num_classes=dim, obs2prior=False,
                                                dim=num_obs, prior_variance=1.0)
         else:
-            self.register_buffer('prior_zero_mean', torch.zeros(num_classes, dim))
+            self.register_buffer(
+                'prior_zero_mean', torch.zeros(num_classes, dim))
 
         # self.prior_cov_factor = nn.Parameter(torch.zeros(num_classes, dim, 1), requires_grad=False)
         # self.prior_cov_diag = nn.Parameter(torch.ones(num_classes, dim), requires_grad=False)
-        self.register_buffer('prior_cov_factor', torch.zeros(num_classes, dim, 1))
-        self.register_buffer('prior_cov_diag', torch.ones(num_classes, dim) * self.prior_variance)
+        self.register_buffer('prior_cov_factor',
+                             torch.zeros(num_classes, dim, 1))
+        self.register_buffer('prior_cov_diag', torch.ones(
+            num_classes, dim) * self.prior_variance)
 
         # create variational distribution.
-        self.variational_mean_flexible = nn.Parameter(torch.randn(num_classes, dim), requires_grad=True)
-        self.variational_logstd = nn.Parameter(torch.randn(num_classes, dim), requires_grad=True)
+        self.variational_mean_flexible = nn.Parameter(
+            torch.randn(num_classes, dim), requires_grad=True)
+        self.variational_logstd = nn.Parameter(
+            torch.randn(num_classes, dim), requires_grad=True)
 
-        self.register_buffer('variational_cov_factor', torch.zeros(num_classes, dim, 1))
+        self.register_buffer('variational_cov_factor',
+                             torch.zeros(num_classes, dim, 1))
 
         self.variational_mean_fixed = None
 
@@ -119,8 +125,8 @@ class BayesianCoefficient(nn.Module):
 
     def log_prior(self,
                   sample: torch.Tensor,
-                  H_sample: Optional[torch.Tensor]=None,
-                  x_obs: Optional[torch.Tensor]=None) -> torch.Tensor:
+                  H_sample: Optional[torch.Tensor] = None,
+                  x_obs: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         Computes the logP_{Prior}(Coefficient Sample) for provided samples of the coefficient. The prior will either be a
         zero-mean Gaussian (if `obs2prior` is False) or a Gaussian with a learnable mean (if `obs2prior` is True).
@@ -146,7 +152,8 @@ class BayesianCoefficient(nn.Module):
         if self.obs2prior:
             assert H_sample.shape == (num_seeds, dim, self.num_obs)
             assert x_obs.shape == (num_classes, self.num_obs)
-            x_obs = x_obs.view(1, num_classes, self.num_obs).expand(num_seeds, -1, -1)
+            x_obs = x_obs.view(1, num_classes, self.num_obs).expand(
+                num_seeds, -1, -1)
             H_sample = torch.transpose(H_sample, 1, 2)
             assert H_sample.shape == (num_seeds, self.num_obs, dim)
             mu = torch.bmm(x_obs, H_sample)
@@ -178,7 +185,7 @@ class BayesianCoefficient(nn.Module):
         assert out.shape == (num_seeds, num_classes)
         return out
 
-    def rsample(self, num_seeds: int=1) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
+    def rsample(self, num_seeds: int = 1) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
         """Samples values of the coefficient from the variational distribution using re-parameterization trick.
 
         Args:
@@ -191,7 +198,8 @@ class BayesianCoefficient(nn.Module):
                 sampled values of coefficient, and (2) a tensor o shape (num_seeds, dim, num_obs) containing samples of the H weight
                 in the prior distribution.
         """
-        value_sample = self.variational_distribution.rsample(torch.Size([num_seeds]))
+        value_sample = self.variational_distribution.rsample(
+            torch.Size([num_seeds]))
         if self.obs2prior:
             # sample obs2prior H as well.
             H_sample = self.prior_H.rsample(num_seeds=num_seeds)
