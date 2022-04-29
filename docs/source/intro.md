@@ -1,0 +1,7 @@
+# Short Introduction to What this Package Does
+1. The package includes a data management tool based on `PyTorch`'s dataset called `ChoiceDataset`. Our dataset implementation allows users to easily move data between CPU and GPU. Unlike traditional long or wide formats, the `ChoiceDataset` offers a memory-efficient way to manage observables. For example, in the traditional long format with $N$ choice instances and $K \ll N$ items, all item features will be copied $N$ times in a long-format dataset, but `ChoiceDataset` only keep one copy for each item.
+2. The package provides a conditional logit model for consumer choice modeling.
+3. The package provides a nested logit model for consumer choice modeling.
+4. The package provides a Bayesian Embedding (also known as probabilistic matrix factorization) model that builds latents for customers and items.
+5. The package leverage GPU acceleration using PyTorch and easily scale to large dataset of millions of choice records. All models are trained using state-of-the-art optimizers by in PyTorch. These optimization algorithms are tested to be scalable by modern machine learning practitioners. However, you can rest assure that the package runs flawlessly when no GPU is used as well.
+6. For those without much experience in model PyTorch development, setting up optimizers and training loops can be frustrating. We provide easy-to-use [PyTorch lightning](https://www.pytorchlightning.ai) wrapper of models to free researchers from the hassle from setting up PyTorch optimizers and training loops.
