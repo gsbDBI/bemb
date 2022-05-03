@@ -37,14 +37,50 @@
             
   <section class="tex2jax_ignore mathjax_ignore" id="short-introduction-to-what-this-package-does">
 <h1>Short Introduction to What this Package Does<a class="headerlink" href="#short-introduction-to-what-this-package-does" title="Permalink to this headline">¶</a></h1>
-<ol class="arabic simple">
-<li><p>The package includes a data management tool based on <code class="docutils literal notranslate"><span class="pre">PyTorch</span></code>’s dataset called <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code>. Our dataset implementation allows users to easily move data between CPU and GPU. Unlike traditional long or wide formats, the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> offers a memory-efficient way to manage observables. For example, in the traditional long format with <span class="math notranslate nohighlight">\(N\)</span> choice instances and <span class="math notranslate nohighlight">\(K \ll N\)</span> items, all item features will be copied <span class="math notranslate nohighlight">\(N\)</span> times in a long-format dataset, but <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> only keep one copy for each item.</p></li>
-<li><p>The package provides a conditional logit model for consumer choice modeling.</p></li>
-<li><p>The package provides a nested logit model for consumer choice modeling.</p></li>
-<li><p>The package provides a Bayesian Embedding (also known as probabilistic matrix factorization) model that builds latents for customers and items.</p></li>
-<li><p>The package leverage GPU acceleration using PyTorch and easily scale to large dataset of millions of choice records. All models are trained using state-of-the-art optimizers by in PyTorch. These optimization algorithms are tested to be scalable by modern machine learning practitioners. However, you can rest assure that the package runs flawlessly when no GPU is used as well.</p></li>
-<li><p>For those without much experience in model PyTorch development, setting up optimizers and training loops can be frustrating. We provide easy-to-use <a class="reference external" href="https://www.pytorchlightning.ai">PyTorch lightning</a> wrapper of models to free researchers from the hassle from setting up PyTorch optimizers and training loops.</p></li>
-</ol>
+<p>This document provides a short introduction to the consumer choice model we aim to solve.</p>
+<p>In short, all models in the package aim to predict which item an user will purchase while facing the shelves in a supermarket.
+More specifically, for each user <span class="math notranslate nohighlight">\(u\)</span> and item <span class="math notranslate nohighlight">\(i\)</span>, models compute a value <span class="math notranslate nohighlight">\(U_{ui}\)</span> predicting the utility user <span class="math notranslate nohighlight">\(u\)</span> will get from purchasing item <span class="math notranslate nohighlight">\(i\)</span>, then user <span class="math notranslate nohighlight">\(u\)</span> is predicted to purchase the item <span class="math notranslate nohighlight">\(i\)</span> generating the maximum utility.</p>
+<p>However, the usage of our models is not limited to this supermarket context, researchers can adjust the definition of <strong>user</strong> and <strong>item</strong> to fit any choice modelling context. The <a class="reference internal" href="projects.html"><span class="doc std std-doc">related project</span></a> page overviews some extensions of our models to other context.</p>
+<section id="components-of-the-consumer-choice-modelling-problem">
+<h2>Components of the Consumer Choice Modelling Problem<a class="headerlink" href="#components-of-the-consumer-choice-modelling-problem" title="Permalink to this headline">¶</a></h2>
+<p>We begin with essential component of the consumer choice modelling problem. Walking through these components should help you understand what kind of data our models are working on.</p>
+<section id="purchasing-record">
+<h3>Purchasing Record<a class="headerlink" href="#purchasing-record" title="Permalink to this headline">¶</a></h3>
+<p>Each row (record) of the dataset is called a <strong>purchasing record</strong>, which includes <em>who</em> bought <em>what</em> at <em>when</em> and <em>where</em>.
+Let <span class="math notranslate nohighlight">\(B\)</span> denote the number of <strong>purchasing records</strong> in the dataset (i.e., number of rows of the dataset). Each row <span class="math notranslate nohighlight">\(b \in \{1,2,\dots, B\}\)</span> corresponds to a purchase record (i.e., <em>who</em> bought <em>what</em> at <em>where and when</em>).</p>
+</section>
+<section id="items">
+<h3>Items<a class="headerlink" href="#items" title="Permalink to this headline">¶</a></h3>
+<p>To begin with, there are <span class="math notranslate nohighlight">\(I\)</span> <strong>items</strong> indexed by <span class="math notranslate nohighlight">\(i \in \{1,2,\dots,I\}\)</span> under our consideration.</p>
+<p>Further, the researcher can optionally partition the set items into <span class="math notranslate nohighlight">\(C\)</span> <strong>categories</strong> indexed by <span class="math notranslate nohighlight">\(c \in \{1,2,\dots,C\}\)</span>. Let <span class="math notranslate nohighlight">\(I_c\)</span> denote the collection of items in category <span class="math notranslate nohighlight">\(c\)</span>, it is easy to verify that
+<span class="math notranslate nohighlight">\(
+\bigcup_{c \in \{1, 2, \dots, C\}} I_c = \{1, 2, \dots I\}
+\)</span>
+If the researcher does not wish to model different categories differently, the researcher can simply put all items in one single category: <span class="math notranslate nohighlight">\(I_1 = \{1, 2, \dots I\}\)</span>, so that all items belong to the same category.</p>
+<p><strong>Note</strong>: since we will be using PyTorch to train our model, we represent their identities with integer values instead of the raw human-readable names of items (e.g., Dell 24 inch LCD monitor).
+Raw item names can be encoded easily with <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OrdinalEncoder.html">sklearn.preprocessing.OrdinalEncoder</a></p>
+</section>
+<section id="users">
+<h3>Users<a class="headerlink" href="#users" title="Permalink to this headline">¶</a></h3>
+<p>Each purchaing reocrd is naturally associated with an <strong>user</strong> indexed by <span class="math notranslate nohighlight">\(u \in \{1,2,\dots,U\}\)</span> (<em>who</em>) as well.</p>
+</section>
+<section id="sessions">
+<h3>Sessions<a class="headerlink" href="#sessions" title="Permalink to this headline">¶</a></h3>
+<p>Our data structure encompasses <em>where and when</em> using a notion called <strong>session</strong> indexed by <span class="math notranslate nohighlight">\(s \in \{1,2,\dots, S\}\)</span>.
+For example, when the data came from a single store over the period of a year. In this case, the notion of <em>where</em> does not matter that much, and session <span class="math notranslate nohighlight">\(s\)</span> is simply the date of purchase.</p>
+<p>Another example is that we have the purchase record from different stores, the session <span class="math notranslate nohighlight">\(s\)</span> can be defined as a pair of <em>(date, store)</em> instead.</p>
+<p>If the researcher does not wish to handle records from different sessions differently, the researcher can assign the same session ID to all rows of the dataset.</p>
+<p>To summarize, each purchasing record <span class="math notranslate nohighlight">\(b\)</span> in the dataset is characterized by a user-session-item tuple <span class="math notranslate nohighlight">\((u, s, i)\)</span>.</p>
+<p>When there are multiple items bought by the same user in the same session, there will be multiple rows in the dataset with the same <span class="math notranslate nohighlight">\((u, s)\)</span> corresponding to the same receipt.</p>
+</section>
+<section id="item-availability">
+<h3>Item Availability<a class="headerlink" href="#item-availability" title="Permalink to this headline">¶</a></h3>
+<p>It is not necessarily that all items are available in every session, items can get out-of-stock in particular sessions.</p>
+<p>To handle these cases, the researcher can <em>optionally</em> provide a boolean tensor <span class="math notranslate nohighlight">\(\in \{\texttt{True}, \texttt{False}\}^{S\times I}\)</span> to indicate which items are available for purchasing in each session.
+While predicting the purchase probabilities, the model sets the probability for these unavailable items to zero and normalizes probabilities among available items.
+If the item availability is not provided, the model assumes all items are available in all sessions.</p>
+</section>
+</section>
 </section>
 
 
@@ -65,8 +101,20 @@
 
 <h3>Navigation</h3>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Short Introduction to What this Package Does</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Short Introduction to What this Package Does</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#components-of-the-consumer-choice-modelling-problem">Components of the Consumer Choice Modelling Problem</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#purchasing-record">Purchasing Record</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#items">Items</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#users">Users</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sessions">Sessions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#item-availability">Item Availability</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="projects.html">Research Projects using this Package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test.html">Compatibility Check List</a></li>
 </ul>
 

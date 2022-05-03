@@ -15,7 +15,7 @@
     <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Compatibility Check List" href="test.html" />
+    <link rel="next" title="Research Projects using this Package" href="projects.html" />
     <link rel="prev" title="Short Introduction to What this Package Does" href="intro.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
@@ -35,11 +35,13 @@
             
   <section class="tex2jax_ignore mathjax_ignore" id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
-<p>There are two parts of this project: the <code class="docutils literal notranslate"><span class="pre">torch_choice</span></code> library consisting of data management modules, logit and nested-logit models for consumer choice modelling. The <code class="docutils literal notranslate"><span class="pre">torch_choice</span></code> package offers based</p>
-<p>For researchers wish to use the Bayesian Embedding (BEMB) model, they need to install an additional <code class="docutils literal notranslate"><span class="pre">bemb</span></code> package, which was built on the top of <code class="docutils literal notranslate"><span class="pre">torch_choice</span></code>.
-We highly recommend users to install <code class="docutils literal notranslate"><span class="pre">torch_choice</span></code> first to have a taste of the type of research question we are trying to solve.</p>
+<p>This page will guide you through the installation procedure of <code class="docutils literal notranslate"><span class="pre">torch-choice</span></code> and <code class="docutils literal notranslate"><span class="pre">bemb</span></code>.</p>
+<p>There are two parts of this project: the <code class="docutils literal notranslate"><span class="pre">torch_choice</span></code> library consisting of data management modules, logit and nested-logit models for consumer choice modelling.</p>
+<p>For researchers wish to use the Bayesian Embedding (BEMB) model, they need to install an additional <code class="docutils literal notranslate"><span class="pre">bemb</span></code> package, which was built on the top of <code class="docutils literal notranslate"><span class="pre">torch_choice</span></code>.</p>
 <p><strong>Note</strong> Since this project is still on its pre-release stage and subject to changes, we have not uploaded our packages to PIP or CONDA. Researchers need to install these packages from Github source code.</p>
-<p>To install <code class="docutils literal notranslate"><span class="pre">torch_choice</span></code> and <code class="docutils literal notranslate"><span class="pre">bemb</span></code> (optional) from source:</p>
+<section id="option-1-install-using-source-code-from-github-repository">
+<h2>Option 1: Install using Source Code from Github Repository<a class="headerlink" href="#option-1-install-using-source-code-from-github-repository" title="Permalink to this headline">¶</a></h2>
+<p>To install <code class="docutils literal notranslate"><span class="pre">torch_choice</span></code> and <code class="docutils literal notranslate"><span class="pre">bemb</span></code> from source,</p>
 <ol class="arabic simple">
 <li><p>Clone the repositories of both <code class="docutils literal notranslate"><span class="pre">torch_choice</span></code> and <code class="docutils literal notranslate"><span class="pre">bemb</span></code> to your local machine.</p></li>
 <li><p>Install required dependencies (e.g., PyTorch and PyTorch-Lightning).</p></li>
@@ -47,6 +49,15 @@ We highly recommend users to install <code class="docutils literal notranslate">
 <li><p>Check installation by running <code class="docutils literal notranslate"><span class="pre">python3</span> <span class="pre">-c</span> <span class="pre">&quot;import</span> <span class="pre">torch_choice;</span> <span class="pre">print(torch_choice.__version__)&quot;</span></code>.</p></li>
 <li><p>Check installation by running <code class="docutils literal notranslate"><span class="pre">python3</span> <span class="pre">-c</span> <span class="pre">&quot;import</span> <span class="pre">bemb;</span> <span class="pre">print(bemb.__version__)&quot;</span></code>.</p></li>
 </ol>
+</section>
+<section id="option-2-install-using-pip">
+<h2>Option 2: Install using Pip<a class="headerlink" href="#option-2-install-using-pip" title="Permalink to this headline">¶</a></h2>
+<p><strong>Note</strong>: We are working on publishing these packages to PIP.</p>
+</section>
+<section id="option-3-install-using-conda">
+<h2>Option 3: Install using Conda<a class="headerlink" href="#option-3-install-using-conda" title="Permalink to this headline">¶</a></h2>
+<p><strong>Note</strong>: We are working on publishing these packages to Conda.</p>
+</section>
 </section>
 
 
@@ -68,7 +79,14 @@ We highly recommend users to install <code class="docutils literal notranslate">
 <h3>Navigation</h3>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Short Introduction to What this Package Does</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#option-1-install-using-source-code-from-github-repository">Option 1: Install using Source Code from Github Repository</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#option-2-install-using-pip">Option 2: Install using Pip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#option-3-install-using-conda">Option 3: Install using Conda</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="projects.html">Research Projects using this Package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test.html">Compatibility Check List</a></li>
 </ul>
 
@@ -77,7 +95,7 @@ We highly recommend users to install <code class="docutils literal notranslate">
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
       <li>Previous: <a href="intro.html" title="previous chapter">Short Introduction to What this Package Does</a></li>
-      <li>Next: <a href="test.html" title="next chapter">Compatibility Check List</a></li>
+      <li>Next: <a href="projects.html" title="next chapter">Research Projects using this Package</a></li>
   </ul></li>
 </ul>
 </div>

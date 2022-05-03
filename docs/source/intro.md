@@ -46,3 +46,5 @@ It is not necessarily that all items are available in every session, items can g
 To handle these cases, the researcher can *optionally* provide a boolean tensor $\in \{\texttt{True}, \texttt{False}\}^{S\times I}$ to indicate which items are available for purchasing in each session.
 While predicting the purchase probabilities, the model sets the probability for these unavailable items to zero and normalizes probabilities among available items.
 If the item availability is not provided, the model assumes all items are available in all sessions.
+
+## Available Models
