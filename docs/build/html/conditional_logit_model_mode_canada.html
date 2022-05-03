@@ -1,42 +1,94 @@
-
 <!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-
-    <title>Example of the Conditional Logit Model on ModeCanada Dataset &#8212; torch-choice  documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Example of the Conditional Logit Model on ModeCanada Dataset &mdash; torch-choice  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Random Utility Model (RUM) Part II: Nested Logit Model" href="nested_logit_model_house_cooling.html" />
-    <link rel="prev" title="Data Management Tutorial" href="data_management.html" />
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+    <link rel="prev" title="Data Management Tutorial" href="data_management.html" /> 
+</head>
 
-  </head><body>
-  
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> torch-choice
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Short Introduction to What this Package Does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="projects.html">Research Projects using this Package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_management.html">Data Management Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_management.html#what-if-the-target-of-prediction-is-not-an-item-it-s-a-binary-variable-instead">What if the target of prediction is not an item? It’s a binary variable instead!</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Example of the Conditional Logit Model on ModeCanada Dataset</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#load-dataset">Load Dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#create-the-model">Create the Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#train-the-model">Train the Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#parameter-estimation">Parameter Estimation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#r-output">R Output</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html">Random Utility Model (RUM) Part II: Nested Logit Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-1">Example 1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-2">Example 2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-3">Example 3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html">Compatibility Check List</a></li>
+</ul>
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          
+        </div>
+      </div>
+    </nav>
 
-          <div class="body" role="main">
-            
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">torch-choice</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Example of the Conditional Logit Model on ModeCanada Dataset</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/conditional_logit_model_mode_canada.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
   <section class="tex2jax_ignore mathjax_ignore" id="example-of-the-conditional-logit-model-on-modecanada-dataset">
-<h1>Example of the Conditional Logit Model on ModeCanada Dataset<a class="headerlink" href="#example-of-the-conditional-logit-model-on-modecanada-dataset" title="Permalink to this headline">¶</a></h1>
+<h1>Example of the Conditional Logit Model on ModeCanada Dataset<a class="headerlink" href="#example-of-the-conditional-logit-model-on-modecanada-dataset" title="Permalink to this headline"></a></h1>
 <p>This tutorial is modified from the <a class="reference external" href="https://cran.r-project.org/web/packages/mlogit/vignettes/c3.rum.html">Random utility model and the multinomial logit model</a> in th documentation of <code class="docutils literal notranslate"><span class="pre">mlogit</span></code> package in R. Please note that the dataset involved in this example is fairly small (2,779 choice records), so we don’t expect the performance to be faster than the R implementation. We provide this tutorial mainly to check the correctness of our prediction. The fully potential of PyTorch is better exploited on much larger dataset.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">argparse</span>
 
@@ -67,7 +119,7 @@
 </pre></div>
 </div>
 <section id="load-dataset">
-<h2>Load Dataset<a class="headerlink" href="#load-dataset" title="Permalink to this headline">¶</a></h2>
+<h2>Load Dataset<a class="headerlink" href="#load-dataset" title="Permalink to this headline"></a></h2>
 <p>We have included the <code class="docutils literal notranslate"><span class="pre">ModeCanada</span></code> dataset in our package. The <code class="docutils literal notranslate"><span class="pre">ModeCanada</span></code> dataset contains individuals’ choice on traveling methods. The raw dataset is in a long-format, in which the <code class="docutils literal notranslate"><span class="pre">case</span></code> variable identifies each choice. For example, the first four row (with <code class="docutils literal notranslate"><span class="pre">case</span> <span class="pre">==</span> <span class="pre">109</span></code>) corresponds to the first choice, the <code class="docutils literal notranslate"><span class="pre">alt</span></code> column lists all alternatives/items available. The <code class="docutils literal notranslate"><span class="pre">choice</span></code> column identifies which alternative/item is chosen. In this example with <code class="docutils literal notranslate"><span class="pre">choice</span> <span class="pre">==</span> <span class="pre">1</span></code> on <code class="docutils literal notranslate"><span class="pre">air</span></code> alternative, the decision maker chose to travel by <code class="docutils literal notranslate"><span class="pre">air</span></code> among four available alternatives/items/traveling modes.</p>
 <p>Now we convert the raw dataset into the format compatible with our model.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;./public_datasets/ModeCanada.csv&#39;</span><span class="p">)</span>
@@ -203,7 +255,7 @@
 2       air
 3       air
 4       air
-       ... 
+       ...
 2774    car
 2775    car
 2776    car
@@ -253,7 +305,7 @@ In contrast, the <code class="docutils literal notranslate"><span class="pre">in
 </div>
 </section>
 <section id="create-the-model">
-<h2>Create the Model<a class="headerlink" href="#create-the-model" title="Permalink to this headline">¶</a></h2>
+<h2>Create the Model<a class="headerlink" href="#create-the-model" title="Permalink to this headline"></a></h2>
 <p>We aim to estimate the following model formulation:
 $<span class="math notranslate nohighlight">\(
 U_{uit} = \beta^0_i + \beta^{1\top} X^{price: (cost, freq, ovt)}_{it} + \beta^2_i X^{session:income}_t + \beta^3_i X_{it}^{price:ivt} + \epsilon_{uit}
@@ -284,7 +336,7 @@ Even the model can infer <code class="docutils literal notranslate"><span class=
 </div>
 </section>
 <section id="train-the-model">
-<h2>Train the Model<a class="headerlink" href="#train-the-model" title="Permalink to this headline">¶</a></h2>
+<h2>Train the Model<a class="headerlink" href="#train-the-model" title="Permalink to this headline"></a></h2>
 <p>The model takes in a <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> object in and return predicted potentials for each alternatives. The shape of output would be <code class="docutils literal notranslate"><span class="pre">len(dataset)</span> <span class="pre">X</span> <span class="pre">num_items</span></code>.
 We provide an easy-to-use model runner for both <code class="docutils literal notranslate"><span class="pre">ConditionalLogitModel</span></code> and <code class="docutils literal notranslate"><span class="pre">NestedLogitModel</span></code> instances.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
@@ -351,10 +403,10 @@ Time taken: 74.3606629371643
 </div>
 </section>
 <section id="parameter-estimation">
-<h2>Parameter Estimation<a class="headerlink" href="#parameter-estimation" title="Permalink to this headline">¶</a></h2>
+<h2>Parameter Estimation<a class="headerlink" href="#parameter-estimation" title="Permalink to this headline"></a></h2>
 <p>The following is the R-output from the <code class="docutils literal notranslate"><span class="pre">mlogit</span></code> implementation, the estimation, standard error, and log-likelihood from our <code class="docutils literal notranslate"><span class="pre">torch_choice</span></code> implementation is the same as the result from <code class="docutils literal notranslate"><span class="pre">mlogit</span></code> implementation.</p>
 <section id="r-output">
-<h3>R Output<a class="headerlink" href="#r-output" title="Permalink to this headline">¶</a></h3>
+<h3>R Output<a class="headerlink" href="#r-output" title="Permalink to this headline"></a></h3>
 <div class="highlight-r notranslate"><div class="highlight"><pre><span></span><span class="nf">install.packages</span><span class="p">(</span><span class="s">&quot;mlogit&quot;</span><span class="p">)</span>
 <span class="nf">library</span><span class="p">(</span><span class="s">&quot;mlogit&quot;</span><span class="p">)</span>
 <span class="nf">data</span><span class="p">(</span><span class="s">&quot;ModeCanada&quot;</span><span class="p">,</span> <span class="n">package</span> <span class="o">=</span> <span class="s">&quot;mlogit&quot;</span><span class="p">)</span>
@@ -365,23 +417,23 @@ Time taken: 74.3606629371643
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Call:
-mlogit(formula = choice ~ cost + freq + ovt | income | ivt, data = MC, 
+mlogit(formula = choice ~ cost + freq + ovt | income | ivt, data = MC,
     reflevel = &quot;air&quot;, method = &quot;nr&quot;)
 
 Frequencies of alternatives:choice
-      air     train       bus       car 
-0.3738755 0.1666067 0.0035984 0.4559194 
+      air     train       bus       car
+0.3738755 0.1666067 0.0035984 0.4559194
 
 nr method
-9 iterations, 0h:0m:0s 
-g&#39;(-H)^-1g = 0.00014 
-successive function values within tolerance limits 
+9 iterations, 0h:0m:0s
+g&#39;(-H)^-1g = 0.00014
+successive function values within tolerance limits
 
 Coefficients :
-                    Estimate Std. Error  z-value  Pr(&gt;|z|)    
+                    Estimate Std. Error  z-value  Pr(&gt;|z|)
 (Intercept):train  3.2741952  0.6244152   5.2436 1.575e-07 ***
-(Intercept):bus    0.6983381  1.2802466   0.5455 0.5854292    
-(Intercept):car    1.8441129  0.7085089   2.6028 0.0092464 ** 
+(Intercept):bus    0.6983381  1.2802466   0.5455 0.5854292
+(Intercept):car    1.8441129  0.7085089   2.6028 0.0092464 **
 cost              -0.0333389  0.0070955  -4.6986 2.620e-06 ***
 freq               0.0925297  0.0050976  18.1517 &lt; 2.2e-16 ***
 ovt               -0.0430036  0.0032247 -13.3356 &lt; 2.2e-16 ***
@@ -389,14 +441,14 @@ income:train      -0.0381466  0.0040831  -9.3426 &lt; 2.2e-16 ***
 income:bus        -0.0890867  0.0183471  -4.8556 1.200e-06 ***
 income:car        -0.0279930  0.0038726  -7.2286 4.881e-13 ***
 ivt:air            0.0595097  0.0100727   5.9080 3.463e-09 ***
-ivt:train         -0.0014504  0.0011875  -1.2214 0.2219430    
-ivt:bus           -0.0067835  0.0044334  -1.5301 0.1259938    
+ivt:train         -0.0014504  0.0011875  -1.2214 0.2219430
+ivt:bus           -0.0067835  0.0044334  -1.5301 0.1259938
 ivt:car           -0.0064603  0.0018985  -3.4029 0.0006668 ***
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Log-Likelihood: -1874.3
-McFadden R^2:  0.35443 
+McFadden R^2:  0.35443
 Likelihood ratio test : chisq = 2058.1 (p.value = &lt; 2.22e-16)
 </pre></div>
 </div>
@@ -405,91 +457,34 @@ Likelihood ratio test : chisq = 2058.1 (p.value = &lt; 2.22e-16)
 </section>
 
 
+           </div>
           </div>
-          
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="data_management.html" class="btn btn-neutral float-left" title="Data Management Tutorial" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="nested_logit_model_house_cooling.html" class="btn btn-neutral float-right" title="Random Utility Model (RUM) Part II: Nested Logit Model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Tianyu Du, Ayush Kanodia.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="index.html">torch-choice</a></h1>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
 
-
-
-
-
-
-
-
-<h3>Navigation</h3>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="intro.html">Short Introduction to What this Package Does</a></li>
-<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="projects.html">Research Projects using this Package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="data_management.html">Data Management Tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="data_management.html#what-if-the-target-of-prediction-is-not-an-item-it-s-a-binary-variable-instead">What if the target of prediction is not an item? It’s a binary variable instead!</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Example of the Conditional Logit Model on ModeCanada Dataset</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#load-dataset">Load Dataset</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#create-the-model">Create the Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#train-the-model">Train the Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#parameter-estimation">Parameter Estimation</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#r-output">R Output</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html">Random Utility Model (RUM) Part II: Nested Logit Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-1">Example 1</a></li>
-<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-2">Example 2</a></li>
-<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-3">Example 3</a></li>
-<li class="toctree-l1"><a class="reference internal" href="test.html">Compatibility Check List</a></li>
-</ul>
-
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="data_management.html" title="previous chapter">Data Management Tutorial</a></li>
-      <li>Next: <a href="nested_logit_model_house_cooling.html" title="next chapter">Random Utility Model (RUM) Part II: Nested Logit Model</a></li>
-  </ul></li>
-</ul>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script>$('#searchbox').show(0);</script>
-
-
-
-
-
-
-
-
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2022, Tianyu Du, Ayush Kanodia.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="_sources/conditional_logit_model_mode_canada.md.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
-    
-
-    
-  </body>
+</body>
 </html>

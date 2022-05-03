@@ -1,40 +1,115 @@
-
 <!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
-
-    <title>Data Management Tutorial &#8212; torch-choice  documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Management Tutorial &mdash; torch-choice  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+    <link rel="next" title="Example of the Conditional Logit Model on ModeCanada Dataset" href="conditional_logit_model_mode_canada.html" />
+    <link rel="prev" title="Tutorials" href="tutorials.html" /> 
+</head>
 
-  </head><body>
-  
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> torch-choice
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Short Introduction to What this Package Does</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="projects.html">Research Projects using this Package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Data Management Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#components-of-the-dataset">Components of the Dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#items-and-categories">Items and Categories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#users">Users</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sessions">Sessions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#item-availability">Item Availability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#observables">Observables</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#advanced-usage-additional-observables">Advanced Usage: Additional Observables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#a-toy-example">A Toy Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#creating-choicedataset-object">Creating  <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> Object</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#step-1-generate-some-random-purchase-records-and-observables">Step 1: Generate some random purchase records and observables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-2-initialize-the-choicedataset">Step 2: Initialize the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code>.</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#what-you-can-do-with-the-choicedataset">What you can do with the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code>?</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#print-dataset-and-dataset-str"><code class="docutils literal notranslate"><span class="pre">print(dataset)</span></code> and <code class="docutils literal notranslate"><span class="pre">dataset.__str__</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dataset-num-users-items-sessions"><code class="docutils literal notranslate"><span class="pre">dataset.num_{users,</span> <span class="pre">items,</span> <span class="pre">sessions}</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dataset-clone"><code class="docutils literal notranslate"><span class="pre">dataset.clone()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dataset-to-cuda-and-dataset-check-device-consistency"><code class="docutils literal notranslate"><span class="pre">dataset.to('cuda')</span></code> and <code class="docutils literal notranslate"><span class="pre">dataset._check_device_consistency()</span></code>.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#subset-method">Subset method</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#using-pytorch-dataloader-for-the-training-loop">Using Pytorch dataloader for the training loop.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#chaining-multiple-datasets-jointdataset-examples">Chaining Multiple Datasets: <code class="docutils literal notranslate"><span class="pre">JointDataset</span></code> Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#what-if-the-target-of-prediction-is-not-an-item-it-s-a-binary-variable-instead">What if the target of prediction is not an item? It’s a binary variable instead!</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conditional_logit_model_mode_canada.html">Example of the Conditional Logit Model on ModeCanada Dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html">Random Utility Model (RUM) Part II: Nested Logit Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-1">Example 1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-2">Example 2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-3">Example 3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html">Compatibility Check List</a></li>
+</ul>
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          
+        </div>
+      </div>
+    </nav>
 
-          <div class="body" role="main">
-            
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">torch-choice</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Data Management Tutorial</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/data_management.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
   <section class="tex2jax_ignore mathjax_ignore" id="data-management-tutorial">
-<h1>Data Management Tutorial<a class="headerlink" href="#data-management-tutorial" title="Permalink to this headline">¶</a></h1>
+<h1>Data Management Tutorial<a class="headerlink" href="#data-management-tutorial" title="Permalink to this headline"></a></h1>
 <p><strong>Author: Tianyu Du (tianyudu&#64;stanford.edu)</strong></p>
 <p>This notebook aims to help users understand the functionality of <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> object. The <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> is an instance
 of the more general PyTorch dataset object holding information of consumer choices. The <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> offers easy and clean
@@ -42,12 +117,12 @@ data management interface and is compatible with most PyTorch machine learning p
 <p><strong>Note</strong>: since this package was initially proposed for modelling consumer choices, attribute names of <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code>
 are borrowed from the consumer choice literature.</p>
 <section id="components-of-the-dataset">
-<h2>Components of the Dataset<a class="headerlink" href="#components-of-the-dataset" title="Permalink to this headline">¶</a></h2>
+<h2>Components of the Dataset<a class="headerlink" href="#components-of-the-dataset" title="Permalink to this headline"></a></h2>
 <p>The BEMB model was initially designed for predicting consumers’ purchasing choices from the supermarket purchase dataset, we use the same setup in this tutorial. However, one can easily adopt the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> data structure to other use cases.
 Since there is a natural notion of <strong>users</strong> in the modelling problem, from now on we will call individuals in the dataset <strong>users</strong> and you, the reader, <strong>researchers</strong>.</p>
 <p>Since we will be using PyTorch to train our model, we represent their identities with integer values.</p>
 <section id="items-and-categories">
-<h3>Items and Categories<a class="headerlink" href="#items-and-categories" title="Permalink to this headline">¶</a></h3>
+<h3>Items and Categories<a class="headerlink" href="#items-and-categories" title="Permalink to this headline"></a></h3>
 <p>We begin with notations and essential component of the consumer choice modelling problem.
 Suppose there are <span class="math notranslate nohighlight">\(I\)</span> <strong>items</strong> indexed by <span class="math notranslate nohighlight">\(i \in \{1,2,\dots,I\}\)</span> under our consideration.
 Further, the researcher can optionally partition the set items into <span class="math notranslate nohighlight">\(C\)</span> <strong>categories</strong> indexed by <span class="math notranslate nohighlight">\(c \in \{1,2,\dots,C\}\)</span>. Let <span class="math notranslate nohighlight">\(I_c\)</span> denote the collection of items in category <span class="math notranslate nohighlight">\(c\)</span>, it is easy to verify that
@@ -57,19 +132,19 @@ Further, the researcher can optionally partition the set items into <span class=
 If the researcher does not wish to model different categories differently, the researcher can simply put all items in one single category: <span class="math notranslate nohighlight">\(I_1 = \{1, 2, \dots I\}\)</span>.</p>
 </section>
 <section id="users">
-<h3>Users<a class="headerlink" href="#users" title="Permalink to this headline">¶</a></h3>
+<h3>Users<a class="headerlink" href="#users" title="Permalink to this headline"></a></h3>
 <p>Let <span class="math notranslate nohighlight">\(B\)</span> denote the number of <strong>purchasing records</strong> in the dataset (i.e., number of rows of the dataset). Each row <span class="math notranslate nohighlight">\(b \in \{1,2,\dots, B\}\)</span> corresponds to a purchase record (i.e., <em>who</em> bought <em>what</em> at <em>where and when</em>). Each row is naturally associated with an <strong>user</strong> indexed by <span class="math notranslate nohighlight">\(u \in \{1,2,\dots,U\}\)</span> (<em>who</em>) and a bought item <span class="math notranslate nohighlight">\(i\)</span> (<em>what</em>).
 Overall, each row (i.e., purchasing record) in the dataset is characterized by a user-session-item tuple <span class="math notranslate nohighlight">\((u, s, i)\)</span>.
 When there are multiple items bought by the same user in the same session, there will be multiple rows in the dataset with the same <span class="math notranslate nohighlight">\((u, s)\)</span>.</p>
 </section>
 <section id="sessions">
-<h3>Sessions<a class="headerlink" href="#sessions" title="Permalink to this headline">¶</a></h3>
+<h3>Sessions<a class="headerlink" href="#sessions" title="Permalink to this headline"></a></h3>
 <p>Our data structure encompasses <em>where and when</em> using a notion called <strong>session</strong> indexed by <span class="math notranslate nohighlight">\(s \in \{1,2,\dots, S\}\)</span>, For example, of session <span class="math notranslate nohighlight">\(s\)</span> is the date of purchase.
 Another example is that we have the purchase record from different stores, the session <span class="math notranslate nohighlight">\(s\)</span> can be defined as a pair of <em>(date, store)</em> instead.
 If the researcher does not wish to handle records from different sessions differently, the researcher can assign the same session ID to all rows of the dataset.</p>
 </section>
 <section id="item-availability">
-<h3>Item Availability<a class="headerlink" href="#item-availability" title="Permalink to this headline">¶</a></h3>
+<h3>Item Availability<a class="headerlink" href="#item-availability" title="Permalink to this headline"></a></h3>
 <p>It is not necessarily that all items are available for purchasing everyday, items can get out-of-stock in particular sessions. To handle these cases, the researcher can optionally provide a boolean tensor <span class="math notranslate nohighlight">\(\in \{\texttt{True}, \texttt{False}\}^{S\times I}\)</span> to indicate which items are available for purchasing in each session.
 While predicting the purchase probabilities, the model sets the probability for these unavailable items to zero and normalizes probabilities among available items.
 If the item availability is not provided, the model assumes all items are available in all sessions.</p>
@@ -82,9 +157,9 @@ If the item availability is not provided, the model assumes all items are availa
 </ol>
 </section>
 <section id="observables">
-<h3>Observables<a class="headerlink" href="#observables" title="Permalink to this headline">¶</a></h3>
+<h3>Observables<a class="headerlink" href="#observables" title="Permalink to this headline"></a></h3>
 <section id="basic-usage">
-<h4>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h4>
+<h4>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline"></a></h4>
 <p>Optionally, the researcher can incorporate observables of, for example, users and items. Currently, the package support the following types of observables, where <span class="math notranslate nohighlight">\(K_{...}\)</span> $denote the number of observables.</p>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">user_obs</span></code> <span class="math notranslate nohighlight">\(\in \mathbb{R}^{U\times K_{user}}\)</span></p></li>
@@ -95,7 +170,7 @@ If the item availability is not provided, the model assumes all items are availa
 <p>The researcher should supply them with as appropriate keyword arguments while constructing the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> object.</p>
 </section>
 <section id="advanced-usage-additional-observables">
-<h4>Advanced Usage: Additional Observables<a class="headerlink" href="#advanced-usage-additional-observables" title="Permalink to this headline">¶</a></h4>
+<h4>Advanced Usage: Additional Observables<a class="headerlink" href="#advanced-usage-additional-observables" title="Permalink to this headline"></a></h4>
 <p>In some cases, the researcher may wish to handle different parts of <code class="docutils literal notranslate"><span class="pre">user_obs</span></code> (or other observable tensors) differently.
 For example, the researcher wishes to model the utility for user <span class="math notranslate nohighlight">\(u\)</span> to purchase item <span class="math notranslate nohighlight">\(i\)</span> in session <span class="math notranslate nohighlight">\(s\)</span> as the following:
 $<span class="math notranslate nohighlight">\(
@@ -108,7 +183,7 @@ The <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</
 </section>
 </section>
 <section id="a-toy-example">
-<h2>A Toy Example<a class="headerlink" href="#a-toy-example" title="Permalink to this headline">¶</a></h2>
+<h2>A Toy Example<a class="headerlink" href="#a-toy-example" title="Permalink to this headline"></a></h2>
 <p>Suppose we have a dataset of purchase history from two stores (Store A and B) on two dates (Sep 16 and 17), both stores sell {apple, banana, orange} (<code class="docutils literal notranslate"><span class="pre">num_items=3</span></code>) and there are three people came to those stores between Sep 16 and 17.</p>
 <table class="colwidths-auto docutils align-default">
 <thead>
@@ -165,7 +240,7 @@ The <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</
 </div>
 </section>
 <section id="creating-choicedataset-object">
-<h2>Creating  <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> Object<a class="headerlink" href="#creating-choicedataset-object" title="Permalink to this headline">¶</a></h2>
+<h2>Creating  <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> Object<a class="headerlink" href="#creating-choicedataset-object" title="Permalink to this headline"></a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Feel free to modify it as you want.</span>
 <span class="n">num_users</span> <span class="o">=</span> <span class="mi">10</span>
 <span class="n">num_items</span> <span class="o">=</span> <span class="mi">4</span>
@@ -175,7 +250,7 @@ The <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</
 </pre></div>
 </div>
 <section id="step-1-generate-some-random-purchase-records-and-observables">
-<h3>Step 1: Generate some random purchase records and observables<a class="headerlink" href="#step-1-generate-some-random-purchase-records-and-observables" title="Permalink to this headline">¶</a></h3>
+<h3>Step 1: Generate some random purchase records and observables<a class="headerlink" href="#step-1-generate-some-random-purchase-records-and-observables" title="Permalink to this headline"></a></h3>
 <p>We will be creating a randomly generated dataset with 10000 purchase records from 10 users, 4 items and 500 sessions.</p>
 <p>The first step is to randomly generate the purchase records using the following code. For simplicity, we assume all items are available in all sessions.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># create observables/features, the number of parameters are arbitrarily chosen.</span>
@@ -200,7 +275,7 @@ The <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</
 </div>
 </section>
 <section id="step-2-initialize-the-choicedataset">
-<h3>Step 2: Initialize the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code>.<a class="headerlink" href="#step-2-initialize-the-choicedataset" title="Permalink to this headline">¶</a></h3>
+<h3>Step 2: Initialize the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code>.<a class="headerlink" href="#step-2-initialize-the-choicedataset" title="Permalink to this headline"></a></h3>
 <p>You can construct a choice set using the following code, which manage all information for you.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span> <span class="o">=</span> <span class="n">ChoiceDataset</span><span class="p">(</span>
     <span class="c1"># pre-specified keywords of __init__</span>
@@ -219,9 +294,9 @@ The <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</
 </section>
 </section>
 <section id="what-you-can-do-with-the-choicedataset">
-<h2>What you can do with the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code>?<a class="headerlink" href="#what-you-can-do-with-the-choicedataset" title="Permalink to this headline">¶</a></h2>
+<h2>What you can do with the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code>?<a class="headerlink" href="#what-you-can-do-with-the-choicedataset" title="Permalink to this headline"></a></h2>
 <section id="print-dataset-and-dataset-str">
-<h3><code class="docutils literal notranslate"><span class="pre">print(dataset)</span></code> and <code class="docutils literal notranslate"><span class="pre">dataset.__str__</span></code><a class="headerlink" href="#print-dataset-and-dataset-str" title="Permalink to this headline">¶</a></h3>
+<h3><code class="docutils literal notranslate"><span class="pre">print(dataset)</span></code> and <code class="docutils literal notranslate"><span class="pre">dataset.__str__</span></code><a class="headerlink" href="#print-dataset-and-dataset-str" title="Permalink to this headline"></a></h3>
 <p>The command <code class="docutils literal notranslate"><span class="pre">print(dataset)</span></code> will provide a quick overview of shapes of tensors included in the object as well as where the dataset is located (i.e., host memory or GPU memory).</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
 </pre></div>
@@ -231,7 +306,7 @@ The <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</
 </div>
 </section>
 <section id="dataset-num-users-items-sessions">
-<h3><code class="docutils literal notranslate"><span class="pre">dataset.num_{users,</span> <span class="pre">items,</span> <span class="pre">sessions}</span></code><a class="headerlink" href="#dataset-num-users-items-sessions" title="Permalink to this headline">¶</a></h3>
+<h3><code class="docutils literal notranslate"><span class="pre">dataset.num_{users,</span> <span class="pre">items,</span> <span class="pre">sessions}</span></code><a class="headerlink" href="#dataset-num-users-items-sessions" title="Permalink to this headline"></a></h3>
 <p>You can use the <code class="docutils literal notranslate"><span class="pre">num_{users,</span> <span class="pre">items,</span> <span class="pre">sessions}</span></code> attribute to obtain the number of users, items, and sessions, they are determined automatically from the <code class="docutils literal notranslate"><span class="pre">{user,</span> <span class="pre">item,</span> <span class="pre">session}_obs</span></code> tensors provided while initializing the dataset object.</p>
 <p><strong>Note</strong>: the print <code class="docutils literal notranslate"><span class="pre">=:</span></code> operator requires Python3.8 or higher, you can remove <code class="docutils literal notranslate"><span class="pre">=:</span></code> if you are using an earlier copy of Python.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">num_users</span><span class="si">=:}</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -248,7 +323,7 @@ len(dataset)=10000
 </div>
 </section>
 <section id="dataset-clone">
-<h3><code class="docutils literal notranslate"><span class="pre">dataset.clone()</span></code><a class="headerlink" href="#dataset-clone" title="Permalink to this headline">¶</a></h3>
+<h3><code class="docutils literal notranslate"><span class="pre">dataset.clone()</span></code><a class="headerlink" href="#dataset-clone" title="Permalink to this headline"></a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> offers a <code class="docutils literal notranslate"><span class="pre">clone</span></code> method allow you to make copy of the dataset, you can modify the cloned dataset arbitrarily without changing the original dataset.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># clone</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">item_index</span><span class="p">[:</span><span class="mi">10</span><span class="p">])</span>
@@ -265,7 +340,7 @@ tensor([2, 2, 3, 1, 3, 2, 2, 1, 0, 1])
 </div>
 </section>
 <section id="dataset-to-cuda-and-dataset-check-device-consistency">
-<h3><code class="docutils literal notranslate"><span class="pre">dataset.to('cuda')</span></code> and <code class="docutils literal notranslate"><span class="pre">dataset._check_device_consistency()</span></code>.<a class="headerlink" href="#dataset-to-cuda-and-dataset-check-device-consistency" title="Permalink to this headline">¶</a></h3>
+<h3><code class="docutils literal notranslate"><span class="pre">dataset.to('cuda')</span></code> and <code class="docutils literal notranslate"><span class="pre">dataset._check_device_consistency()</span></code>.<a class="headerlink" href="#dataset-to-cuda-and-dataset-check-device-consistency" title="Permalink to this headline"></a></h3>
 <p>One key advantage of the <code class="docutils literal notranslate"><span class="pre">torch_choice</span></code> and <code class="docutils literal notranslate"><span class="pre">bemb</span></code> is their compatibility with GPUs, you can easily move tensors in a <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> object between host memory (i.e., cpu memory) and device memory (i.e., GPU memory) using <code class="docutils literal notranslate"><span class="pre">dataset.to()</span></code> method.
 Please note that the following code runs only if your machine has a compatible GPU and GPU-compatible version of PyTorch installed.</p>
 <p>Similarly, one can move data to host-memory using <code class="docutils literal notranslate"><span class="pre">dataset.to('cpu')</span></code>.
@@ -337,7 +412,7 @@ dict.price_obs.shape=torch.Size([10000, 4, 12])
 </div>
 </section>
 <section id="subset-method">
-<h3>Subset method<a class="headerlink" href="#subset-method" title="Permalink to this headline">¶</a></h3>
+<h3>Subset method<a class="headerlink" href="#subset-method" title="Permalink to this headline"></a></h3>
 <p>One can use <code class="docutils literal notranslate"><span class="pre">dataset[indices]</span></code> with <code class="docutils literal notranslate"><span class="pre">indices</span></code> as an integer-valued tensor or array to get the corresponding rows of the dataset.
 The example code block below queries the 6256-th, 4119-th, 453-th, 5520-th, and 1877-th row of the dataset object.
 The <code class="docutils literal notranslate"><span class="pre">item_index</span></code>, <code class="docutils literal notranslate"><span class="pre">user_index</span></code>, <code class="docutils literal notranslate"><span class="pre">session_index</span></code> of the resulted subset will be different from the original dataset, but other tensors will be the same.</p>
@@ -401,7 +476,7 @@ tensor(-1.5811)
 </section>
 </section>
 <section id="using-pytorch-dataloader-for-the-training-loop">
-<h2>Using Pytorch dataloader for the training loop.<a class="headerlink" href="#using-pytorch-dataloader-for-the-training-loop" title="Permalink to this headline">¶</a></h2>
+<h2>Using Pytorch dataloader for the training loop.<a class="headerlink" href="#using-pytorch-dataloader-for-the-training-loop" title="Permalink to this headline"></a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> object natively support batch samplers from PyTorch. For demonstration purpose, we turned off the shuffling option.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torch.utils.data.sampler</span> <span class="kn">import</span> <span class="n">BatchSampler</span><span class="p">,</span> <span class="n">SequentialSampler</span><span class="p">,</span> <span class="n">RandomSampler</span>
 <span class="n">shuffle</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># for demonstration purpose.</span>
@@ -461,7 +536,7 @@ dict.price_obs.shape=torch.Size([10000, 4, 12])
 </div>
 </section>
 <section id="chaining-multiple-datasets-jointdataset-examples">
-<h2>Chaining Multiple Datasets: <code class="docutils literal notranslate"><span class="pre">JointDataset</span></code> Examples<a class="headerlink" href="#chaining-multiple-datasets-jointdataset-examples" title="Permalink to this headline">¶</a></h2>
+<h2>Chaining Multiple Datasets: <code class="docutils literal notranslate"><span class="pre">JointDataset</span></code> Examples<a class="headerlink" href="#chaining-multiple-datasets-jointdataset-examples" title="Permalink to this headline"></a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dataset1</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
 <span class="n">dataset2</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
 <span class="n">joint_dataset</span> <span class="o">=</span> <span class="n">JointDataset</span><span class="p">(</span><span class="n">the_dataset</span><span class="o">=</span><span class="n">dataset1</span><span class="p">,</span> <span class="n">another_dataset</span><span class="o">=</span><span class="n">dataset2</span><span class="p">)</span>
@@ -479,77 +554,38 @@ dict.price_obs.shape=torch.Size([10000, 4, 12])
 </section>
 </section>
 <section class="tex2jax_ignore mathjax_ignore" id="what-if-the-target-of-prediction-is-not-an-item-it-s-a-binary-variable-instead">
-<h1>What if the target of prediction is not an item? It’s a binary variable instead!<a class="headerlink" href="#what-if-the-target-of-prediction-is-not-an-item-it-s-a-binary-variable-instead" title="Permalink to this headline">¶</a></h1>
+<h1>What if the target of prediction is not an item? It’s a binary variable instead!<a class="headerlink" href="#what-if-the-target-of-prediction-is-not-an-item-it-s-a-binary-variable-instead" title="Permalink to this headline"></a></h1>
 </section>
 
 
+           </div>
           </div>
-          
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tutorials.html" class="btn btn-neutral float-left" title="Tutorials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="conditional_logit_model_mode_canada.html" class="btn btn-neutral float-right" title="Example of the Conditional Logit Model on ModeCanada Dataset" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Tianyu Du, Ayush Kanodia.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="index.html">torch-choice</a></h1>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
 
-
-
-
-
-
-
-
-<h3>Navigation</h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="intro.html">Short Introduction to What this Package Does</a></li>
-<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="projects.html">Research Projects using this Package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="test.html">Compatibility Check List</a></li>
-</ul>
-
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-  </ul></li>
-</ul>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script>$('#searchbox').show(0);</script>
-
-
-
-
-
-
-
-
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2022, Tianyu Du, Ayush Kanodia.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="_sources/data_management.md.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
-    
-
-    
-  </body>
+</body>
 </html>
