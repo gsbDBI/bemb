@@ -31,8 +31,10 @@ Our objective is to provide a versatile interface for managing choice dataset, a
    install.md
    projects.md
    tutorials.md
+   data_management.md
+   conditional_logit_model_mode_canada.md
+   nested_logit_model_house_cooling.md
    test.md
-
 
 
 ==================

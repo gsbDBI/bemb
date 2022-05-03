@@ -13,7 +13,7 @@ We begin with essential component of the consumer choice modelling problem. Walk
 Each row (record) of the dataset is called a **purchasing record**, which includes *who* bought *what* at *when* and *where*.
 Let $B$ denote the number of **purchasing records** in the dataset (i.e., number of rows of the dataset). Each row $b \in \{1,2,\dots, B\}$ corresponds to a purchase record (i.e., *who* bought *what* at *where and when*).
 
-### Items
+### Items and Categories
 To begin with, there are $I$ **items** indexed by $i \in \{1,2,\dots,I\}$ under our consideration.
 
 Further, the researcher can optionally partition the set items into $C$ **categories** indexed by $c \in \{1,2,\dots,C\}$. Let $I_c$ denote the collection of items in category $c$, it is easy to verify that

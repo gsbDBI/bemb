@@ -51,12 +51,13 @@
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Short Introduction to What this Package Does</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#components-of-the-consumer-choice-modelling-problem">Components of the Consumer Choice Modelling Problem</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#purchasing-record">Purchasing Record</a></li>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#items">Items</a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#items-and-categories">Items and Categories</a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#users">Users</a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#sessions">Sessions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="intro.html#item-availability">Item Availability</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#available-models">Available Models</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a><ul>
@@ -66,7 +67,74 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="projects.html">Research Projects using this Package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#data-management">Data Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#random-utility-model-rum-1-conditional-logit-model">Random Utility Model (RUM) 1: Conditional Logit Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#random-utility-model-rum-2-nested-logit-model">Random Utility Model (RUM) 2: Nested Logit Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#bayesian-embedding-model-bemb">Bayesian Embedding Model (BEMB)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data_management.html">Data Management Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data_management.html#components-of-the-dataset">Components of the Dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_management.html#items-and-categories">Items and Categories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_management.html#users">Users</a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_management.html#sessions">Sessions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_management.html#item-availability">Item Availability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_management.html#observables">Observables</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="data_management.html#basic-usage">Basic Usage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_management.html#advanced-usage-additional-observables">Advanced Usage: Additional Observables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data_management.html#a-toy-example">A Toy Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_management.html#creating-choicedataset-object">Creating  <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> Object</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_management.html#step-1-generate-some-random-purchase-records-and-observables">Step 1: Generate some random purchase records and observables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_management.html#step-2-initialize-the-choicedataset">Step 2: Initialize the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code>.</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data_management.html#what-you-can-do-with-the-choicedataset">What you can do with the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code>?</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_management.html#print-dataset-and-dataset-str"><code class="docutils literal notranslate"><span class="pre">print(dataset)</span></code> and <code class="docutils literal notranslate"><span class="pre">dataset.__str__</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_management.html#dataset-num-users-items-sessions"><code class="docutils literal notranslate"><span class="pre">dataset.num_{users,</span> <span class="pre">items,</span> <span class="pre">sessions}</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_management.html#dataset-clone"><code class="docutils literal notranslate"><span class="pre">dataset.clone()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_management.html#dataset-to-cuda-and-dataset-check-device-consistency"><code class="docutils literal notranslate"><span class="pre">dataset.to('cuda')</span></code> and <code class="docutils literal notranslate"><span class="pre">dataset._check_device_consistency()</span></code>.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_management.html#subset-method">Subset method</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data_management.html#using-pytorch-dataloader-for-the-training-loop">Using Pytorch dataloader for the training loop.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_management.html#chaining-multiple-datasets-jointdataset-examples">Chaining Multiple Datasets: <code class="docutils literal notranslate"><span class="pre">JointDataset</span></code> Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="data_management.html#what-if-the-target-of-prediction-is-not-an-item-it-s-a-binary-variable-instead">What if the target of prediction is not an item? It’s a binary variable instead!</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conditional_logit_model_mode_canada.html">Example of the Conditional Logit Model on ModeCanada Dataset</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="conditional_logit_model_mode_canada.html#load-dataset">Load Dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="conditional_logit_model_mode_canada.html#create-the-model">Create the Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="conditional_logit_model_mode_canada.html#train-the-model">Train the Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="conditional_logit_model_mode_canada.html#parameter-estimation">Parameter Estimation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="conditional_logit_model_mode_canada.html#r-output">R Output</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html">Random Utility Model (RUM) Part II: Nested Logit Model</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="nested_logit_model_house_cooling.html#nested-logit-model-background">Nested Logit Model: Background</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nested_logit_model_house_cooling.html#load-essential-packages">Load Essential Packages.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nested_logit_model_house_cooling.html#encompass-configurations-in-a-name-space-object">Encompass Configurations in a Name Space Object</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nested_logit_model_house_cooling.html#load-datasets">Load Datasets</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-1">Example 1</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="nested_logit_model_house_cooling.html#r-output">R Output</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-2">Example 2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="nested_logit_model_house_cooling.html#id1">R Output</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-3">Example 3</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="nested_logit_model_house_cooling.html#id2">R Output</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="test.html">Compatibility Check List</a></li>
 </ul>
 </div>
@@ -100,6 +168,13 @@
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="projects.html">Research Projects using this Package</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_management.html">Data Management Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_management.html#what-if-the-target-of-prediction-is-not-an-item-it-s-a-binary-variable-instead">What if the target of prediction is not an item? It’s a binary variable instead!</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conditional_logit_model_mode_canada.html">Example of the Conditional Logit Model on ModeCanada Dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html">Random Utility Model (RUM) Part II: Nested Logit Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-1">Example 1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-2">Example 2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-3">Example 3</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test.html">Compatibility Check List</a></li>
 </ul>
 

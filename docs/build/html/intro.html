@@ -17,8 +17,6 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Installation" href="install.html" />
-    <link rel="prev" title="Welcome to torch-choice’s documentation!" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -49,8 +47,8 @@ More specifically, for each user <span class="math notranslate nohighlight">\(u\
 <p>Each row (record) of the dataset is called a <strong>purchasing record</strong>, which includes <em>who</em> bought <em>what</em> at <em>when</em> and <em>where</em>.
 Let <span class="math notranslate nohighlight">\(B\)</span> denote the number of <strong>purchasing records</strong> in the dataset (i.e., number of rows of the dataset). Each row <span class="math notranslate nohighlight">\(b \in \{1,2,\dots, B\}\)</span> corresponds to a purchase record (i.e., <em>who</em> bought <em>what</em> at <em>where and when</em>).</p>
 </section>
-<section id="items">
-<h3>Items<a class="headerlink" href="#items" title="Permalink to this headline">¶</a></h3>
+<section id="items-and-categories">
+<h3>Items and Categories<a class="headerlink" href="#items-and-categories" title="Permalink to this headline">¶</a></h3>
 <p>To begin with, there are <span class="math notranslate nohighlight">\(I\)</span> <strong>items</strong> indexed by <span class="math notranslate nohighlight">\(i \in \{1,2,\dots,I\}\)</span> under our consideration.</p>
 <p>Further, the researcher can optionally partition the set items into <span class="math notranslate nohighlight">\(C\)</span> <strong>categories</strong> indexed by <span class="math notranslate nohighlight">\(c \in \{1,2,\dots,C\}\)</span>. Let <span class="math notranslate nohighlight">\(I_c\)</span> denote the collection of items in category <span class="math notranslate nohighlight">\(c\)</span>, it is easy to verify that
 <span class="math notranslate nohighlight">\(
@@ -81,6 +79,9 @@ While predicting the purchase probabilities, the model sets the probability for 
 If the item availability is not provided, the model assumes all items are available in all sessions.</p>
 </section>
 </section>
+<section id="available-models">
+<h2>Available Models<a class="headerlink" href="#available-models" title="Permalink to this headline">¶</a></h2>
+</section>
 </section>
 
 
@@ -100,30 +101,11 @@ If the item availability is not provided, the model assumes all items are availa
 
 
 <h3>Navigation</h3>
-<ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Short Introduction to What this Package Does</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#components-of-the-consumer-choice-modelling-problem">Components of the Consumer Choice Modelling Problem</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#purchasing-record">Purchasing Record</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#items">Items</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#users">Users</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#sessions">Sessions</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#item-availability">Item Availability</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="projects.html">Research Projects using this Package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="test.html">Compatibility Check List</a></li>
-</ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="index.html" title="previous chapter">Welcome to torch-choice’s documentation!</a></li>
-      <li>Next: <a href="install.html" title="next chapter">Installation</a></li>
   </ul></li>
 </ul>
 </div>
