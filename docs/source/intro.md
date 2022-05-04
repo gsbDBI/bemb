@@ -1,4 +1,4 @@
-# Short Introduction to What this Package Does
+# Introduction
 This document provides a short introduction to the consumer choice model we aim to solve.
 
 In short, all models in the package aim to predict which item an user will purchase while facing the shelves in a supermarket.

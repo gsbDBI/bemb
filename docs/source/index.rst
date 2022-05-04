@@ -5,7 +5,7 @@
 
 Welcome to torch-choice's documentation!
 ========================================
-Author: Tianyu Du and Ayush Kanodia; PI: Susan Athey; Contact: tianyudu@stanford.edu
+Authors: Tianyu Du and Ayush Kanodia; PI: Susan Athey; Contact: tianyudu@stanford.edu
 
 
 This package is a `PyTorch <https://pytorch.org>`_ based package for, but not limited to, modeling consumer choice.
@@ -24,16 +24,14 @@ Our objective is to provide a versatile interface for managing choice dataset, a
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents
 
-.. toctree::
    intro.md
    install.md
    projects.md
-   tutorials.md
    data_management.md
    conditional_logit_model_mode_canada.md
    nested_logit_model_house_cooling.md
+   bemb.md
    test.md
 
 
