@@ -10,8 +10,22 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
+import commonmark
+
+def docstring(app, what, name, obj, options, lines):
+    md  = '\n'.join(lines)
+    ast = commonmark.Parser().parse(md)
+    rst = commonmark.ReStructuredTextRenderer().render(ast)
+    lines.clear()
+    lines += rst.splitlines()
+
+def setup(app):
+    app.connect('autodoc-process-docstring', docstring)
+
+
+import os
+import sys
+sys.path.insert(0, os.path.abspath('../..'))
 # sys.path.insert(0, os.path.abspath('.'))
 
 
@@ -29,7 +43,8 @@ author = 'Tianyu Du, Ayush Kanodia'
 # ones.
 extensions = [
     'myst_parser',
-    'sphinx.ext.autodoc'
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
 ]
 
 myst_enable_extensions = ['dollarmath', 'amsmath']
@@ -50,6 +65,7 @@ exclude_patterns = []
 #
 # html_theme = 'alabaster'
 html_theme = 'pydata_sphinx_theme'
+# html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

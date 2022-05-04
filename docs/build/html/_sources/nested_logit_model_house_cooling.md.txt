@@ -254,7 +254,7 @@ dataset = JointDataset(category=category_dataset, item=item_dataset)
 data_loader = utils.create_data_loader(dataset)
 ```
 
-# Example 1
+## Example 1
 Run a nested logit model on the data for two nests and one log-sum coefficient that applies to both nests. Note that the model is specified to have the cooling alternatives `{gcc, ecc, erc, hpc}` in one nest and the non-cooling alternatives `{gc, ec, er}` in another nest.
 
 **NOTE**: We are computing the standard errors using $\sqrt{\text{diag}(H^{-1})}$, where $H$ is the
@@ -344,7 +344,7 @@ run(model, dataset, num_epochs=10000)
 
 
 
-## R Output
+### R Output
 ```
 ## 
 ## Call:
@@ -377,7 +377,7 @@ run(model, dataset, num_epochs=10000)
 ## Log-Likelihood: -178.12
 ```
 
-# Example 2
+## Example 2
 Re-estimate the model with the room alternatives in one nest and the central alternatives in another nest. (Note that a heat pump is a central system.)
 
 
@@ -463,7 +463,7 @@ run(model, dataset, num_epochs=5000, learning_rate=0.3)
 
 
 
-## R Output
+### R Output
 ```
 ## 
 ## Call:
@@ -497,7 +497,7 @@ run(model, dataset, num_epochs=5000, learning_rate=0.3)
 
 ```
 
-# Example 3
+## Example 3
 Rewrite the code to allow three nests. For simplicity, estimate only one log-sum coefficient which is applied to all three nests. Estimate a model with alternatives gcc, ecc and erc in a nest, hpc in a nest alone, and alternatives gc, ec and er in a nest. Does this model seem better or worse than the model in exercise 1, which puts alternative hpc in the same nest as alternatives gcc, ecc and erc?
 
 
@@ -583,7 +583,7 @@ run(model, dataset)
 
 
 
-## R Output
+### R Output
 ```
 ## 
 ## Call:
@@ -615,4 +615,9 @@ run(model, dataset)
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ## 
 ## Log-Likelihood: -180.26
+```
+
+
+```python
+
 ```

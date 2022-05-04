@@ -1,83 +1,190 @@
-<!DOCTYPE html>
-<html class="writer-html5" lang="en" >
-<head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome to torch-choice’s documentation! &mdash; torch-choice  documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-    <script src="_static/js/theme.js"></script>
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Welcome to torch-choice’s documentation! &#8212; torch-choice  documentation</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Short Introduction to What this Package Does" href="intro.html" /> 
-</head>
+    <link rel="next" title="Introduction" href="intro.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
 
-<body class="wy-body-for-nav"> 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
-            <a href="#" class="icon icon-home"> torch-choice
-          </a>
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
-</div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul>
-<li class="toctree-l1"><a class="reference internal" href="intro.html">Short Introduction to What this Package Does</a></li>
-<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="projects.html">Research Projects using this Package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="data_management.html">Data Management Tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="data_management.html#what-if-the-target-of-prediction-is-not-an-item-it-s-a-binary-variable-instead">What if the target of prediction is not an item? It’s a binary variable instead!</a></li>
-<li class="toctree-l1"><a class="reference internal" href="conditional_logit_model_mode_canada.html">Example of the Conditional Logit Model on ModeCanada Dataset</a></li>
-<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html">Random Utility Model (RUM) Part II: Nested Logit Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-1">Example 1</a></li>
-<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-2">Example 2</a></li>
-<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-3">Example 3</a></li>
-<li class="toctree-l1"><a class="reference internal" href="test.html">Compatibility Check List</a></li>
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+<a class="navbar-brand" href="#">
+<p class="title">torch-choice</p>
+</a>
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="intro.html">
+  Introduction
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="install.html">
+  Installation
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="projects.html">
+  Research Projects using this Package
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="data_management.html">
+  Tutorial: Data Management
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="conditional_logit_model_mode_canada.html">
+  Tutorial: Conditional Logit Model on ModeCanada Dataset
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="nested_logit_model_house_cooling.html">
+  Random Utility Model (RUM) Part II: Nested Logit Model
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="bemb.html">
+  bemb package
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="test.html">
+  Compatibility Check List
+ </a>
+</li>
+
+    
 </ul>
-
-        </div>
       </div>
-    </nav>
+      
+    </div>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="#">torch-choice</a>
-      </nav>
-
-      <div class="wy-nav-content">
-        <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
-  <ul class="wy-breadcrumbs">
-      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
-      <li>Welcome to torch-choice’s documentation!</li>
-      <li class="wy-breadcrumbs-aside">
-            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
-      </li>
-  </ul>
-  <hr/>
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+      </ul>
+      </div>
+      
+    </div>
+  </div>
 </div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-             
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar">
+              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+              </div>
+              <div class="sidebar-end-items">
+              </div>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+
+<nav id="bd-toc-nav">
+    
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
   <section id="welcome-to-torch-choice-s-documentation">
-<h1>Welcome to torch-choice’s documentation!<a class="headerlink" href="#welcome-to-torch-choice-s-documentation" title="Permalink to this headline"></a></h1>
-<p>Author: Tianyu Du and Ayush Kanodia; PI: Susan Athey; Contact: <a class="reference external" href="mailto:tianyudu&#37;&#52;&#48;stanford&#46;edu">tianyudu<span>&#64;</span>stanford<span>&#46;</span>edu</a></p>
+<h1>Welcome to torch-choice’s documentation!<a class="headerlink" href="#welcome-to-torch-choice-s-documentation" title="Permalink to this headline">#</a></h1>
+<p>Authors: Tianyu Du and Ayush Kanodia; PI: Susan Athey; Contact: <a class="reference external" href="mailto:tianyudu&#37;&#52;&#48;stanford&#46;edu">tianyudu<span>&#64;</span>stanford<span>&#46;</span>edu</a></p>
 <p>This package is a <a class="reference external" href="https://pytorch.org">PyTorch</a> based package for, but not limited to, modeling consumer choice.</p>
 <p>With the growing size of choice datasets available, existing implementations of consumer choice modelling does not easily scale up modern datasets of millions of records.</p>
 <p>Our objective is to provide a versatile interface for managing choice dataset, a range of baseline models (the <cite>torch_choice</cite> part), and a Bayesian Embedding (i.e., BEMB) models for choice modeling that handle large-scale consumer choice datasets in modern research projects.</p>
@@ -88,18 +195,9 @@
 <li><p>For those without much experience in model PyTorch development, setting up optimizers and training loops can be frustrating. We provide easy-to-use <a class="reference external" href="https://www.pytorchlightning.ai">PyTorch lightning</a> wrapper of models to free researchers from the hassle from setting up PyTorch optimizers and training loops.</p></li>
 </ol>
 <div class="toctree-wrapper compound">
-</div>
-<div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="intro.html">Short Introduction to What this Package Does</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="intro.html#components-of-the-consumer-choice-modelling-problem">Components of the Consumer Choice Modelling Problem</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#purchasing-record">Purchasing Record</a></li>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#items-and-categories">Items and Categories</a></li>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#users">Users</a></li>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#sessions">Sessions</a></li>
-<li class="toctree-l3"><a class="reference internal" href="intro.html#item-availability">Item Availability</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#components-of-the-consumer-choice-modelling-problem">Components of the Consumer Choice Modelling Problem</a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#available-models">Available Models</a></li>
 </ul>
 </li>
@@ -110,53 +208,19 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="projects.html">Research Projects using this Package</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#data-management">Data Management</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#random-utility-model-rum-1-conditional-logit-model">Random Utility Model (RUM) 1: Conditional Logit Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#random-utility-model-rum-2-nested-logit-model">Random Utility Model (RUM) 2: Nested Logit Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#bayesian-embedding-model-bemb">Bayesian Embedding Model (BEMB)</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="data_management.html">Data Management Tutorial</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="data_management.html#components-of-the-dataset">Components of the Dataset</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="data_management.html#items-and-categories">Items and Categories</a></li>
-<li class="toctree-l3"><a class="reference internal" href="data_management.html#users">Users</a></li>
-<li class="toctree-l3"><a class="reference internal" href="data_management.html#sessions">Sessions</a></li>
-<li class="toctree-l3"><a class="reference internal" href="data_management.html#item-availability">Item Availability</a></li>
-<li class="toctree-l3"><a class="reference internal" href="data_management.html#observables">Observables</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="data_management.html#basic-usage">Basic Usage</a></li>
-<li class="toctree-l4"><a class="reference internal" href="data_management.html#advanced-usage-additional-observables">Advanced Usage: Additional Observables</a></li>
-</ul>
-</li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="data_management.html">Tutorial: Data Management</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data_management.html#components-of-the-consumer-choice-modelling-problem">Components of the Consumer Choice Modelling Problem</a></li>
 <li class="toctree-l2"><a class="reference internal" href="data_management.html#a-toy-example">A Toy Example</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data_management.html#creating-choicedataset-object">Creating  <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> Object</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="data_management.html#step-1-generate-some-random-purchase-records-and-observables">Step 1: Generate some random purchase records and observables</a></li>
-<li class="toctree-l3"><a class="reference internal" href="data_management.html#step-2-initialize-the-choicedataset">Step 2: Initialize the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code>.</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="data_management.html#what-you-can-do-with-the-choicedataset">What you can do with the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code>?</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="data_management.html#print-dataset-and-dataset-str"><code class="docutils literal notranslate"><span class="pre">print(dataset)</span></code> and <code class="docutils literal notranslate"><span class="pre">dataset.__str__</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="data_management.html#dataset-num-users-items-sessions"><code class="docutils literal notranslate"><span class="pre">dataset.num_{users,</span> <span class="pre">items,</span> <span class="pre">sessions}</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="data_management.html#dataset-clone"><code class="docutils literal notranslate"><span class="pre">dataset.clone()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="data_management.html#dataset-to-cuda-and-dataset-check-device-consistency"><code class="docutils literal notranslate"><span class="pre">dataset.to('cuda')</span></code> and <code class="docutils literal notranslate"><span class="pre">dataset._check_device_consistency()</span></code>.</a></li>
-<li class="toctree-l3"><a class="reference internal" href="data_management.html#subset-method">Subset method</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="data_management.html#creating-choicedataset-object">Creating  <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> Object</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_management.html#what-you-can-do-with-the-choicedataset">What you can do with the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code>?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="data_management.html#using-pytorch-dataloader-for-the-training-loop">Using Pytorch dataloader for the training loop.</a></li>
 <li class="toctree-l2"><a class="reference internal" href="data_management.html#chaining-multiple-datasets-jointdataset-examples">Chaining Multiple Datasets: <code class="docutils literal notranslate"><span class="pre">JointDataset</span></code> Examples</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="data_management.html#what-if-the-target-of-prediction-is-not-an-item-it-s-a-binary-variable-instead">What if the target of prediction is not an item? It’s a binary variable instead!</a></li>
-<li class="toctree-l1"><a class="reference internal" href="conditional_logit_model_mode_canada.html">Example of the Conditional Logit Model on ModeCanada Dataset</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="conditional_logit_model_mode_canada.html">Tutorial: Conditional Logit Model on ModeCanada Dataset</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="conditional_logit_model_mode_canada.html#load-dataset">Load Dataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="conditional_logit_model_mode_canada.html#create-the-model">Create the Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="conditional_logit_model_mode_canada.html#train-the-model">Train the Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="conditional_logit_model_mode_canada.html#parameter-estimation">Parameter Estimation</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="conditional_logit_model_mode_canada.html#r-output">R Output</a></li>
-</ul>
-</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html">Random Utility Model (RUM) Part II: Nested Logit Model</a><ul>
@@ -164,18 +228,14 @@
 <li class="toctree-l2"><a class="reference internal" href="nested_logit_model_house_cooling.html#load-essential-packages">Load Essential Packages.</a></li>
 <li class="toctree-l2"><a class="reference internal" href="nested_logit_model_house_cooling.html#encompass-configurations-in-a-name-space-object">Encompass Configurations in a Name Space Object</a></li>
 <li class="toctree-l2"><a class="reference internal" href="nested_logit_model_house_cooling.html#load-datasets">Load Datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-1">Example 1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-2">Example 2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-3">Example 3</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-1">Example 1</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="nested_logit_model_house_cooling.html#r-output">R Output</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-2">Example 2</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="nested_logit_model_house_cooling.html#id1">R Output</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="nested_logit_model_house_cooling.html#example-3">Example 3</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="nested_logit_model_house_cooling.html#id2">R Output</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bemb.html">bemb package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="bemb.html#subpackages">Subpackages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bemb.html#module-bemb">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="test.html">Compatibility Check List</a></li>
@@ -190,33 +250,44 @@
 </section>
 
 
-           </div>
-          </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="intro.html" class="btn btn-neutral float-right" title="Short Introduction to What this Package Does" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+              </div>
+              
+              
+              <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='right-next' id="next-link" href="intro.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Introduction</p>
     </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+              
+          </main>
+          
 
-  <hr/>
-
-  <div role="contentinfo">
-    <p>&#169; Copyright 2022, Tianyu Du, Ayush Kanodia.</p>
-  </div>
-
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
-
-</footer>
-        </div>
       </div>
-    </section>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, Tianyu Du, Ayush Kanodia.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
+</p>
+    </div>
+    
   </div>
-  <script>
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script> 
-
-</body>
+</footer>
+  </body>
 </html>

@@ -14,4 +14,4 @@ The executable Jupyter notebook for this tutorial is located at [Random Utility 
 The executable Jupyter notebook for this tutorial is located at [Random Utility Model (RUM) 2: Nested Logit Model](https://github.com/gsbDBI/torch-choice/blob/main/tutorials/nested_logit_model_house_cooling.ipynb)
 
 ## Bayesian Embedding Model (BEMB)
-<!-- 4. [Bayesian Embedding Model (BEMB)](./bemb.md) -->
+4. [Bayesian Embedding Model (BEMB)](./bemb.md)
