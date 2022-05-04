@@ -1,0 +1,1221 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://example.com/nested_logit_model_house_cooling/">
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.2.13">
+    
+    
+      
+        <title>Tutorial for Nested Logit Model - Deep Choice</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.e411adfe.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.cc9b2e1e.min.css">
+        
+      
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#random-utility-model-rum-part-ii-nested-logit-model" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Deep Choice" class="md-header__button md-logo" aria-label="Deep Choice" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Deep Choice
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Tutorial for Nested Logit Model
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Deep Choice" class="md-nav__button md-logo" aria-label="Deep Choice" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Deep Choice
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        Home
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../intro/" class="md-nav__link">
+        About
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/" class="md-nav__link">
+        Get Started
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data_management/" class="md-nav__link">
+        Tutorial for  Data Management
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../conditional_logit_model_mode_canada/" class="md-nav__link">
+        Tutorial for Conditional Logit Model
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Tutorial for Nested Logit Model
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Tutorial for Nested Logit Model
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#nested-logit-model-background" class="md-nav__link">
+    Nested Logit Model: Background
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#load-essential-packages" class="md-nav__link">
+    Load Essential Packages.
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#encompass-configurations-in-a-name-space-object" class="md-nav__link">
+    Encompass Configurations in a Name Space Object
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#load-datasets" class="md-nav__link">
+    Load Datasets
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-1" class="md-nav__link">
+    Example 1
+  </a>
+  
+    <nav class="md-nav" aria-label="Example 1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#r-output" class="md-nav__link">
+    R Output
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-2" class="md-nav__link">
+    Example 2
+  </a>
+  
+    <nav class="md-nav" aria-label="Example 2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#r-output_1" class="md-nav__link">
+    R Output
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-3" class="md-nav__link">
+    Example 3
+  </a>
+  
+    <nav class="md-nav" aria-label="Example 3">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#r-output_2" class="md-nav__link">
+    R Output
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bemb/" class="md-nav__link">
+        Tutorial for Bayesian Embedding (BEMB)
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../projects/" class="md-nav__link">
+        Related Projects
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../test/" class="md-nav__link">
+        Compability Tests
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api_torch_choice/" class="md-nav__link">
+        API Reference Torch-Choice
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api_bemb/" class="md-nav__link">
+        API Reference BEMB
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#nested-logit-model-background" class="md-nav__link">
+    Nested Logit Model: Background
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#load-essential-packages" class="md-nav__link">
+    Load Essential Packages.
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#encompass-configurations-in-a-name-space-object" class="md-nav__link">
+    Encompass Configurations in a Name Space Object
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#load-datasets" class="md-nav__link">
+    Load Datasets
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-1" class="md-nav__link">
+    Example 1
+  </a>
+  
+    <nav class="md-nav" aria-label="Example 1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#r-output" class="md-nav__link">
+    R Output
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-2" class="md-nav__link">
+    Example 2
+  </a>
+  
+    <nav class="md-nav" aria-label="Example 2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#r-output_1" class="md-nav__link">
+    R Output
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-3" class="md-nav__link">
+    Example 3
+  </a>
+  
+    <nav class="md-nav" aria-label="Example 3">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#r-output_2" class="md-nav__link">
+    R Output
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+
+
+<h1 id="random-utility-model-rum-part-ii-nested-logit-model">Random Utility Model (RUM) Part II: Nested Logit Model</h1>
+<p>Author: Tianyu Du</p>
+<p>The package implements the nested logit model as well, which allows researchers to model choices as a two-stage process: the user first picks a category of purchase and then picks the item from the chosen category that generates the most utility.</p>
+<p>Examples here are modified from <a href="https://cran.r-project.org/web/packages/mlogit/vignettes/e2nlogit.html">Exercise 2: Nested logit model by Kenneth Train and Yves Croissant</a>
+The data set HC from mlogit contains data in R format on the choice of heating and central cooling system for 250 single-family, newly built houses in California.</p>
+<p>The alternatives are:</p>
+<ul>
+<li>Gas central heat with cooling gcc,</li>
+<li>Electric central resistence heat with cooling ecc,</li>
+<li>Electric room resistence heat with cooling erc,</li>
+<li>Electric heat pump, which provides cooling also hpc,</li>
+<li>Gas central heat without cooling gc,</li>
+<li>Electric central resistence heat without cooling ec,</li>
+<li>Electric room resistence heat without cooling er.</li>
+<li>Heat pumps necessarily provide both heating and cooling such that heat pump without cooling is not an alternative.</li>
+</ul>
+<p>The variables are:</p>
+<ul>
+<li>depvar gives the name of the chosen alternative,</li>
+<li>ich.alt are the installation cost for the heating portion of the system,</li>
+<li>icca is the installation cost for cooling</li>
+<li>och.alt are the operating cost for the heating portion of the system</li>
+<li>occa is the operating cost for cooling</li>
+<li>income is the annual income of the household</li>
+</ul>
+<p>Note that the full installation cost of alternative gcc is ich.gcc+icca, and similarly for the operating cost and for the other alternatives with cooling.</p>
+<h2 id="nested-logit-model-background">Nested Logit Model: Background</h2>
+<p>The following code block provides an example initialization of the <code>NestedLogitModel</code> (please refer to examples below for details).</p>
+<pre><code class="language-python">model = NestedLogitModel(category_to_item=category_to_item,
+                         category_coef_variation_dict={},
+                         category_num_param_dict={},
+                         item_coef_variation_dict={'price_obs': 'constant'},
+                         item_num_param_dict={'price_obs': 7},
+                         shared_lambda=True)
+</code></pre>
+<p>The nested logit model decompose the utility of choosing item <span class="arithmatex">\(i\)</span> into the (1) item-specific values and (2) category specify values.  For simplicity, suppose item <span class="arithmatex">\(i\)</span>  belongs to category <span class="arithmatex">\(k \in \{1, \dots, K\}\)</span>: <span class="arithmatex">\(i \in B_k\)</span>.
+$$
+U_{uit} = W_{ukt} + Y_{uit}
+$$
+Where both <span class="arithmatex">\(W\)</span> and <span class="arithmatex">\(Y\)</span> are estimated using linear models from as in the conditional logit model.</p>
+<p>The log-likelihood for user <span class="arithmatex">\(u\)</span> to choose item <span class="arithmatex">\(i\)</span> at time/session <span class="arithmatex">\(t\)</span> decomposes into the item-level likelihood and category-level likelihood.
+$$
+\log P(i \mid u, t) = \log P(i \mid u, t, B_k) + \log P(k \mid u, t) \
+= \log \left(\frac{\exp(Y_{uit}/\lambda_k)}{\sum_{j \in B_k} \exp(Y_{ujt}/\lambda_k)}\right) + \log \left( \frac{\exp(W_{ukt} + \lambda_k I_{ukt})}{\sum_{\ell=1}^K \exp(W_{u\ell t} + \lambda_\ell I_{u\ell t})}\right)
+$$
+The <strong>inclusive value</strong> of category <span class="arithmatex">\(k\)</span>, <span class="arithmatex">\(I_{ukt}\)</span> is defined as <span class="arithmatex">\(\log \sum_{j \in B_k} \exp(Y_{ujt}/\lambda_k)\)</span>, which is the <em>expected utility from choosing the best alternative from category <span class="arithmatex">\(k\)</span></em>.</p>
+<p>The <code>category_to_item</code> keyword defines a dictionary of the mapping <span class="arithmatex">\(k \mapsto B_k\)</span>, where keys of <code>category_to_item</code>  are integer <span class="arithmatex">\(k\)</span>'s and  <code>category_to_item[k]</code>  is a list consisting of IDs of items in <span class="arithmatex">\(B_k\)</span>.</p>
+<p>The <code>{category, item}_coef_variation_dict</code> provides specification to <span class="arithmatex">\(W_{ukt}\)</span> and <span class="arithmatex">\(Y_{uit}\)</span> respectively, <code>torch_choice</code> allows for empty category level models by providing an empty dictionary (in this case, <span class="arithmatex">\(W_{ukt} = \epsilon_{ukt}\)</span>) since the inclusive value term <span class="arithmatex">\(\lambda_k I_{ukt}\)</span> will be used to model the choice over categories. However, by specifying an empty second stage model (<span class="arithmatex">\(Y_{uit} = \epsilon_{uit}\)</span>), the nested logit model reduces to a conditional logit model of choices over categories. Hence, one should never use the <code>NestedLogitModel</code> class with an empty item-level model.</p>
+<p>Similar to the conditional logit model, <code>{category, item}_num_param_dict</code> specify the dimension (number of observables to be multiplied with the coefficient) of coefficients. The above code initializes a simple model built upon item-time-specific observables <span class="arithmatex">\(X_{it} \in \mathbb{R}^7\)</span>,
+$$
+Y_{uit} = \beta^\top X_{it} + \epsilon_{uit} \
+W_{ukt} = \epsilon_{ukt}
+$$
+The research may wish to enfoce the <em>elasiticity</em> <span class="arithmatex">\(\lambda_k\)</span> to be constant across categories, setting <code>shared_lambda=True</code> enforces <span class="arithmatex">\(\lambda_k = \lambda\ \forall k \in [K]\)</span>.</p>
+<h2 id="load-essential-packages">Load Essential Packages.</h2>
+<pre><code class="language-python">import argparse
+
+import pandas as pd
+import torch
+
+from torch_choice.data import ChoiceDataset, JointDataset, utils
+from torch_choice.model.nested_logit_model import NestedLogitModel
+from torch_choice.utils.run_helper import run
+
+if torch.cuda.is_available():
+    print(f'CUDA device used: {torch.cuda.get_device_name()}')
+</code></pre>
+<pre><code>CUDA device used: NVIDIA GeForce RTX 3090
+</code></pre>
+<h2 id="encompass-configurations-in-a-name-space-object">Encompass Configurations in a Name Space Object</h2>
+<pre><code class="language-python">args = argparse.Namespace(data_path='./',
+                          batch_size=-1,  # full-batch.
+                          shuffle=False,
+                          num_epochs=30000,
+                          device='cuda' if torch.cuda.is_available() else 'cpu')
+</code></pre>
+<h2 id="load-datasets">Load Datasets</h2>
+<pre><code class="language-python">df = pd.read_csv('./public_datasets/HC.csv', index_col=0)
+df = df.reset_index(drop=True)
+df.head()
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>depvar</th>
+      <th>icca</th>
+      <th>occa</th>
+      <th>income</th>
+      <th>ich</th>
+      <th>och</th>
+      <th>idx.id1</th>
+      <th>idx.id2</th>
+      <th>inc.room</th>
+      <th>inc.cooling</th>
+      <th>int.cooling</th>
+      <th>cooling.modes</th>
+      <th>room.modes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>False</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>20</td>
+      <td>24.50</td>
+      <td>4.09</td>
+      <td>1</td>
+      <td>ec</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>False</td>
+      <td>27.28</td>
+      <td>2.95</td>
+      <td>20</td>
+      <td>7.86</td>
+      <td>4.09</td>
+      <td>1</td>
+      <td>ecc</td>
+      <td>0</td>
+      <td>20</td>
+      <td>1</td>
+      <td>True</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>False</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>20</td>
+      <td>7.37</td>
+      <td>3.85</td>
+      <td>1</td>
+      <td>er</td>
+      <td>20</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>True</td>
+      <td>27.28</td>
+      <td>2.95</td>
+      <td>20</td>
+      <td>8.79</td>
+      <td>3.85</td>
+      <td>1</td>
+      <td>erc</td>
+      <td>20</td>
+      <td>20</td>
+      <td>1</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>False</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>20</td>
+      <td>24.08</td>
+      <td>2.26</td>
+      <td>1</td>
+      <td>gc</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<pre><code class="language-python"># what was actually chosen.
+item_index = df[df['depvar'] == True].sort_values(by='idx.id1')['idx.id2'].reset_index(drop=True)
+item_names = ['ec', 'ecc', 'er', 'erc', 'gc', 'gcc', 'hpc']
+num_items = df['idx.id2'].nunique()
+# cardinal encoder.
+encoder = dict(zip(item_names, range(num_items)))
+item_index = item_index.map(lambda x: encoder[x])
+item_index = torch.LongTensor(item_index)
+</code></pre>
+<pre><code class="language-python"># category feature: no category feature, all features are item-level.
+category_dataset = ChoiceDataset(item_index=item_index.clone()).to(args.device)
+
+# item feature.
+item_feat_cols = ['ich', 'och', 'icca', 'occa', 'inc.room', 'inc.cooling', 'int.cooling']
+price_obs = utils.pivot3d(df, dim0='idx.id1', dim1='idx.id2', values=item_feat_cols)
+item_dataset = ChoiceDataset(item_index=item_index, price_obs=price_obs).to(args.device)
+
+# combine dataets
+dataset = JointDataset(category=category_dataset, item=item_dataset)
+data_loader = utils.create_data_loader(dataset)
+</code></pre>
+<h2 id="example-1">Example 1</h2>
+<p>Run a nested logit model on the data for two nests and one log-sum coefficient that applies to both nests. Note that the model is specified to have the cooling alternatives <code>{gcc, ecc, erc, hpc}</code> in one nest and the non-cooling alternatives <code>{gc, ec, er}</code> in another nest.</p>
+<p><strong>NOTE</strong>: We are computing the standard errors using <span class="arithmatex">\(\sqrt{\text{diag}(H^{-1})}\)</span>, where <span class="arithmatex">\(H\)</span> is the
+hessian of negative log-likelihood with repsect to model parameters. This leads to slight different
+results compared with R implementation.</p>
+<pre><code class="language-python">category_to_item = {0: ['gcc', 'ecc', 'erc', 'hpc'],
+                    1: ['gc', 'ec', 'er']}
+
+# convert names 
+for k, v in category_to_item.items():
+    v = [encoder[item] for item in v]
+    category_to_item[k] = sorted(v)
+
+model = NestedLogitModel(category_to_item=category_to_item,
+                         category_coef_variation_dict={},
+                         category_num_param_dict={},
+                         item_coef_variation_dict={'price_obs': 'constant'},
+                         item_num_param_dict={'price_obs': 7},
+                         shared_lambda=True)
+
+model = model.to(args.device)
+</code></pre>
+<pre><code class="language-python">run(model, dataset, num_epochs=10000)
+</code></pre>
+<pre><code>==================== received model ====================
+NestedLogitModel(
+  (category_coef_dict): ModuleDict()
+  (item_coef_dict): ModuleDict(
+    (price_obs): Coefficient(variation=constant, num_items=7, num_users=None, num_params=7, 7 trainable parameters in total).
+  )
+)
+==================== received dataset ====================
+JointDataset with 2 sub-datasets: (
+    category: ChoiceDataset(label=[], item_index=[250], user_index=[], session_index=[250], item_availability=[], device=cuda:0)
+    item: ChoiceDataset(label=[], item_index=[250], user_index=[], session_index=[250], item_availability=[], price_obs=[250, 7, 7], device=cuda:0)
+)
+==================== training the model ====================
+Epoch 1000: Log-likelihood=-588.3027954101562
+Epoch 2000: Log-likelihood=-186.7021484375
+Epoch 3000: Log-likelihood=-179.2357635498047
+Epoch 4000: Log-likelihood=-178.38218688964844
+Epoch 5000: Log-likelihood=-178.31878662109375
+Epoch 6000: Log-likelihood=-178.27572631835938
+Epoch 7000: Log-likelihood=-178.22787475585938
+Epoch 8000: Log-likelihood=-178.18026733398438
+Epoch 9000: Log-likelihood=-178.14501953125
+Epoch 10000: Log-likelihood=-178.128662109375
+==================== model results ====================
+Training Epochs: 10000
+
+Learning Rate: 0.01
+
+Batch Size: 250 out of 250 observations in total
+
+Final Log-likelihood: -178.128662109375
+
+Coefficients:
+
+| Coefficient      |   Estimation |   Std. Err. |
+|:-----------------|-------------:|------------:|
+| lambda_weight_0  |     0.580075 |   0.165447  |
+| item_price_obs_0 |    -0.549378 |   0.143561  |
+| item_price_obs_1 |    -0.849512 |   0.235958  |
+| item_price_obs_2 |    -0.231246 |   0.110558  |
+| item_price_obs_3 |    -1.15354  |   1.03607   |
+| item_price_obs_4 |    -0.375084 |   0.0999644 |
+| item_price_obs_5 |     0.248696 |   0.0516442 |
+| item_price_obs_6 |    -5.57415  |   4.7879    |
+
+
+
+
+
+NestedLogitModel(
+  (category_coef_dict): ModuleDict()
+  (item_coef_dict): ModuleDict(
+    (price_obs): Coefficient(variation=constant, num_items=7, num_users=None, num_params=7, 7 trainable parameters in total).
+  )
+)
+</code></pre>
+<h3 id="r-output">R Output</h3>
+<pre><code>## 
+## Call:
+## mlogit(formula = depvar ~ ich + och + icca + occa + inc.room + 
+##     inc.cooling + int.cooling | 0, data = HC, nests = list(cooling = c(&quot;gcc&quot;, 
+##     &quot;ecc&quot;, &quot;erc&quot;, &quot;hpc&quot;), other = c(&quot;gc&quot;, &quot;ec&quot;, &quot;er&quot;)), un.nest.el = TRUE)
+## 
+## Frequencies of alternatives:choice
+##    ec   ecc    er   erc    gc   gcc   hpc 
+## 0.004 0.016 0.032 0.004 0.096 0.744 0.104 
+## 
+## bfgs method
+## 11 iterations, 0h:0m:0s 
+## g'(-H)^-1g = 7.26E-06 
+## successive function values within tolerance limits 
+## 
+## Coefficients :
+##              Estimate Std. Error z-value  Pr(&gt;|z|)    
+## ich         -0.554878   0.144205 -3.8478 0.0001192 ***
+## och         -0.857886   0.255313 -3.3601 0.0007791 ***
+## icca        -0.225079   0.144423 -1.5585 0.1191212    
+## occa        -1.089458   1.219821 -0.8931 0.3717882    
+## inc.room    -0.378971   0.099631 -3.8038 0.0001425 ***
+## inc.cooling  0.249575   0.059213  4.2149 2.499e-05 ***
+## int.cooling -6.000415   5.562423 -1.0787 0.2807030    
+## iv           0.585922   0.179708  3.2604 0.0011125 ** 
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Log-Likelihood: -178.12
+</code></pre>
+<h2 id="example-2">Example 2</h2>
+<p>Re-estimate the model with the room alternatives in one nest and the central alternatives in another nest. (Note that a heat pump is a central system.)</p>
+<pre><code class="language-python">category_to_item = {0: ['ec', 'ecc', 'gc', 'gcc', 'hpc'],
+                    1: ['er', 'erc']}
+for k, v in category_to_item.items():
+    v = [encoder[item] for item in v]
+    category_to_item[k] = sorted(v)
+
+model = NestedLogitModel(category_to_item=category_to_item,
+                            category_coef_variation_dict={},
+                            category_num_param_dict={},
+                        #  category_num_param_dict={'intercept': 1},
+                            item_coef_variation_dict={'price_obs': 'constant'},
+                            item_num_param_dict={'price_obs': 7},
+                            shared_lambda=True
+                            )
+
+model = model.to(args.device)
+</code></pre>
+<pre><code class="language-python">run(model, dataset, num_epochs=5000, learning_rate=0.3)
+</code></pre>
+<pre><code>==================== received model ====================
+NestedLogitModel(
+  (category_coef_dict): ModuleDict()
+  (item_coef_dict): ModuleDict(
+    (price_obs): Coefficient(variation=constant, num_items=7, num_users=None, num_params=7, 7 trainable parameters in total).
+  )
+)
+==================== received dataset ====================
+JointDataset with 2 sub-datasets: (
+    category: ChoiceDataset(label=[], item_index=[250], user_index=[], session_index=[250], item_availability=[], device=cuda:0)
+    item: ChoiceDataset(label=[], item_index=[250], user_index=[], session_index=[250], item_availability=[], price_obs=[250, 7, 7], device=cuda:0)
+)
+==================== training the model ====================
+Epoch 500: Log-likelihood=-182.41204833984375
+Epoch 1000: Log-likelihood=-180.3829803466797
+Epoch 1500: Log-likelihood=-180.6223907470703
+Epoch 2000: Log-likelihood=-180.298828125
+Epoch 2500: Log-likelihood=-180.500732421875
+Epoch 3000: Log-likelihood=-180.5670166015625
+Epoch 3500: Log-likelihood=-182.52322387695312
+Epoch 4000: Log-likelihood=-184.7764129638672
+Epoch 4500: Log-likelihood=-180.62258911132812
+Epoch 5000: Log-likelihood=-180.3092498779297
+==================== model results ====================
+Training Epochs: 5000
+
+Learning Rate: 0.3
+
+Batch Size: 250 out of 250 observations in total
+
+Final Log-likelihood: -180.3092498779297
+
+Coefficients:
+
+| Coefficient      |   Estimation |   Std. Err. |
+|:-----------------|-------------:|------------:|
+| lambda_weight_0  |     1.62779  |    0.664918 |
+| item_price_obs_0 |    -1.35793  |    0.530842 |
+| item_price_obs_1 |    -2.18411  |    0.886321 |
+| item_price_obs_2 |    -0.403624 |    0.237611 |
+| item_price_obs_3 |    -2.71561  |    2.08917  |
+| item_price_obs_4 |    -0.895584 |    0.337144 |
+| item_price_obs_5 |     0.495313 |    0.199812 |
+| item_price_obs_6 |   -16.0579   |    9.35129  |
+
+
+
+
+
+NestedLogitModel(
+  (category_coef_dict): ModuleDict()
+  (item_coef_dict): ModuleDict(
+    (price_obs): Coefficient(variation=constant, num_items=7, num_users=None, num_params=7, 7 trainable parameters in total).
+  )
+)
+</code></pre>
+<h3 id="r-output_1">R Output</h3>
+<pre><code>## 
+## Call:
+## mlogit(formula = depvar ~ ich + och + icca + occa + inc.room + 
+##     inc.cooling + int.cooling | 0, data = HC, nests = list(central = c(&quot;ec&quot;, 
+##     &quot;ecc&quot;, &quot;gc&quot;, &quot;gcc&quot;, &quot;hpc&quot;), room = c(&quot;er&quot;, &quot;erc&quot;)), un.nest.el = TRUE)
+## 
+## Frequencies of alternatives:choice
+##    ec   ecc    er   erc    gc   gcc   hpc 
+## 0.004 0.016 0.032 0.004 0.096 0.744 0.104 
+## 
+## bfgs method
+## 10 iterations, 0h:0m:0s 
+## g'(-H)^-1g = 5.87E-07 
+## gradient close to zero 
+## 
+## Coefficients :
+##              Estimate Std. Error z-value Pr(&gt;|z|)  
+## ich          -1.13818    0.54216 -2.0993  0.03579 *
+## och          -1.82532    0.93228 -1.9579  0.05024 .
+## icca         -0.33746    0.26934 -1.2529  0.21024  
+## occa         -2.06328    1.89726 -1.0875  0.27681  
+## inc.room     -0.75722    0.34292 -2.2081  0.02723 *
+## inc.cooling   0.41689    0.20742  2.0099  0.04444 *
+## int.cooling -13.82487    7.94031 -1.7411  0.08167 .
+## iv            1.36201    0.65393  2.0828  0.03727 *
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Log-Likelihood: -180.02
+
+</code></pre>
+<h2 id="example-3">Example 3</h2>
+<p>Rewrite the code to allow three nests. For simplicity, estimate only one log-sum coefficient which is applied to all three nests. Estimate a model with alternatives gcc, ecc and erc in a nest, hpc in a nest alone, and alternatives gc, ec and er in a nest. Does this model seem better or worse than the model in exercise 1, which puts alternative hpc in the same nest as alternatives gcc, ecc and erc?</p>
+<pre><code class="language-python">category_to_item = {0: ['gcc', 'ecc', 'erc'],
+                    1: ['hpc'],
+                    2: ['gc', 'ec', 'er']}
+for k, v in category_to_item.items():
+    v = [encoder[item] for item in v]
+    category_to_item[k] = sorted(v)
+
+model = NestedLogitModel(category_to_item=category_to_item,
+                         category_coef_variation_dict={},
+                         category_num_param_dict={},
+                         item_coef_variation_dict={'price_obs': 'constant'},
+                         item_num_param_dict={'price_obs': 7},
+                         shared_lambda=True
+                         )
+
+model = model.to(args.device)
+</code></pre>
+<pre><code class="language-python">run(model, dataset)
+</code></pre>
+<pre><code>==================== received model ====================
+NestedLogitModel(
+  (category_coef_dict): ModuleDict()
+  (item_coef_dict): ModuleDict(
+    (price_obs): Coefficient(variation=constant, num_items=7, num_users=None, num_params=7, 7 trainable parameters in total).
+  )
+)
+==================== received dataset ====================
+JointDataset with 2 sub-datasets: (
+    category: ChoiceDataset(label=[], item_index=[250], user_index=[], session_index=[250], item_availability=[], device=cuda:0)
+    item: ChoiceDataset(label=[], item_index=[250], user_index=[], session_index=[250], item_availability=[], price_obs=[250, 7, 7], device=cuda:0)
+)
+==================== training the model ====================
+Epoch 500: Log-likelihood=-254.35272216796875
+Epoch 1000: Log-likelihood=-199.40536499023438
+Epoch 1500: Log-likelihood=-193.3748321533203
+Epoch 2000: Log-likelihood=-187.37646484375
+Epoch 2500: Log-likelihood=-183.7972869873047
+Epoch 3000: Log-likelihood=-182.31369018554688
+Epoch 3500: Log-likelihood=-181.67796325683594
+Epoch 4000: Log-likelihood=-181.39984130859375
+Epoch 4500: Log-likelihood=-181.2567138671875
+Epoch 5000: Log-likelihood=-181.1448516845703
+==================== model results ====================
+Training Epochs: 5000
+
+Learning Rate: 0.01
+
+Batch Size: 250 out of 250 observations in total
+
+Final Log-likelihood: -181.1448516845703
+
+Coefficients:
+
+| Coefficient      |   Estimation |   Std. Err. |
+|:-----------------|-------------:|------------:|
+| lambda_weight_0  |     0.916814 |   0.189271  |
+| item_price_obs_0 |    -0.804039 |   0.0949913 |
+| item_price_obs_1 |    -1.29091  |   0.180003  |
+| item_price_obs_2 |    -0.382208 |   0.128881  |
+| item_price_obs_3 |    -2.60614  |   1.16214   |
+| item_price_obs_4 |    -0.543321 |   0.0711768 |
+| item_price_obs_5 |     0.310327 |   0.0555514 |
+| item_price_obs_6 |    -3.63363  |   4.96449   |
+
+
+
+
+
+NestedLogitModel(
+  (category_coef_dict): ModuleDict()
+  (item_coef_dict): ModuleDict(
+    (price_obs): Coefficient(variation=constant, num_items=7, num_users=None, num_params=7, 7 trainable parameters in total).
+  )
+)
+</code></pre>
+<h3 id="r-output_2">R Output</h3>
+<pre><code>## 
+## Call:
+## mlogit(formula = depvar ~ ich + och + icca + occa + inc.room + 
+##     inc.cooling + int.cooling | 0, data = HC, nests = list(n1 = c(&quot;gcc&quot;, 
+##     &quot;ecc&quot;, &quot;erc&quot;), n2 = c(&quot;hpc&quot;), n3 = c(&quot;gc&quot;, &quot;ec&quot;, &quot;er&quot;)), 
+##     un.nest.el = TRUE)
+## 
+## Frequencies of alternatives:choice
+##    ec   ecc    er   erc    gc   gcc   hpc 
+## 0.004 0.016 0.032 0.004 0.096 0.744 0.104 
+## 
+## bfgs method
+## 8 iterations, 0h:0m:0s 
+## g'(-H)^-1g = 3.71E-08 
+## gradient close to zero 
+## 
+## Coefficients :
+##               Estimate Std. Error z-value  Pr(&gt;|z|)    
+## ich          -0.838394   0.100546 -8.3384 &lt; 2.2e-16 ***
+## och          -1.331598   0.252069 -5.2827 1.273e-07 ***
+## icca         -0.256131   0.145564 -1.7596   0.07848 .  
+## occa         -1.405656   1.207281 -1.1643   0.24430    
+## inc.room     -0.571352   0.077950 -7.3297 2.307e-13 ***
+## inc.cooling   0.311355   0.056357  5.5247 3.301e-08 ***
+## int.cooling -10.413384   5.612445 -1.8554   0.06354 .  
+## iv            0.956544   0.180722  5.2929 1.204e-07 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Log-Likelihood: -180.26
+</code></pre>
+<pre><code class="language-python">
+</code></pre>
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../conditional_logit_model_mode_canada/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Tutorial for Conditional Logit Model" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Tutorial for Conditional Logit Model
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../bemb/" class="md-footer__link md-footer__link--next" aria-label="Next: Tutorial for Bayesian Embedding (BEMB)" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Tutorial for Bayesian Embedding (BEMB)
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.2a1c317c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.ed9748b7.min.js"></script>
+      
+        <script src="../javascripts/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

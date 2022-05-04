@@ -1,0 +1,803 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://example.com/bemb/">
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.2.13">
+    
+    
+      
+        <title>Tutorial for Bayesian Embedding (BEMB) - Deep Choice</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.e411adfe.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.cc9b2e1e.min.css">
+        
+      
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#bemb-tutorial" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Deep Choice" class="md-header__button md-logo" aria-label="Deep Choice" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Deep Choice
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Tutorial for Bayesian Embedding (BEMB)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Deep Choice" class="md-nav__button md-logo" aria-label="Deep Choice" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Deep Choice
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        Home
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../intro/" class="md-nav__link">
+        About
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/" class="md-nav__link">
+        Get Started
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data_management/" class="md-nav__link">
+        Tutorial for  Data Management
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../conditional_logit_model_mode_canada/" class="md-nav__link">
+        Tutorial for Conditional Logit Model
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nested_logit_model_house_cooling/" class="md-nav__link">
+        Tutorial for Nested Logit Model
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Tutorial for Bayesian Embedding (BEMB)
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Tutorial for Bayesian Embedding (BEMB)
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#running-bemb" class="md-nav__link">
+    Running BEMB
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-choicedataset" class="md-nav__link">
+    The ChoiceDataset
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setup-the-bemb-model-pytorch-lightning-interface" class="md-nav__link">
+    Setup the BEMB Model (PyTorch-Lightning Interface)
+  </a>
+  
+    <nav class="md-nav" aria-label="Setup the BEMB Model (PyTorch-Lightning Interface)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#utility-formula-utility_formula" class="md-nav__link">
+    Utility Formula: utility_formula
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#number-of-usersitemssessions-num_users-items-sessions" class="md-nav__link">
+    Number of Users/Items/Sessions num_{users, items, sessions}
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#specifying-the-dimensions-of-coefficients-with-the-coef_dim_dict-dictionary" class="md-nav__link">
+    Specifying the Dimensions of Coefficients with the coef_dim_dict dictionary
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#specifying-variance-of-coefficient-prior-distributions-with-prior_variance" class="md-nav__link">
+    Specifying Variance of Coefficient Prior Distributions with prior_variance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#incorporating-observables-to-the-bayesian-prior-with-obs2prior_dict" class="md-nav__link">
+    Incorporating Observables to the Bayesian Prior with obs2prior_dict
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#grouping-items-into-categories-with-category_to_item" class="md-nav__link">
+    Grouping Items into Categories with category_to_item
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#last-step-create-the-litbembflex-wrapper" class="md-nav__link">
+    Last Step: Create the LitBEMBFlex wrapper
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#training-the-model" class="md-nav__link">
+    Training the Model
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inference" class="md-nav__link">
+    Inference
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../projects/" class="md-nav__link">
+        Related Projects
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../test/" class="md-nav__link">
+        Compability Tests
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api_torch_choice/" class="md-nav__link">
+        API Reference Torch-Choice
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api_bemb/" class="md-nav__link">
+        API Reference BEMB
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#running-bemb" class="md-nav__link">
+    Running BEMB
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-choicedataset" class="md-nav__link">
+    The ChoiceDataset
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setup-the-bemb-model-pytorch-lightning-interface" class="md-nav__link">
+    Setup the BEMB Model (PyTorch-Lightning Interface)
+  </a>
+  
+    <nav class="md-nav" aria-label="Setup the BEMB Model (PyTorch-Lightning Interface)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#utility-formula-utility_formula" class="md-nav__link">
+    Utility Formula: utility_formula
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#number-of-usersitemssessions-num_users-items-sessions" class="md-nav__link">
+    Number of Users/Items/Sessions num_{users, items, sessions}
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#specifying-the-dimensions-of-coefficients-with-the-coef_dim_dict-dictionary" class="md-nav__link">
+    Specifying the Dimensions of Coefficients with the coef_dim_dict dictionary
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#specifying-variance-of-coefficient-prior-distributions-with-prior_variance" class="md-nav__link">
+    Specifying Variance of Coefficient Prior Distributions with prior_variance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#incorporating-observables-to-the-bayesian-prior-with-obs2prior_dict" class="md-nav__link">
+    Incorporating Observables to the Bayesian Prior with obs2prior_dict
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#grouping-items-into-categories-with-category_to_item" class="md-nav__link">
+    Grouping Items into Categories with category_to_item
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#last-step-create-the-litbembflex-wrapper" class="md-nav__link">
+    Last Step: Create the LitBEMBFlex wrapper
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#training-the-model" class="md-nav__link">
+    Training the Model
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inference" class="md-nav__link">
+    Inference
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+
+
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+<h1 id="bemb-tutorial">BEMB Tutorial</h1>
+<p>This tutorial assumes the reader has ready gone through the <a href="../data_management/">Data Management</a> tutorial.
+Through this tutorial, we use Greek letters (except for <span class="arithmatex">\(\varepsilon\)</span> as error term) to denote learnable coefficients of the model. However, researchers are not restricted to use Greek letters in practice.</p>
+<p>Bayesian EMBedding (BEMB) is a hierarchical Bayesian model for modelling consumer choices.
+The model can naturally extend to other use cases which can be formulated into the consumer choice framework.
+For example, in a job-transition modelling study, we formulated the starting job as the user and ending job as the item and applied the BEMB framework.
+Suppose we have a dataset of purchase records consisting of <span class="arithmatex">\(U\)</span> users, <span class="arithmatex">\(I\)</span> items, and <span class="arithmatex">\(S\)</span> sessions, at it's core (assume no <span class="arithmatex">\(s\)</span>-level effect for now), the BEMB model aims to build user embeddings <span class="arithmatex">\(\theta_u \in \mathbb{R}^{L}\)</span> and item embeddings <span class="arithmatex">\(\alpha_i \in \mathbb{R}^{L}\)</span>, then the model predicts the probability for user <span class="arithmatex">\(u\)</span> to purchase item <span class="arithmatex">\(i\)</span> as
+$
+P(i|u,s) \propto \theta_u^\top \alpha_i.
+$
+Both of <span class="arithmatex">\(\theta_u\)</span> and <span class="arithmatex">\(\alpha_i\)</span> are <em>Bayesian</em>, which means there is a prior distribution and a variational distribution associated with each of them.
+By default, the prior distribution of all entries of <span class="arithmatex">\(\theta_u\)</span> and <span class="arithmatex">\(\alpha_i\)</span> are i.i.d. standard Gaussian distributions.
+The variational distributions are Gaussian with learnable mean and standard deviation, these parameters are trained by minimizing the ELBO so that the predicted purchasing probabilities best fit the observed dataset.</p>
+<p><strong>TODO</strong>: add reference to the paper introducing BEMB for a complete description of the model.</p>
+<h2 id="running-bemb">Running BEMB</h2>
+<p>Running BEMB requires you to (1) build the <code>ChoiceDataset</code> object and (2) training the model.</p>
+<h2 id="the-choicedataset">The <code>ChoiceDataset</code></h2>
+<p>Please refer to the <a href="../data_management/">Data Management</a> tutorial for a detailed walk-through of how to constructing the dataset.
+For simplicity, we assume that item/user/session/price observables are named as <code>{item, user, session, price}_obs</code> in the <code>ChoiceDataset</code>, the researcher can use arbitrary variable names as long as they satisfy the naming convention (e.g., user-level observables should start with <code>user_</code> and cannot be <code>user_index</code>) and have the correct shape (e.g., user-level observables should have shape <code>(num_users, num_obs)</code>).</p>
+<h2 id="setup-the-bemb-model-pytorch-lightning-interface">Setup the BEMB Model (PyTorch-Lightning Interface)</h2>
+<p>You will be constructing the <code>LitBEMBFlex</code> class, which is a PyTorch-lightning wrapper of the BEMB model implemented in plain PyTorch. The lighting wrapper free researchers from complications such as setting up the training loop and optimizers.</p>
+<p>To initialize the <code>LitBEMBFlex</code> class, the researcher needs to provide it with the following arguments. We recommend the research to encompass all arguments in a separate yaml file. Most of these arguments should be self explanatory, Please refer to the doc string of <code>BEMBFlex.__init__()</code> for a detailed elaboration.</p>
+<h3 id="utility-formula-utility_formula">Utility Formula: <code>utility_formula</code></h3>
+<p><strong>Note</strong>: for the string parsing to work correctly, please <strong>do</strong> add spaces around <code>+</code> and <code>*</code>.
+This section covers how to convert the utility representation in a choice problem into the <code>utility_formula</code> argument of the <code>BEMBFlex</code> model and <code>LitBEMBFlex</code> wrapper.</p>
+<p>The core of specifying a BEMB model is to <strong>specify the utility function</strong> <span class="arithmatex">\(\mathcal{U}(u,i,s)\)</span> for user <span class="arithmatex">\(u\)</span> to purchase item <span class="arithmatex">\(i\)</span> in session <span class="arithmatex">\(s\)</span>, the <code>bemb</code> package provides an easy-to-use string-parsing mechanism for researchers to provide their ideal utility representations.
+With the utility representation, the probability for consumer <span class="arithmatex">\(u\)</span> to purchase item <span class="arithmatex">\(i\)</span> in session <span class="arithmatex">\(s\)</span> is the following
+$
+P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i' \in I_c} e^{\mathcal{U}(u, i', s)}}
+$
+where <span class="arithmatex">\(I_c\)</span> is the set of items in the same category of item <span class="arithmatex">\(i\)</span>.
+If there is no category information, the model considers all items to be in the same category, i.e., <span class="arithmatex">\(I_c = \{1, 2, \dots I\}\)</span>.</p>
+<p>The BEMB admits a <strong>linear additive form</strong> of utility formula.</p>
+<p>For example, the model parses utility formula string <code>lambda_item + theta_user * alpha_item + zeta_user * item_obs</code> into the following representation:</p>
+<p>$
+\mathcal{U}(u, i, s)= \lambda_i + \theta_u^\top \alpha_i + \zeta_u^\top X^{item}_i \varepsilon \in \mathbb{R}
+$</p>
+<p>The <code>utility_formula</code> consists of two classes of objects:
+1. <strong>learnable coefficients</strong> (i.e., Greek letters): the string-parser identifies learnable coefficients by looking at their suffix. These variables can be (1) constant across all items and users, (2) user-specific, or (3) item-specific. For example, the <span class="arithmatex">\(\lambda_i\)</span> term above is item-specific intercept and it is presented as <code>item_item</code> in the <code>utility_formula</code>. To ensure the string-parsing is working properly, learnable coefficients <strong>must</strong> ends with one of <code>{_item, _user, _constant}</code>.
+2. <strong>Observable Tensors</strong> are identified by their prefix, which tells whether they are item-specific (with <code>item_</code> prefix), user-specific (with <code>user_</code> prefix), session-specific (with <code>session_</code> prefix), or session-and-item-specific (with <code>price_</code> prefix) observables. Each of these observables should present in the <code>ChoiceDataset</code> data structure constructed.</p>
+<p><strong>Warning</strong>: the <code>utility_formula</code> parser identifies learnable coefficients as using suffix and observables using prefix, the researcher should <strong>never</strong> name things with both prefix in <code>{user_, item_, session_, price_}</code> and suffix <code>{_constant, _user, _item}</code> such as <code>item_quality_user</code>.</p>
+<p>Overall, there are four types of additive component, except the error term <span class="arithmatex">\(\epsilon\)</span>, in the utility representation:</p>
+<ol>
+<li>Standalone coefficients <span class="arithmatex">\(\lambda, \lambda_i, \lambda_u \in \mathbb{R}\)</span> representing intercepts and item/user level fixed effects.</li>
+<li>“Matrix factorization” coefficients <span class="arithmatex">\(\theta_u^\top \alpha_i\)</span>, where <span class="arithmatex">\(\theta_u,\alpha_i \in \mathbb{R}^L\)</span> are embedding/latent of users and items, <span class="arithmatex">\(L\)</span> is the latent dimension specified by the researcher.</li>
+<li>Observable terms <span class="arithmatex">\(\zeta_u^\top X^{item}_i\)</span>, where each <span class="arithmatex">\(\zeta_u \in \mathbb{R}^{K_{item}}\)</span> is the user specific coefficients for item observables. This type of component is written as <code>zeta_user * item_obs</code> in the utility formula. For sure, one can use coefficients constant among users by simply putting <code>zeta_constant</code> in the utility formula.</li>
+<li>“Matrix factorization” coefficients of observables written as <code>gamma_user * beta_item * price_obs</code>.  This type of component factorizes the coefficient of observables into user and item latents. For example, suppose there are <span class="arithmatex">\(K_{price}\)</span> price observables (i.e., observables varying by both item and session, price is one of them!), for each of price observable <span class="arithmatex">\(X^{price}_{is}[k] \in \mathbb{R}\)</span>, a pair of latent <span class="arithmatex">\(\gamma_u^k, \beta_i^k \in \mathbb{R}^L\)</span> is trained to construct the coefficient of the <span class="arithmatex">\(k^{th}\)</span> price observable, where <span class="arithmatex">\(L\)</span> is the latent dimension specified by the researcher. In this case, the utility is  <span class="arithmatex">\(\mathcal{U}(u, i, s) = \sum_{k=1}^K (\gamma_u^{k\top} \beta_i^k) X^{price}_{is}[k]\)</span>. One can for sure replace the <code>price_obs</code> with any of <code>{user, item, session}_obs</code>.</li>
+</ol>
+<p>If the researcher wish to treat different part of item observable differently, for example,
+$
+\mathcal{U}(u, i, s) = \dots + \zeta_u^\top Y^{item}_i + \omega^\top Z^{item}_i + \dots
+$
+where we partition item observables into two parts <span class="arithmatex">\(X^{item}_i = [Y^{item}_i, Z^{item}_i]\)</span>, and the coefficient for <span class="arithmatex">\(Y^{item}_i\)</span> is user-specific but the coefficient for the second part is constant across all users.
+In this case, the researcher should use separate tensors <code>item_obs_part1</code> and <code>item_obs_part2</code> while constructing the <code>ChoiceDataset</code> (both of them needs to start with <code>item_</code>), and use the <code>utility formula</code> with <code>zeta_user * item_obs_part1 + omega_constant * item_obs_part2</code>.</p>
+<p>With the above four cases as building blocks, the researcher can specify all kinds of utility functions.</p>
+<h3 id="number-of-usersitemssessions-num_users-items-sessions">Number of Users/Items/Sessions <code>num_{users, items, sessions}</code></h3>
+<p>The researcher is responsible for providing the size of the prediction problem.
+For every model, the <code>num_items</code> is <strong>required</strong>.
+However, <code>num_users</code> and <code>num_sessions</code> are required only if there is any user/session-specific observables or parameters involved in the <code>utility_formula</code>.</p>
+<h3 id="specifying-the-dimensions-of-coefficients-with-the-coef_dim_dict-dictionary">Specifying the Dimensions of Coefficients with the <code>coef_dim_dict</code> dictionary</h3>
+<p>To correctly initialize the model, the constructor needs to know the shape of each learnable coefficients (i.e., Greek letters above). For item/user-specific parameters, the value of <code>coef_dim_dict</code> is the number of parameters for <strong>each</strong> user/item, not the total number of parameters.
+1. For standalone coefficients like <code>lambda_item</code>, <code>coef_dim_dict['lambda_item']</code> = 1 always.
+2. For matrix factorization coefficients like <code>theta_user</code> and <code>alpha_item</code>, <code>coef_dim_dict['theta_user'] = coef_dim_dict[alpha_item] = L</code>, where <code>L</code> is the desired latent dimension. For the inner product between <span class="arithmatex">\(\alpha_i\)</span> and <span class="arithmatex">\(\theta_u\)</span> to work properly, <code>coef_dim_dict['theta_user'] == coef_dim_dict['alpha_item']</code>.
+3. For terms like <span class="arithmatex">\(\zeta_u^\top X^{item}_i\)</span>, <code>coef_dim_dict['zeta_user']</code> needs to be the dimension of <span class="arithmatex">\(X^{item}_i\)</span>.
+4. For matrix factorization coefficients, the dimension needs to be the latent dimension multiplied by the number of observables. For example, if you have a 3-dimensional feature <span class="arithmatex">\(X = (x_1, x_2, x_3)\)</span>, the utility is <span class="arithmatex">\(\mathcal{U}(u, i, s) = \zeta_{u, i}^\top X\)</span>, and <span class="arithmatex">\(\zeta_{u, i}\)</span> needs to be factorized into two an user-specific and item-specific part (both in <span class="arithmatex">\(\mathbb{R}^L\)</span>) as below
+$
+\mathcal{U}(u, i, s) = \sum_{k=1}^3 (\gamma_u^{k\top} \beta_i^k) x_k
+$
+  then <code>coef_dim_dict[gamma_user] = coef_dim_dict[beta_item] = 3 * L</code>.</p>
+<p><strong>TODO</strong>: sounds like a lot of work? we are currently developing helper function to infer all these information from the <code>ChoiceDataset</code>, but we will still provide researchers with the full control over the configuration.</p>
+<h3 id="specifying-variance-of-coefficient-prior-distributions-with-prior_variance">Specifying Variance of Coefficient Prior Distributions with <code>prior_variance</code></h3>
+<p>The <code>prior_variance</code> term can be either a scalar or a dictionary with the same keys of <code>coef_dim_dict</code>, which provides the variance of prior distribution for each learnable coefficients.
+If a float is provided, all priors will be Gaussian distribution with diagonal covariance matrix with <code>prior_variance</code> along the diagonal.
+If a dictionary is provided, keys of <code>prior_variance</code> should be coefficient names, and the prior of each <code>coef_name</code> would be a Gaussian with diagonal covariance matrix with <code>prior_variance[coef_name]</code> along the diagonal.
+This value is default to be <code>1.0</code>, which means priors of all coefficients are standard Gaussian distributions.</p>
+<h3 id="incorporating-observables-to-the-bayesian-prior-with-obs2prior_dict">Incorporating Observables to the Bayesian Prior with <code>obs2prior_dict</code></h3>
+<p>BEMB is a Bayesian factorization model trained by optimizing the evidence lower bound (ELBO). Each parameter (i.e., these with <code>_item, _user, _constant</code> suffix.) in the BEMB model carries a prior distribution, which is set to <span class="arithmatex">\(\mathcal{N}(\mathbf{0}, \mathbf{I})\)</span> by default. With <code>prior_variance</code> argument described above, one can specify different scales/variances for different learnable coefficients.</p>
+<p>Beyond this baseline case, the hierarchical nature of BEMB allows the mean of the prior distribution to depend on observables as a (learnable) linear mapping. For example:</p>
+<p>$
+\theta_{i} \overset{prior}{\sim} \mathcal{N}(HX^{item}_i, \mathbf{I})
+$</p>
+<p>where the prior mean is a linear transformation of the item observable and <span class="arithmatex">\(H: \mathbb{R}^{K_{item}} \to \mathbb{R}^L\)</span>.</p>
+<p>To enable the observable-to-prior feature, one needs to set <code>obs2prior_dict['theta_item']=True</code>.
+In order to leverage obs-to-prior for item-specific coefficients like <code>theta_item</code>, the researchers need to include <code>item_obs</code> tensor to the <code>ChoiceDataset</code>, <em>the attribute name needs to be exactly <code>item_obs</code>, just with <code>item_</code> prefix is </em><em>not</em><em> sufficient.</em> Similarly, <code>user_obs</code> are required if obs-to-prior is turned on for <strong>any</strong> of user-specific coefficients.</p>
+<h3 id="grouping-items-into-categories-with-category_to_item">Grouping Items into Categories with <code>category_to_item</code></h3>
+<p>In some cases the researcher wishes to provide additional guidance to the model by providing the category of the bought item in teach purchasing record.
+In this case, the probability of purchasing each <span class="arithmatex">\(i\)</span> will be normalized only across other items from the same category rather than all items.
+The <code>category_to_item</code> argument provides a dictionary with category id or name as keys, and <code>category_to_item[C]</code> contains the list of item ids belonging to category <code>C</code>.
+With <code>category_to_item</code> provided, for the probability of purchasing item <span class="arithmatex">\(i\)</span> by user <span class="arithmatex">\(u\)</span> in session, let <span class="arithmatex">\(I_c\)</span> denote the set of items belonging to the same category <span class="arithmatex">\(i\)</span>, the probability of purchasing is
+$
+P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i' \in I_c} e^{\mathcal{U}(u, i', s)}}
+$
+If <code>category_to_item</code> is not provided (or <code>None</code> is provided), the probability of purchasing item <span class="arithmatex">\(i\)</span> by user <span class="arithmatex">\(u\)</span> in session <span class="arithmatex">\(s\)</span> is (note the difference in summation scope, this is computed as if all items are from the same category):
+$
+P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i'=1}^I e^{\mathcal{U}(u, i', s)}}
+$</p>
+<h3 id="last-step-create-the-litbembflex-wrapper">Last Step: Create the <code>LitBEMBFlex</code> wrapper</h3>
+<p>The last step is to create the <code>LitBEMBFlex</code> object which contains all information we gathered above. You will also need to provide a <code>learning_rate</code> for the the optimizer and a <code>num_seeds</code> for the Monte-Carlo estimator of gradient in ELBO.</p>
+<pre><code class="language-python">model = bemb.model.LitBEMBFlex(
+    learning_rate=0.01,
+    num_seeds=4,
+    utility_formula=utility_formula,
+    num_users=num_users,
+    num_items=num_items,
+    num_sessions=num_sessions,
+    obs2prior_dict=obs2prior_dict,
+    coef_dim_dict=coef_dim_dict,
+    category_to_item=category_to_item,
+    num_user_obs=num_user_obs,
+    num_item_obs=num_item_obs,
+)
+</code></pre>
+<h2 id="training-the-model">Training the Model</h2>
+<p>We provide a ready-to-use scrip to train the model, where <code>dataset_list</code> is a list consists of three <code>ChoiceDataset</code> objects (see the <a href="../data_management/">Data Management</a> tutorial for splitting datasets), the training, validation, and testing dataset.</p>
+<pre><code class="language-python">model = model.to('cuda')  # only if GPU is installed
+model = bemb.utils.run_helper.run(model, dataset_list, batch_size=32, num_epochs=10)
+</code></pre>
+<h2 id="inference">Inference</h2>
+<p>Lastly, to get the utilities (i.e., the logit) of the item bought for each row of the test dataset, the <code>model.model.forward()</code> method does the trick.
+You can either compute the utility for the purchased item or for all items, we put significant effort on optimizing the pipeline for estimating utility of the bought item, so it's much faster than computing utilities of all items.</p>
+<pre><code class="language-python">with torch.no_grad():
+    # disable gradient tracking to save computational cost.
+    utility_chosen = model.model.forward(dataset_list[2], return_logit=True, all_items=False)
+    # uses much higher memory!
+    utility_all = model.model.forward(dataset_list[2], return_logit=True, all_items=True)
+</code></pre>
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../nested_logit_model_house_cooling/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Tutorial for Nested Logit Model" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Tutorial for Nested Logit Model
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../projects/" class="md-footer__link md-footer__link--next" aria-label="Next: Related Projects" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Related Projects
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.2a1c317c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.ed9748b7.min.js"></script>
+      
+        <script src="../javascripts/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
