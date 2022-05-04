@@ -1,52 +1,59 @@
-# Data Management Tutorial
+# Tutorial: Data Management
 **Author: Tianyu Du (tianyudu@stanford.edu)**
 
-This notebook aims to help users understand the functionality of `ChoiceDataset` object. The `ChoiceDataset` is an instance
-of the more general PyTorch dataset object holding information of consumer choices. The `ChoiceDataset` offers easy and clean
-data management interface and is compatible with most PyTorch machine learning pipeline.
+This notebook aims to help users understand the functionality of `ChoiceDataset` object.
+The `ChoiceDataset` is an instance of the more general PyTorch dataset object holding information of consumer choices. The `ChoiceDataset` offers easy, clean and efficient data management.
 
-**Note**: since this package was initially proposed for modelling consumer choices, attribute names of `ChoiceDataset`
-are borrowed from the consumer choice literature.
+**Note**: since this package was initially proposed for modelling consumer choices, attribute names of `ChoiceDataset` are borrowed from the consumer choice literature.
 
-## Components of the Dataset
-The BEMB model was initially designed for predicting consumers’ purchasing choices from the supermarket purchase dataset, we use the same setup in this tutorial. However, one can easily adopt the `ChoiceDataset` data structure to other use cases.
-Since there is a natural notion of **users** in the modelling problem, from now on we will call individuals in the dataset **users** and you, the reader, **researchers**.
+The BEMB model was initially designed for predicting consumers’ purchasing choices from the supermarket purchase dataset, we use the same setup in this tutorial as a running example. However, one can easily adopt the `ChoiceDataset` data structure to other use cases.
 
-Since we will be using PyTorch to train our model, we represent their identities with integer values.
+**Note**: the Jupyter-notebook version of this tutorial can be found [here](https://github.com/gsbDBI/torch-choice/blob/main/tutorials/data_management.ipynb).
+
+## Components of the Consumer Choice Modelling Problem
+We begin with essential component of the consumer choice modelling problem. Walking through these components should help you understand what kind of data our models are working on.
+
+### Purchasing Record
+Each row (record) of the dataset is called a **purchasing record**, which includes *who* bought *what* at *when* and *where*.
+Let $B$ denote the number of **purchasing records** in the dataset (i.e., number of rows of the dataset). Each row $b \in \{1,2,\dots, B\}$ corresponds to a purchase record (i.e., *who* bought *what* at *where and when*).
 
 ### Items and Categories
-We begin with notations and essential component of the consumer choice modelling problem.
-Suppose there are $I$ **items** indexed by $i \in \{1,2,\dots,I\}$ under our consideration.
+To begin with, there are $I$ **items** indexed by $i \in \{1,2,\dots,I\}$ under our consideration.
+
 Further, the researcher can optionally partition the set items into $C$ **categories** indexed by $c \in \{1,2,\dots,C\}$. Let $I_c$ denote the collection of items in category $c$, it is easy to verify that
 $
 \bigcup_{c \in \{1, 2, \dots, C\}} I_c = \{1, 2, \dots I\}
 $
-If the researcher does not wish to model different categories differently, the researcher can simply put all items in one single category: $I_1 = \{1, 2, \dots I\}$.
+If the researcher does not wish to model different categories differently, the researcher can simply put all items in one single category: $I_1 = \{1, 2, \dots I\}$, so that all items belong to the same category.
+
+**Note**: since we will be using PyTorch to train our model, we represent their identities with integer values instead of the raw human-readable names of items (e.g., Dell 24 inch LCD monitor).
+Raw item names can be encoded easily with [sklearn.preprocessing.OrdinalEncoder](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OrdinalEncoder.html).
 
 ### Users
-Let $B$ denote the number of **purchasing records** in the dataset (i.e., number of rows of the dataset). Each row $b \in \{1,2,\dots, B\}$ corresponds to a purchase record (i.e., *who* bought *what* at *where and when*). Each row is naturally associated with an **user** indexed by $u \in \{1,2,\dots,U\}$ (*who*) and a bought item $i$ (*what*).
-Overall, each row (i.e., purchasing record) in the dataset is characterized by a user-session-item tuple $(u, s, i)$.
-When there are multiple items bought by the same user in the same session, there will be multiple rows in the dataset with the same $(u, s)$.
+Each purchaing reocrd is naturally associated with an **user** indexed by $u \in \{1,2,\dots,U\}$ (*who*) as well.
 
 ### Sessions
-Our data structure encompasses *where and when* using a notion called **session** indexed by $s \in \{1,2,\dots, S\}$, For example, of session $s$ is the date of purchase.
+Our data structure encompasses *where and when* using a notion called **session** indexed by $s \in \{1,2,\dots, S\}$.
+For example, when the data came from a single store over the period of a year. In this case, the notion of *where* does not matter that much, and session $s$ is simply the date of purchase.
+
 Another example is that we have the purchase record from different stores, the session $s$ can be defined as a pair of *(date, store)* instead.
+
 If the researcher does not wish to handle records from different sessions differently, the researcher can assign the same session ID to all rows of the dataset.
 
+To summarize, each purchasing record $b$ in the dataset is characterized by a user-session-item tuple $(u, s, i)$.
+
+When there are multiple items bought by the same user in the same session, there will be multiple rows in the dataset with the same $(u, s)$ corresponding to the same receipt.
+
 ### Item Availability
-It is not necessarily that all items are available for purchasing everyday, items can get out-of-stock in particular sessions. To handle these cases, the researcher can optionally provide a boolean tensor $\in \{\texttt{True}, \texttt{False}\}^{S\times I}$ to indicate which items are available for purchasing in each session.
+It is not necessarily that all items are available in every session, items can get out-of-stock in particular sessions.
+
+To handle these cases, the researcher can *optionally* provide a boolean tensor $\in \{\texttt{True}, \texttt{False}\}^{S\times I}$ to indicate which items are available for purchasing in each session.
 While predicting the purchase probabilities, the model sets the probability for these unavailable items to zero and normalizes probabilities among available items.
 If the item availability is not provided, the model assumes all items are available in all sessions.
 
-To summarize, the `ChoiceDataset` is expecting the following keyword argument while being constructed:
-1. `item_index` $\in \{1,2,\dots,I\}^B$ : the ID of bought item for each purchasing record (*what*).
-2. `user_index` $\in \{1,2,\dots,U\}^B$: the ID of the corresponding user (shopper)for each purchasing record (*who*).
-3. `session_index` $\in \{1,2,\dots,S\}^B$: the corresponding session of each purchasing record (*where and when*).
-4. `item_availability` $\in \{\texttt{True}, \texttt{False}\}^{S\times I}$  identifies the availability of items in each session, the model will ignore unavailable items while making prediction.
-
 ### Observables
 #### Basic Usage
-Optionally, the researcher can incorporate observables of, for example, users and items. Currently, the package support the following types of observables, where $K_{...}$ $denote the number of observables.
+Optionally, the researcher can incorporate observables of, for example, users and items. Currently, the package support the following types of observables, where $K_{...}$ denote the number of observables.
 
 1. `user_obs` $\in \mathbb{R}^{U\times K_{user}}$
 2. `item_obs` $\in \mathbb{R}^{I\times K_{item}}$
@@ -472,9 +479,5 @@ joint_dataset
     	the_dataset: ChoiceDataset(label=[], item_index=[10000], user_index=[10000], session_index=[10000], item_availability=[500, 4], user_obs=[10, 128], item_obs=[4, 64], session_obs=[500, 10], price_obs=[500, 4, 12], device=cpu)
     	another_dataset: ChoiceDataset(label=[], item_index=[10000], user_index=[10000], session_index=[10000], item_availability=[500, 4], user_obs=[10, 128], item_obs=[4, 64], session_obs=[500, 10], price_obs=[500, 4, 12], device=cpu)
     )
-
-
-
-# What if the target of prediction is not an item? It's a binary variable instead!
 
 
