@@ -3,29 +3,32 @@ Author: Tianyu Du
 
 The package implements the nested logit model as well, which allows researchers to model choices as a two-stage process: the user first picks a category of purchase and then picks the item from the chosen category that generates the most utility.
 
-Examples here are modified from [Exercise 2: Nested logit model by Kenneth Train and Yves Croissant](https://cran.r-project.org/web/packages/mlogit/vignettes/e2nlogit.html)
-The data set HC from mlogit contains data in R format on the choice of heating and central cooling system for 250 single-family, newly built houses in California.
+Examples here are modified from [Exercise 2: Nested logit model by Kenneth Train and Yves Croissant](https://cran.r-project.org/web/packages/mlogit/vignettes/e2nlogit.html).
+
+The House Cooling (HC) dataset from `mlogit` contains data in R format on the choice of heating and central cooling system for 250 single-family, newly built houses in California.
+
+The dataset is small and serve as a demonstration of the nested logit model.
 
 
 The alternatives are:
 
-- Gas central heat with cooling gcc,
-- Electric central resistence heat with cooling ecc,
-- Electric room resistence heat with cooling erc,
-- Electric heat pump, which provides cooling also hpc,
-- Gas central heat without cooling gc,
-- Electric central resistence heat without cooling ec,
-- Electric room resistence heat without cooling er.
+- Gas central heat with cooling `gcc`,
+- Electric central resistence heat with cooling `ecc`,
+- Electric room resistence heat with cooling `erc`,
+- Electric heat pump, which provides cooling also `hpc`,
+- Gas central heat without cooling `gc`,
+- Electric central resistence heat without cooling `ec`,
+- Electric room resistence heat without cooling `er`.
 - Heat pumps necessarily provide both heating and cooling such that heat pump without cooling is not an alternative.
 
 The variables are:
 
-- depvar gives the name of the chosen alternative,
-- ich.alt are the installation cost for the heating portion of the system,
-- icca is the installation cost for cooling
-- och.alt are the operating cost for the heating portion of the system
-- occa is the operating cost for cooling
-- income is the annual income of the household
+- `depvar` gives the name of the chosen alternative,
+- `ich.alt` are the installation cost for the heating portion of the system,
+- `icca` is the installation cost for cooling
+- `och.alt` are the operating cost for the heating portion of the system
+- `occa` is the operating cost for cooling
+- `income` is the annual income of the household
 
 Note that the full installation cost of alternative gcc is ich.gcc+icca, and similarly for the operating cost and for the other alternatives with cooling.
 
@@ -64,7 +67,8 @@ W_{ukt} = \epsilon_{ukt}
 $$
 The research may wish to enfoce the *elasiticity* $\lambda_k$ to be constant across categories, setting `shared_lambda=True` enforces $\lambda_k = \lambda\ \forall k \in [K]$.
 
-## Load Essential Packages.
+## Load Essential Packages
+We firstly read essential packages for this tutorial.
 
 
 ```python
@@ -76,26 +80,27 @@ import torch
 from torch_choice.data import ChoiceDataset, JointDataset, utils
 from torch_choice.model.nested_logit_model import NestedLogitModel
 from torch_choice.utils.run_helper import run
+```
+
+We then select the appropriate device to run the model on, our package supports both CPU and GPU.
+
+
+```python
 
 if torch.cuda.is_available():
     print(f'CUDA device used: {torch.cuda.get_device_name()}')
+    DEVICE = 'cuda'
+else:
+    print('Running tutorial on CPU')
+    DEVICE = 'cpu' 
+    
 ```
 
     CUDA device used: NVIDIA GeForce RTX 3090
 
 
-## Encompass Configurations in a Name Space Object
-
-
-```python
-args = argparse.Namespace(data_path='./',
-                          batch_size=-1,  # full-batch.
-                          shuffle=False,
-                          num_epochs=30000,
-                          device='cuda' if torch.cuda.is_available() else 'cpu')
-```
-
 ## Load Datasets
+We firstly read the dataset for this tutorial, the `csv` file can be found at `./public_datasets/HC.csv`.
 
 
 ```python
@@ -227,6 +232,27 @@ df.head()
 
 
 
+The raw dataset is in a long-format (i.e., each row contains information of one item).
+
+
+```python
+df['idx.id2'].value_counts()
+```
+
+
+
+
+    ec     250
+    ecc    250
+    er     250
+    erc    250
+    gc     250
+    gcc    250
+    hpc    250
+    Name: idx.id2, dtype: int64
+
+
+
 
 ```python
 # what was actually chosen.
@@ -239,38 +265,132 @@ item_index = item_index.map(lambda x: encoder[x])
 item_index = torch.LongTensor(item_index)
 ```
 
+Because we will be training our model with `PyTorch`, we need to encode item names to integers (from 0 to 6).
+We do this manually in this exercise given the small amount of items, for more items, one can use [sklearn.preprocessing.OrdinalEncoder](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OrdinalEncoder.html) to encode.
+
+Raw item names will be encoded as the following.
+
+
+```python
+encoder
+```
+
+
+
+
+    {'ec': 0, 'ecc': 1, 'er': 2, 'erc': 3, 'gc': 4, 'gcc': 5, 'hpc': 6}
+
+
+
+### Category Level Dataset
+We firstly construct the category-level dataset, however, there is no observable that is constant within the same category, so we don't need to include any observable tensor to the `category_dataset`.
+
+All we need to do is adding the `item_index` (i.e., which item is chosen) to the dataset, so that `category_dataset` knows the total number of choices made.
+
 
 ```python
 # category feature: no category feature, all features are item-level.
-category_dataset = ChoiceDataset(item_index=item_index.clone()).to(args.device)
+category_dataset = ChoiceDataset(item_index=item_index.clone()).to(DEVICE)
+```
 
+    No `session_index` is provided, assume each choice instance is in its own session.
+
+
+### Item Level Dataset
+For simplicity, we treat each purchasing record as its own session. Moreover, we treat all observables as price observables (i.e., varying by both session and item).
+
+Since there are 7 observables in total, the resulted `price_obs` has shape (250, 7, 7) corresponding to `number_of_sessions` by `number_of_items` by `number_of_observables`. 
+
+
+```python
 # item feature.
 item_feat_cols = ['ich', 'och', 'icca', 'occa', 'inc.room', 'inc.cooling', 'int.cooling']
 price_obs = utils.pivot3d(df, dim0='idx.id1', dim1='idx.id2', values=item_feat_cols)
-item_dataset = ChoiceDataset(item_index=item_index, price_obs=price_obs).to(args.device)
-
-# combine dataets
-dataset = JointDataset(category=category_dataset, item=item_dataset)
-data_loader = utils.create_data_loader(dataset)
+price_obs.shape
 ```
 
-## Example 1
-Run a nested logit model on the data for two nests and one log-sum coefficient that applies to both nests. Note that the model is specified to have the cooling alternatives `{gcc, ecc, erc, hpc}` in one nest and the non-cooling alternatives `{gc, ec, er}` in another nest.
 
-**NOTE**: We are computing the standard errors using $\sqrt{\text{diag}(H^{-1})}$, where $H$ is the
-hessian of negative log-likelihood with repsect to model parameters. This leads to slight different
-results compared with R implementation.
+
+
+    torch.Size([250, 7, 7])
+
+
+
+Then, we construct the item level dataset by providing both `item_index` and `price_obs`.
+
+We move `item_dataset` to the appropriate device as well. This is only necessary if we are using GPU to accelerate the model.
+
+
+```python
+item_dataset = ChoiceDataset(item_index=item_index, price_obs=price_obs).to(DEVICE)
+```
+
+    No `session_index` is provided, assume each choice instance is in its own session.
+
+
+Finally, we chain the category-level and item-level dataset into a single `JointDataset`.
+
+
+```python
+dataset = JointDataset(category=category_dataset, item=item_dataset)
+```
+
+One can print the joint dataset to see its contents, and tensors contained in each of these sub-datasets.
+
+
+```python
+print(dataset)
+```
+
+    JointDataset with 2 sub-datasets: (
+    	category: ChoiceDataset(label=[], item_index=[250], user_index=[], session_index=[250], item_availability=[], device=cuda:0)
+    	item: ChoiceDataset(label=[], item_index=[250], user_index=[], session_index=[250], item_availability=[], price_obs=[250, 7, 7], device=cuda:0)
+    )
+
+
+## Examples
+There are multiple ways to group 7 items into categories, different classification will result in different utility functions and estimations (see the background of nested logit models).
+
+We will demonstrate the usage of our package by presenting three different categorization schemes and corresponding model estimations.
+
+### Example 1
+In the first example, the model is specified to have the *cooling alternatives* `{gcc, ecc, erc, hpc}` in one category and the *non-cooling alternatives* `{gc, ec, er}` in another category.
+
+We create a `category_to_item` dictionary to inform the model our categorization scheme. The dictionary should have keys ranging from `0` to `number_of_categories - 1`, each integer corresponds to a category. The value of each key is a list of item IDs in the category, the encoding of item names should be exactly the same as in the construction of `item_index`.
 
 
 ```python
 category_to_item = {0: ['gcc', 'ecc', 'erc', 'hpc'],
                     1: ['gc', 'ec', 'er']}
 
-# convert names 
+# encode items to integers.
 for k, v in category_to_item.items():
     v = [encoder[item] for item in v]
     category_to_item[k] = sorted(v)
+```
 
+In this example, we have item `[1, 3, 5, 6]` in the first category (category `0`) and the rest of items in the second category (category `1`).
+
+
+```python
+print(category_to_item)
+```
+
+    {0: [1, 3, 5, 6], 1: [0, 2, 4]}
+
+
+Next, let's create the `NestedLogitModel` class!
+
+The first thing to put in is the `category_to_item` dictionary we just built.
+
+For `category_coef_variation_dict`, `category_num_param_dict`, since we don't have any category-specific observables, we can simply put an empty dictionary there.
+
+Coefficients for all observables are constant across items, and there are 7 observables in total.
+
+As for `shared_lambda=True`, please refer to the background recap for nested logit model.
+
+
+```python
 model = NestedLogitModel(category_to_item=category_to_item,
                          category_coef_variation_dict={},
                          category_num_param_dict={},
@@ -278,8 +398,27 @@ model = NestedLogitModel(category_to_item=category_to_item,
                          item_num_param_dict={'price_obs': 7},
                          shared_lambda=True)
 
-model = model.to(args.device)
+model = model.to(DEVICE)
 ```
+
+You can print the model to get summary information of the `NestedLogitModel` class.
+
+
+```python
+print(model)
+```
+
+    NestedLogitModel(
+      (category_coef_dict): ModuleDict()
+      (item_coef_dict): ModuleDict(
+        (price_obs): Coefficient(variation=constant, num_items=7, num_users=None, num_params=7, 7 trainable parameters in total).
+      )
+    )
+
+
+**NOTE**: We are computing the standard errors using $\sqrt{\text{diag}(H^{-1})}$, where $H$ is the
+hessian of negative log-likelihood with respect to model parameters. This leads to slight different
+results compared with R implementation.
 
 
 ```python
@@ -299,16 +438,16 @@ run(model, dataset, num_epochs=10000)
     	item: ChoiceDataset(label=[], item_index=[250], user_index=[], session_index=[250], item_availability=[], price_obs=[250, 7, 7], device=cuda:0)
     )
     ==================== training the model ====================
-    Epoch 1000: Log-likelihood=-588.3027954101562
-    Epoch 2000: Log-likelihood=-186.7021484375
-    Epoch 3000: Log-likelihood=-179.2357635498047
-    Epoch 4000: Log-likelihood=-178.38218688964844
-    Epoch 5000: Log-likelihood=-178.31878662109375
-    Epoch 6000: Log-likelihood=-178.27572631835938
-    Epoch 7000: Log-likelihood=-178.22787475585938
-    Epoch 8000: Log-likelihood=-178.18026733398438
-    Epoch 9000: Log-likelihood=-178.14501953125
-    Epoch 10000: Log-likelihood=-178.128662109375
+    Epoch 1000: Log-likelihood=-187.43597412109375
+    Epoch 2000: Log-likelihood=-179.69964599609375
+    Epoch 3000: Log-likelihood=-178.70831298828125
+    Epoch 4000: Log-likelihood=-178.28799438476562
+    Epoch 5000: Log-likelihood=-178.17779541015625
+    Epoch 6000: Log-likelihood=-178.13650512695312
+    Epoch 7000: Log-likelihood=-178.12576293945312
+    Epoch 8000: Log-likelihood=-178.14144897460938
+    Epoch 9000: Log-likelihood=-178.12478637695312
+    Epoch 10000: Log-likelihood=-178.13674926757812
     ==================== model results ====================
     Training Epochs: 10000
     
@@ -316,20 +455,20 @@ run(model, dataset, num_epochs=10000)
     
     Batch Size: 250 out of 250 observations in total
     
-    Final Log-likelihood: -178.128662109375
+    Final Log-likelihood: -178.13674926757812
     
     Coefficients:
     
     | Coefficient      |   Estimation |   Std. Err. |
     |:-----------------|-------------:|------------:|
-    | lambda_weight_0  |     0.580075 |   0.165447  |
-    | item_price_obs_0 |    -0.549378 |   0.143561  |
-    | item_price_obs_1 |    -0.849512 |   0.235958  |
-    | item_price_obs_2 |    -0.231246 |   0.110558  |
-    | item_price_obs_3 |    -1.15354  |   1.03607   |
-    | item_price_obs_4 |    -0.375084 |   0.0999644 |
-    | item_price_obs_5 |     0.248696 |   0.0516442 |
-    | item_price_obs_6 |    -5.57415  |   4.7879    |
+    | lambda_weight_0  |     0.585981 |   0.167168  |
+    | item_price_obs_0 |    -0.555577 |   0.145414  |
+    | item_price_obs_1 |    -0.85812  |   0.238405  |
+    | item_price_obs_2 |    -0.224599 |   0.111092  |
+    | item_price_obs_3 |    -1.08912  |   1.04131   |
+    | item_price_obs_4 |    -0.379067 |   0.101126  |
+    | item_price_obs_5 |     0.250203 |   0.0522721 |
+    | item_price_obs_6 |    -5.99917  |   4.85404   |
 
 
 
@@ -344,7 +483,22 @@ run(model, dataset, num_epochs=10000)
 
 
 
-### R Output
+#### R Output
+Here we provide the output from `mlogit` model in `R` for estimation reference.
+
+Coefficient names reported are slightly different in `Python` and `R`, please use the following table for comparison. Please note that the `lambda_weight_0` in `Python` (at the top) corresponds to the `iv` (inclusive value) in `R` (at the bottom). Orderings of coefficients for observables should be the same in both languages.
+
+| Coefficient (Python) |   Coefficient (R) |
+|:-----------------|:-------------:|
+| lambda_weight_0  |     iv |
+| item_price_obs_0 |    ich |
+| item_price_obs_1 |    och  |
+| item_price_obs_2 |    icca |
+| item_price_obs_3 |    occa  |
+| item_price_obs_4 |    inc.room |
+| item_price_obs_5 |    inc.cooling  |
+| item_price_obs_6 |    int.cooling  |
+
 ```
 ## 
 ## Call:
@@ -377,7 +531,8 @@ run(model, dataset, num_epochs=10000)
 ## Log-Likelihood: -178.12
 ```
 
-## Example 2
+### Example 2
+The second example is similar to the first one, but we change the way we group items into different categories.
 Re-estimate the model with the room alternatives in one nest and the central alternatives in another nest. (Note that a heat pump is a central system.)
 
 
@@ -391,13 +546,12 @@ for k, v in category_to_item.items():
 model = NestedLogitModel(category_to_item=category_to_item,
                             category_coef_variation_dict={},
                             category_num_param_dict={},
-                        #  category_num_param_dict={'intercept': 1},
                             item_coef_variation_dict={'price_obs': 'constant'},
                             item_num_param_dict={'price_obs': 7},
                             shared_lambda=True
                             )
 
-model = model.to(args.device)
+model = model.to(DEVICE)
 ```
 
 
@@ -418,16 +572,16 @@ run(model, dataset, num_epochs=5000, learning_rate=0.3)
     	item: ChoiceDataset(label=[], item_index=[250], user_index=[], session_index=[250], item_availability=[], price_obs=[250, 7, 7], device=cuda:0)
     )
     ==================== training the model ====================
-    Epoch 500: Log-likelihood=-182.41204833984375
-    Epoch 1000: Log-likelihood=-180.3829803466797
-    Epoch 1500: Log-likelihood=-180.6223907470703
-    Epoch 2000: Log-likelihood=-180.298828125
-    Epoch 2500: Log-likelihood=-180.500732421875
-    Epoch 3000: Log-likelihood=-180.5670166015625
-    Epoch 3500: Log-likelihood=-182.52322387695312
-    Epoch 4000: Log-likelihood=-184.7764129638672
-    Epoch 4500: Log-likelihood=-180.62258911132812
-    Epoch 5000: Log-likelihood=-180.3092498779297
+    Epoch 500: Log-likelihood=-193.73406982421875
+    Epoch 1000: Log-likelihood=-185.25933837890625
+    Epoch 1500: Log-likelihood=-183.55142211914062
+    Epoch 2000: Log-likelihood=-181.8164825439453
+    Epoch 2500: Log-likelihood=-180.4320526123047
+    Epoch 3000: Log-likelihood=-180.04095458984375
+    Epoch 3500: Log-likelihood=-180.7447509765625
+    Epoch 4000: Log-likelihood=-180.39688110351562
+    Epoch 4500: Log-likelihood=-180.27947998046875
+    Epoch 5000: Log-likelihood=-181.1483612060547
     ==================== model results ====================
     Training Epochs: 5000
     
@@ -435,20 +589,20 @@ run(model, dataset, num_epochs=5000, learning_rate=0.3)
     
     Batch Size: 250 out of 250 observations in total
     
-    Final Log-likelihood: -180.3092498779297
+    Final Log-likelihood: -181.1483612060547
     
     Coefficients:
     
     | Coefficient      |   Estimation |   Std. Err. |
     |:-----------------|-------------:|------------:|
-    | lambda_weight_0  |     1.62779  |    0.664918 |
-    | item_price_obs_0 |    -1.35793  |    0.530842 |
-    | item_price_obs_1 |    -2.18411  |    0.886321 |
-    | item_price_obs_2 |    -0.403624 |    0.237611 |
-    | item_price_obs_3 |    -2.71561  |    2.08917  |
-    | item_price_obs_4 |    -0.895584 |    0.337144 |
-    | item_price_obs_5 |     0.495313 |    0.199812 |
-    | item_price_obs_6 |   -16.0579   |    9.35129  |
+    | lambda_weight_0  |     1.61072  |    0.787735 |
+    | item_price_obs_0 |    -1.34719  |    0.631206 |
+    | item_price_obs_1 |    -2.16109  |    1.0451   |
+    | item_price_obs_2 |    -0.393868 |    0.255138 |
+    | item_price_obs_3 |    -2.53253  |    2.2719   |
+    | item_price_obs_4 |    -0.884873 |    0.379626 |
+    | item_price_obs_5 |     0.496491 |    0.248118 |
+    | item_price_obs_6 |   -15.6477   |    9.88054  |
 
 
 
@@ -463,7 +617,21 @@ run(model, dataset, num_epochs=5000, learning_rate=0.3)
 
 
 
-### R Output
+#### R Output
+
+You can use the table for converting coefficient names reported by `Python` and `R`:
+
+| Coefficient (Python) |   Coefficient (R) |
+|:-----------------|:-------------:|
+| lambda_weight_0  |     iv |
+| item_price_obs_0 |    ich |
+| item_price_obs_1 |    och  |
+| item_price_obs_2 |    icca |
+| item_price_obs_3 |    occa  |
+| item_price_obs_4 |    inc.room |
+| item_price_obs_5 |    inc.cooling  |
+| item_price_obs_6 |    int.cooling  |
+
 ```
 ## 
 ## Call:
@@ -497,8 +665,8 @@ run(model, dataset, num_epochs=5000, learning_rate=0.3)
 
 ```
 
-## Example 3
-Rewrite the code to allow three nests. For simplicity, estimate only one log-sum coefficient which is applied to all three nests. Estimate a model with alternatives gcc, ecc and erc in a nest, hpc in a nest alone, and alternatives gc, ec and er in a nest. Does this model seem better or worse than the model in exercise 1, which puts alternative hpc in the same nest as alternatives gcc, ecc and erc?
+### Example 3
+For the third example, we now group items into three categories. Specifically, we have items `gcc`, `ecc` and `erc` in the first category (category `0` in the `category_to_item` dictionary), `hpc` in a category (category `1`) alone, and items `gc`, `ec` and `er` in the last category (category `2`).
 
 
 ```python
@@ -517,7 +685,7 @@ model = NestedLogitModel(category_to_item=category_to_item,
                          shared_lambda=True
                          )
 
-model = model.to(args.device)
+model = model.to(DEVICE)
 ```
 
 
@@ -538,16 +706,16 @@ run(model, dataset)
     	item: ChoiceDataset(label=[], item_index=[250], user_index=[], session_index=[250], item_availability=[], price_obs=[250, 7, 7], device=cuda:0)
     )
     ==================== training the model ====================
-    Epoch 500: Log-likelihood=-254.35272216796875
-    Epoch 1000: Log-likelihood=-199.40536499023438
-    Epoch 1500: Log-likelihood=-193.3748321533203
-    Epoch 2000: Log-likelihood=-187.37646484375
-    Epoch 2500: Log-likelihood=-183.7972869873047
-    Epoch 3000: Log-likelihood=-182.31369018554688
-    Epoch 3500: Log-likelihood=-181.67796325683594
-    Epoch 4000: Log-likelihood=-181.39984130859375
-    Epoch 4500: Log-likelihood=-181.2567138671875
-    Epoch 5000: Log-likelihood=-181.1448516845703
+    Epoch 500: Log-likelihood=-187.12100219726562
+    Epoch 1000: Log-likelihood=-182.98468017578125
+    Epoch 1500: Log-likelihood=-181.72171020507812
+    Epoch 2000: Log-likelihood=-181.3906707763672
+    Epoch 2500: Log-likelihood=-181.2037353515625
+    Epoch 3000: Log-likelihood=-181.0186767578125
+    Epoch 3500: Log-likelihood=-180.83331298828125
+    Epoch 4000: Log-likelihood=-180.6610107421875
+    Epoch 4500: Log-likelihood=-180.51480102539062
+    Epoch 5000: Log-likelihood=-180.40383911132812
     ==================== model results ====================
     Training Epochs: 5000
     
@@ -555,20 +723,20 @@ run(model, dataset)
     
     Batch Size: 250 out of 250 observations in total
     
-    Final Log-likelihood: -181.1448516845703
+    Final Log-likelihood: -180.40383911132812
     
     Coefficients:
     
     | Coefficient      |   Estimation |   Std. Err. |
     |:-----------------|-------------:|------------:|
-    | lambda_weight_0  |     0.916814 |   0.189271  |
-    | item_price_obs_0 |    -0.804039 |   0.0949913 |
-    | item_price_obs_1 |    -1.29091  |   0.180003  |
-    | item_price_obs_2 |    -0.382208 |   0.128881  |
-    | item_price_obs_3 |    -2.60614  |   1.16214   |
-    | item_price_obs_4 |    -0.543321 |   0.0711768 |
-    | item_price_obs_5 |     0.310327 |   0.0555514 |
-    | item_price_obs_6 |    -3.63363  |   4.96449   |
+    | lambda_weight_0  |     0.939528 |   0.193704  |
+    | item_price_obs_0 |    -0.823672 |   0.0973065 |
+    | item_price_obs_1 |    -1.31387  |   0.182701  |
+    | item_price_obs_2 |    -0.305365 |   0.12726   |
+    | item_price_obs_3 |    -1.89104  |   1.14781   |
+    | item_price_obs_4 |    -0.559503 |   0.0734163 |
+    | item_price_obs_5 |     0.310081 |   0.0551569 |
+    | item_price_obs_6 |    -7.68508  |   5.09592   |
 
 
 
@@ -583,7 +751,21 @@ run(model, dataset)
 
 
 
-### R Output
+#### R Output
+
+You can use the table for converting coefficient names reported by `Python` and `R`:
+
+| Coefficient (Python) |   Coefficient (R) |
+|:-----------------|:-------------:|
+| lambda_weight_0  |     iv |
+| item_price_obs_0 |    ich |
+| item_price_obs_1 |    och  |
+| item_price_obs_2 |    icca |
+| item_price_obs_3 |    occa  |
+| item_price_obs_4 |    inc.room |
+| item_price_obs_5 |    inc.cooling  |
+| item_price_obs_6 |    int.cooling  |
+
 ```
 ## 
 ## Call:
@@ -615,9 +797,4 @@ run(model, dataset)
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ## 
 ## Log-Likelihood: -180.26
-```
-
-
-```python
-
 ```
