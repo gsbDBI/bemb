@@ -56,5 +56,5 @@ def run(model: LitBEMBFlex, dataset_list: List[ChoiceDataset], batch_size: int=-
     print(f'time taken: {time.time() - start_time}')
 
     section_print('test performance')
-    trainer.test(model, test_dataloaders=test)
+    trainer.test(model, dataloaders=test)
     return model
