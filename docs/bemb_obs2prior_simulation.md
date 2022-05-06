@@ -1,4 +1,4 @@
-# Tutorial for BEMB with Simulated Data and the `obs2prior` Option  
+# Tutorial for BEMB with Simulated Data and the `obs2prior` Option
 
 Author: Tianyu Du
 
@@ -47,7 +47,7 @@ $$
 i^{love}(u) = \left \lfloor \frac{\sin \left( \frac{u}{num\_users} \times 4 \times \pi \right) + 1}{2} \times num\_items \right \rfloor
 $$
 
-The `PREFERENCE` dictionary maps each user $u$ to the item she loves. 
+The `PREFERENCE` dictionary maps each user $u$ to the item she loves.
 
 
 ```python
@@ -73,9 +73,9 @@ plt.show()
 ```
 
 
-    
+
 ![png](simulation_files/simulation_9_0.png)
-    
+
 
 
 To add some randomness, for each purchasing records, with 50\% chance, user $u$ chooses the item $i^*(u)$ she loves, and with 50\% of chance she chooses an item randomly.
@@ -104,9 +104,9 @@ fig.show()
 ```
 
 
-    
+
 ![png](simulation_files/simulation_13_0.png)
-    
+
 
 
 ## Build the `ChoiceDataset` Object
@@ -157,21 +157,26 @@ dataset
 
 ## Fitting the Model
 We will be fitting a Bayesian matrix factorization model with utility form
+
 $$
 \mathcal{U}_{u, i} = \theta_u^\top \alpha_i
 $$
 where $\theta_u$ and $\alpha_i$ are Bayesian variables. Please refer to the BEMB tutorial for a detailed description on how this kind of model works.
 
 There are two options on the prior distributions of these Bayesian variables $\theta_u$ and $\alpha_i$. Firstly, we can simply use standard Gaussian as the prior distribution:
+
 $$
-\theta_u \overset{prior}{\sim} \mathcal{N}(\mathbf{0}, I) \\
+\theta_u \overset{prior}{\sim} \mathcal{N}(\mathbf{0}, I) \quad
 \alpha_i \overset{prior}{\sim} \mathcal{N}(\mathbf{0}, I)
 $$
-Alternatively, the prior can be chosen using a data-driven method called `obs2prior`. In particular, the mean of prior distribution can be a learnable linear function of user/item observables. Let $X^{(user)}_u$ and $X^{(item)}_i$ denote the observables of user $u$ and item $i$ respectively. The `obs2prior`-augmented prior distribution is the following: 
+
+Alternatively, the prior can be chosen using a data-driven method called `obs2prior`. In particular, the mean of prior distribution can be a learnable linear function of user/item observables. Let $X^{(user)}_u$ and $X^{(item)}_i$ denote the observables of user $u$ and item $i$ respectively. The `obs2prior`-augmented prior distribution is the following:
+
 $$
-\theta_u \overset{prior}{\sim} \mathcal{N}(H X^{(user)}_u, I) \\
+\theta_u \overset{prior}{\sim} \mathcal{N}(H X^{(user)}_u, I) \quad
 \alpha_i \overset{prior}{\sim} \mathcal{N}(W X^{(item)}_i, I)
 $$
+
 where $H$ and $W$ are two learnable parameters.
 
 
@@ -197,7 +202,7 @@ def fit_model(obs2prior: bool):
     # use GPU if available.
     if torch.cuda.is_available():
         bemb = bemb.to('cuda')
-       
+
     # use the provided run helper to train the model.
     # we set batch size to be 5% of the data size, and train the model for 10 epochs.
     # there would be 20*10=200 gradient update steps in total.
@@ -222,7 +227,7 @@ fit_model(obs2prior=False)
 
 
     LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-    
+
       | Name  | Type     | Params
     -----------------------------------
     0 | model | BEMBFlex | 31.0 K
@@ -247,219 +252,6 @@ fit_model(obs2prior=False)
     [Validation dataset] ChoiceDataset(label=[], item_index=[100], user_index=[100], session_index=[100], item_availability=[], user_obs=[1500, 50], item_obs=[50, 50], device=cpu)
     [Testing dataset] ChoiceDataset(label=[], item_index=[100], user_index=[100], session_index=[100], item_availability=[], user_obs=[1500, 50], item_obs=[50, 50], device=cpu)
     ==================== train the model ====================
-
-
-
-    Sanity Checking: 0it [00:00, ?it/s]
-
-
-
-    Training: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-    LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-
-
     time taken: 40.19812321662903
     ==================== test performance ====================
 
@@ -477,9 +269,9 @@ fit_model(obs2prior=False)
 
 
 
-    
+
 ![png](simulation_files/simulation_20_59.png)
-    
+
 
 
 
@@ -492,7 +284,7 @@ fit_model(obs2prior=True)
     IPU available: False, using: 0 IPUs
     HPU available: False, using: 0 HPUs
     LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-    
+
       | Name  | Type     | Params
     -----------------------------------
     0 | model | BEMBFlex | 33.0 K
@@ -519,219 +311,6 @@ fit_model(obs2prior=True)
     [Validation dataset] ChoiceDataset(label=[], item_index=[100], user_index=[100], session_index=[100], item_availability=[], user_obs=[1500, 50], item_obs=[50, 50], device=cpu)
     [Testing dataset] ChoiceDataset(label=[], item_index=[100], user_index=[100], session_index=[100], item_availability=[], user_obs=[1500, 50], item_obs=[50, 50], device=cpu)
     ==================== train the model ====================
-
-
-
-    Sanity Checking: 0it [00:00, ?it/s]
-
-
-
-    Training: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-
-    Validation: 0it [00:00, ?it/s]
-
-
-    LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-
-
     time taken: 40.98820662498474
     ==================== test performance ====================
 
@@ -749,9 +328,9 @@ fit_model(obs2prior=True)
 
 
 
-    
+
 ![png](simulation_files/simulation_21_58.png)
-    
+
 
 
 Now we compare the difference between two options of prior distributions. We provide a `fit_model` helper function to train and visualize the model. You can go through `fit_model` method to have a preliminary understanding on how to train a BEMB model.
