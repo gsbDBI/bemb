@@ -8,8 +8,9 @@ nav:
     - Tutorial for Conditional Logit Model: conditional_logit_model_mode_canada.md
     - Tutorial for Nested Logit Model: nested_logit_model_house_cooling.md
     - Tutorial for Bayesian Embedding (BEMB): bemb.md
+    - Tutorial for BEMB obs2prior feature: bemb_obs2prior_simulation.md
     - Related Projects: projects.md
-    - Compability Tests: test.md
+    - Compatibility Tests: test.md
     - API Reference Torch-Choice: api_torch_choice.md
     - API Reference BEMB: api_bemb.md
 
