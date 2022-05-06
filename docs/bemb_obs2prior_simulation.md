@@ -41,7 +41,7 @@ user_index = torch.LongTensor(np.random.choice(num_users, size=data_size))
 
 We further assign each individual some preferences so that our simulated is **not** totally random.
 
-In particular, for each user $u \in \{1, 2, \dots, num\_users\}$, we assume $u$ particularly loves the item $i^*(u) \in \{0, 1, \dots, num\_item - 1\}$:
+In particular, for each user $u \in \{0, 1, \dots, num\_users - 1\}$, we assume $u$ particularly loves the item $i^*(u) \in \{0, 1, \dots, num\_item - 1\}$:
 
 $$
 i^{love}(u) = \left \lfloor \frac{\sin \left( \frac{u}{num\_users} \times 4 \times \pi \right) + 1}{2} \times num\_items \right \rfloor
