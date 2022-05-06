@@ -6,6 +6,8 @@ Update: May. 6, 2022
 
 This tutorial offers a simple simulation exercise to demonstrate how to use BEMB model and the power of BEMB's `obs2prior` feature. We highly recommend you to read the BEMB tutorial first.
 
+The executable Jupyter notebook for this tutorial can be found [here](https://github.com/gsbDBI/deepchoice/blob/main/tutorials/simulation/simulation.ipynb)
+
 
 ```python
 import numpy as np
