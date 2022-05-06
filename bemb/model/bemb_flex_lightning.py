@@ -82,7 +82,7 @@ class LitBEMBFlex(pl.LightningModule):
         # utility.
 
         for key, val in self._get_performance_dict(batch).items():
-            self.log('val_' + key, val, prog_bar=True)
+            self.log('val_' + key, val, prog_bar=True, batch_size=len(batch))
 
     def test_step(self, batch, batch_idx):
         # LL = self.model.forward(batch, return_logit=False, all_items=False).mean()
@@ -100,7 +100,7 @@ class LitBEMBFlex(pl.LightningModule):
         # pred = self.model(batch)
         # performance = self.model.get_within_category_accuracy(pred, batch.label)
         for key, val in self._get_performance_dict(batch).items():
-            self.log('test_' + key, val, prog_bar=True)
+            self.log('test_' + key, val, prog_bar=True, batch_size=len(batch))
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
