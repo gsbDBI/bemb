@@ -278,6 +278,20 @@ class BEMBFlex(nn.Module):
                + str(self.coef_dict) + '\n' \
                + str(self.additional_modules)
 
+    def posterior_mean(self, coef_name: str) -> torch.Tensor:
+        """Returns the mean of estimated posterior distribution of coefficient `coef_name`.
+
+        Args:
+            coef_name (str): name of the coefficient to query.
+
+        Returns:
+            torch.Tensor: mean of the estimated posterior distribution of `coef_name`.
+        """
+        if coef_name in self.coef_dict.keys():
+            return self.coef_dict[coef_name].variational_mean
+        else:
+            raise KeyError(f'{coef_name} is not a valid coefficient name in {self.utility_formula}.')
+
     def forward(self, batch: ChoiceDataset,
                 return_type: str,
                 return_scope: str,
