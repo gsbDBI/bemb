@@ -36,9 +36,11 @@ This section covers how to convert the utility representation in a choice proble
 
 The core of specifying a BEMB model is to **specify the utility function** $\mathcal{U}(u,i,s)$ for user $u$ to purchase item $i$ in session $s$, the `bemb` package provides an easy-to-use string-parsing mechanism for researchers to provide their ideal utility representations.
 With the utility representation, the probability for consumer $u$ to purchase item $i$ in session $s$ is the following
+
 $$
 P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i' \in I_c} e^{\mathcal{U}(u, i', s)}}
 $$
+
 where $I_c$ is the set of items in the same category of item $i$.
 If there is no category information, the model considers all items to be in the same category, i.e., $I_c = \{1, 2, \dots I\}$.
 
@@ -47,7 +49,7 @@ The BEMB admits a **linear additive form** of utility formula.
 For example, the model parses utility formula string `lambda_item + theta_user * alpha_item + zeta_user * item_obs` into the following representation:
 
 $$
-\mathcal{U}(u, i, s)= \lambda_i + \theta_u^\top \alpha_i + \zeta_u^\top X^{item}_i \varepsilon \in \mathbb{R}
+\mathcal{U}(u, i, s)= \lambda_i + \theta_u^\top \alpha_i + \zeta_u^\top X^{item}_i + \varepsilon \in \mathbb{R}
 $$
 
 The `utility_formula` consists of two classes of objects:
@@ -64,9 +66,11 @@ Overall, there are four types of additive component, except the error term $\eps
 4.  “Matrix factorization” coefficients of observables written as `gamma_user * beta_item * price_obs`.  This type of component factorizes the coefficient of observables into user and item latents. For example, suppose there are $K_{price}$ price observables (i.e., observables varying by both item and session, price is one of them!), for each of price observable $X^{price}_{is}[k] \in \mathbb{R}$, a pair of latent $\gamma_u^k, \beta_i^k \in \mathbb{R}^L$ is trained to construct the coefficient of the $k^{th}$ price observable, where $L$ is the latent dimension specified by the researcher. In this case, the utility is  $\mathcal{U}(u, i, s) = \sum_{k=1}^K (\gamma_u^{k\top} \beta_i^k) X^{price}_{is}[k]$. One can for sure replace the `price_obs` with any of `{user, item, session}_obs`.
 
 If the researcher wish to treat different part of item observable differently, for example,
-$
+
+$$
 \mathcal{U}(u, i, s) = \dots + \zeta_u^\top Y^{item}_i + \omega^\top Z^{item}_i + \dots
-$
+$$
+
 where we partition item observables into two parts $X^{item}_i = [Y^{item}_i, Z^{item}_i]$, and the coefficient for $Y^{item}_i$ is user-specific but the coefficient for the second part is constant across all users.
 In this case, the researcher should use separate tensors `item_obs_part1` and `item_obs_part2` while constructing the `ChoiceDataset` (both of them needs to start with `item_`), and use the `utility formula` with `zeta_user * item_obs_part1 + omega_constant * item_obs_part2`.
 
@@ -83,10 +87,12 @@ To correctly initialize the model, the constructor needs to know the shape of ea
 2. For matrix factorization coefficients like `theta_user` and `alpha_item`, `coef_dim_dict['theta_user'] = coef_dim_dict[alpha_item] = L`, where `L` is the desired latent dimension. For the inner product between $\alpha_i$ and $\theta_u$ to work properly, `coef_dim_dict['theta_user'] == coef_dim_dict['alpha_item']`.
 3. For terms like $\zeta_u^\top X^{item}_i$, `coef_dim_dict['zeta_user']` needs to be the dimension of $X^{item}_i$.
 4. For matrix factorization coefficients, the dimension needs to be the latent dimension multiplied by the number of observables. For example, if you have a 3-dimensional feature $X = (x_1, x_2, x_3)$, the utility is $\mathcal{U}(u, i, s) = \zeta_{u, i}^\top X$, and $\zeta_{u, i}$ needs to be factorized into two an user-specific and item-specific part (both in $\mathbb{R}^L$) as below
+
 $$
 \mathcal{U}(u, i, s) = \sum_{k=1}^3 (\gamma_u^{k\top} \beta_i^k) x_k
 $$
-  then `coef_dim_dict[gamma_user] = coef_dim_dict[beta_item] = 3 * L`.
+
+then `coef_dim_dict[gamma_user] = coef_dim_dict[beta_item] = 3 * L`.
 
 **TODO**: sounds like a lot of work? we are currently developing helper function to infer all these information from the `ChoiceDataset`, but we will still provide researchers with the full control over the configuration.
 
@@ -115,10 +121,13 @@ In some cases the researcher wishes to provide additional guidance to the model 
 In this case, the probability of purchasing each $i$ will be normalized only across other items from the same category rather than all items.
 The `category_to_item` argument provides a dictionary with category id or name as keys, and `category_to_item[C]` contains the list of item ids belonging to category `C`.
 With `category_to_item` provided, for the probability of purchasing item $i$ by user $u$ in session, let $I_c$ denote the set of items belonging to the same category $i$, the probability of purchasing is
+
 $$
 P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i' \in I_c} e^{\mathcal{U}(u, i', s)}}
 $$
+
 If `category_to_item` is not provided (or `None` is provided), the probability of purchasing item $i$ by user $u$ in session $s$ is (note the difference in summation scope, this is computed as if all items are from the same category):
+
 $$
 P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i'=1}^I e^{\mathcal{U}(u, i', s)}}
 $$
