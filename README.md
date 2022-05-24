@@ -1,5 +1,5 @@
 # deepchoice
-**NOTE**: this readme document is for internal usages only, please refer to the [project website](https://gsbdbi.github.io/deepchoice/) for detailed guideline for deployment and usage.
+**NOTE**: this readme document is for internal usages only, please refer to the [project website](https://deepchoice-vcghm.ondigitalocean.app) for detailed guideline for deployment and usage.
 
 **NOTE**: the data structure `ChoiceDataset` is greatly inspired by `Graph` and `HeteroGraph` object in the `deepsnap` library (https://github.com/snap-stanford/deepsnap).
 
