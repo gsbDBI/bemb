@@ -5,13 +5,13 @@ Author: Tianyu Du
 Update: Apr. 28, 2022
 """
 from pprint import pprint
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Tuple
 
 import numpy as np
 import torch
 import torch.nn as nn
 from torch_choice.data import ChoiceDataset
-from torch_scatter import scatter_max
+from torch_scatter import scatter_max, scatter_logsumexp
 from torch_scatter.composite import scatter_log_softmax
 
 from bemb.model.bayesian_coefficient import BayesianCoefficient
@@ -291,6 +291,72 @@ class BEMBFlex(nn.Module):
             return self.coef_dict[coef_name].variational_mean
         else:
             raise KeyError(f'{coef_name} is not a valid coefficient name in {self.utility_formula}.')
+
+    def ivs(self, batch) -> torch.Tensor:
+        """The combined method of computing utilities and log probability.
+
+            Args:
+                batch (dict): a batch of data.
+
+            Returns:
+                torch.Tensor: the combined utility and log probability.
+            """
+        # Use the means of variational distributions as the sole MC sample.
+        sample_dict = dict()
+        for coef_name, coef in self.coef_dict.items():
+            sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+
+        # there is 1 random seed in this case.
+        # (num_seeds=1, len(batch), num_items)
+        out = self.log_likelihood_all_items(batch, return_logit=True, sample_dict=sample_dict)
+        out = out.squeeze(0)
+        # import pdb; pdb.set_trace()
+        ivs = scatter_logsumexp(out, self.item_to_category_tensor, dim=-1)
+        return ivs # (len(batch), num_categories)
+
+    def sample_choices(self, batch:ChoiceDataset, debug: bool = False, num_seeds: int = 1, **kwargs) -> Tuple[torch.Tensor]:
+        """Samples choices given model paramaters and trips
+
+        Args:
+        batch(ChoiceDataset): batch data containing trip information; item choice information is discarded
+        debug(bool): whether to print debug information
+
+        Returns:
+        Tuple[torch.Tensor]: sampled choices; shape: (batch_size, num_categories)
+        """
+        sample_dict = self.sample_coefficient_dictionary(num_seeds)
+        maxes, out = self.sample_log_likelihoods(batch, sample_dict)
+        return maxes.squeeze(), out.squeeze()
+
+    def sample_log_likelihoods(self, batch:ChoiceDataset, sample_dict: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Samples log likelihoods given model paramaters and trips
+
+        Args:
+        batch(ChoiceDataset): batch data containing trip information; item choice information is discarded
+        sample_dict(Dict[str, torch.Tensor]): sampled coefficient values
+
+        Returns:
+        Tuple[torch.Tensor]: sampled log likelihoods; shape: (batch_size, num_categories)
+        """
+        # get the log likelihoods for all items for all categories
+        utility = self.log_likelihood_all_items(batch, return_logit=True, sample_dict=sample_dict)
+        mu_gumbel = 0.0
+        beta_gumbel = 1.0
+        EUL_MAS_CONST = 0.5772156649
+        mean_gumbel = torch.tensor([mu_gumbel + beta_gumbel * EUL_MAS_CONST], device=self.device)
+        m = torch.distributions.gumbel.Gumbel(torch.tensor([0.0], device=self.device), torch.tensor([1.0], device=self.device))
+        # m = torch.distributions.gumbel.Gumbel(0.0, 1.0)
+        gumbel_samples = m.sample(utility.shape).squeeze(-1)
+        gumbel_samples -= mean_gumbel
+        utility += gumbel_samples
+        max_by_category, argmax_by_category = scatter_max(utility, self.item_to_category_tensor, dim=-1)
+        return max_by_category, argmax_by_category
+        log_likelihoods = self.sample_log_likelihoods_per_category(batch, sample_dict)
+
+        # sum over all categories.
+        log_likelihoods = log_likelihoods.sum(dim=1)
+
+        return log_likelihoods, log_likelihoods
 
     def forward(self, batch: ChoiceDataset,
                 return_type: str,
