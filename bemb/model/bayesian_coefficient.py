@@ -48,11 +48,11 @@ class BayesianCoefficient(nn.Module):
         """
         super(BayesianCoefficient, self).__init__()
         # do we use this at all? TODO: drop self.variation.
-        assert variation in ['item', 'user', 'constant']
+        assert variation in ['item', 'user', 'constant', 'category']
 
         self.variation = variation
         self.obs2prior = obs2prior
-        if variation == 'constant':
+        if variation == 'constant' or variation == 'category':
             assert not obs2prior
 
         self.num_classes = num_classes
