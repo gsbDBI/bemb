@@ -8,14 +8,14 @@
       
       
       
-        <link rel="canonical" href="https://example.com/test/">
+        <link rel="canonical" href="https://example.com/education_data/">
       
       <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.2.13">
     
     
       
-        <title>Compatibility Tests - Deep Choice</title>
+        <title>Tutorial for Bayesian Embedding (BEMB) with Educational Data - Deep Choice</title>
       
     
     
@@ -63,7 +63,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#compatibility-check-list" class="md-skip">
+        <a href="#tutorial-for-bayesian-embedding-bemb-with-educational-data" class="md-skip">
           Skip to content
         </a>
       
@@ -112,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Compatibility Tests
+              Tutorial for Bayesian Embedding (BEMB) with Educational Data
             
           </span>
         </div>
@@ -347,21 +347,11 @@
 
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../test/" class="md-nav__link">
         Compatibility Tests
       </a>
-      
     </li>
   
 
@@ -416,6 +406,96 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#load-data" class="md-nav__link">
+    Load Data
+  </a>
+  
+    <nav class="md-nav" aria-label="Load Data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-user-item-and-label-dataset-ie-the-response-dataset" class="md-nav__link">
+    The User-Item and Label Dataset (i.e., The Response Dataset)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-attribute-dataset" class="md-nav__link">
+    The Attribute Dataset
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#construct-the-choicedataset-object" class="md-nav__link">
+    Construct the ChoiceDataset Object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#splitting-data-into-training-validation-and-testing-sets" class="md-nav__link">
+    Splitting Data into Training, Validation, and Testing Sets
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fitting-the-model" class="md-nav__link">
+    Fitting the Model
+  </a>
+  
+    <nav class="md-nav" aria-label="Fitting the Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#one-basic-model" class="md-nav__link">
+    One Basic Model
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#leveraging-more-complex-utility-representations" class="md-nav__link">
+    Leveraging More Complex Utility Representations
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#leveraging-obs2prior" class="md-nav__link">
+    Leveraging obs2prior
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tuning-the-model" class="md-nav__link">
+    Tuning the Model
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -428,63 +508,674 @@
                 
 
 
-<h1 id="compatibility-check-list">Compatibility Check List</h1>
-<p>We have tested the tutorials using the following environments, please let us know if there is any issue with our packages on other systems.</p>
-<table>
-<thead>
-<tr>
-<th>Tutorial</th>
-<th>Platform Versions</th>
-<th>CPU</th>
-<th>GPU</th>
-<th>Device Tested</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><a href="https://github.com/gsbDBI/torch-choice/blob/main/tutorials/data_management.ipynb">Data Management</a></td>
-<td>MacOS 12.2 Python 3.9.7 PyTorch 1.10.0</td>
-<td>M1 Max</td>
-<td>N/A</td>
-<td>cpu</td>
-</tr>
-<tr>
-<td><a href="https://github.com/gsbDBI/torch-choice/blob/main/tutorials/data_management.ipynb">Data Management</a></td>
-<td>Ubuntu 20.04 Python 3.8.10 PyTorch 1.10.1 CUDA 11.3</td>
-<td>11700F</td>
-<td>RTX3090</td>
-<td>cpu and cuda</td>
-</tr>
-<tr>
-<td><a href="https://github.com/gsbDBI/torch-choice/blob/main/tutorials/conditional_logit_model_mode_canada.ipynb">Conditional Logit Model</a></td>
-<td>MacOS 12.2 Python 3.9 PyTorch 1.10.0</td>
-<td>M1 Max</td>
-<td>N/A</td>
-<td>cpu</td>
-</tr>
-<tr>
-<td><a href="https://github.com/gsbDBI/torch-choice/blob/main/tutorials/conditional_logit_model_mode_canada.ipynb">Conditional Logit Model</a></td>
-<td>Ubuntu 20.04 Python 3.8.10 PyTorch 1.10.1 CUDA 11.3</td>
-<td>11700F</td>
-<td>RTX3090</td>
-<td>cpu and cuda</td>
-</tr>
-<tr>
-<td><a href="https://github.com/gsbDBI/torch-choice/blob/main/tutorials/nested_logit_model_house_cooling.ipynb">Nested Logit Model</a></td>
-<td>MacOS 12.2 Python 3.9.7 PyTorch 1.10.0</td>
-<td>M1 Max</td>
-<td>N/A</td>
-<td>cpu</td>
-</tr>
-<tr>
-<td><a href="https://github.com/gsbDBI/torch-choice/blob/main/tutorials/nested_logit_model_house_cooling.ipynb">Nested Logit Model</a></td>
-<td>Ubuntu 20.04 Python 3.8.10 PyTorch 1.10.1 CUDA 11.3</td>
-<td>11700F</td>
-<td>RTX3090</td>
-<td>cpu and cuda</td>
-</tr>
-</tbody>
+<h1 id="tutorial-for-bayesian-embedding-bemb-with-educational-data">Tutorial for Bayesian Embedding (BEMB) with Educational Data</h1>
+<p>Author: Tianyu Du</p>
+<p>Date: May. 7, 2022</p>
+<p>This tutorial helps lab members to deploy the BEMB model on educational question-answering (QA) datasets. We will be using the 17Zuoye data, which is available on Sherlock, throughout this tutorial.</p>
+<p>However, this tutorial generalizes to any QA datasets in which each row of the dataset corresponds to a triple (student, question, label). Equivalently, each row of these QA datasets is about a student answering a question correctly/incorrectly.</p>
+<p>You can find the executable Jupyter notebook for this tutorial <a href="https://github.com/gsbDBI/deepchoice/blob/main/tutorials/education_data/education_data.ipynb">here</a></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">os</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kn">import</span> <span class="nn">torch</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="kn">from</span> <span class="nn">bemb.model</span> <span class="kn">import</span> <span class="n">LitBEMBFlex</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="kn">from</span> <span class="nn">bemb.utils.run_helper</span> <span class="kn">import</span> <span class="n">run</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="kn">from</span> <span class="nn">sklearn</span> <span class="kn">import</span> <span class="n">preprocessing</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="kn">from</span> <span class="nn">torch_choice.data</span> <span class="kn">import</span> <span class="n">ChoiceDataset</span>
+</code></pre></div>
+<h2 id="load-data">Load Data</h2>
+<p>We build some helper functions especially for the Zuoye data for demonstration, you can skip this part if you have your own data ready.
+Please see below for the formats data.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">def</span> <span class="nf">get_all_unique_fields</span><span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="n">field</span> <span class="o">=</span> <span class="s1">&#39;id&#39;</span><span class="p">):</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="n">unique_fields</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="k">for</span> <span class="n">tag_list</span> <span class="ow">in</span> <span class="n">column</span><span class="p">:</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">tag_list</span><span class="p">:</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>            <span class="n">unique_fields</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="n">field</span><span class="p">])</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">unique_fields</span><span class="p">)</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="k">def</span> <span class="nf">convert_tag_list_into_binary_vector</span><span class="p">(</span><span class="n">tag_list</span><span class="p">,</span> <span class="n">encoder</span><span class="p">,</span> <span class="n">vec_len</span><span class="p">):</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">index</span> <span class="o">=</span> <span class="n">encoder</span><span class="o">.</span><span class="n">transform</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">tag_list</span><span class="p">])</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">vec_len</span><span class="p">],</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="n">out</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="k">return</span> <span class="n">out</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="k">def</span> <span class="nf">convert_column_to_binary_vectors</span><span class="p">(</span><span class="n">column</span><span class="p">):</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    <span class="n">all_elements</span> <span class="o">=</span> <span class="n">get_all_unique_fields</span><span class="p">(</span><span class="n">column</span><span class="p">)</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="n">my_encoder</span> <span class="o">=</span> <span class="n">preprocessing</span><span class="o">.</span><span class="n">LabelEncoder</span><span class="p">()</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>    <span class="n">my_encoder</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">all_elements</span><span class="p">)</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>    <span class="n">out</span> <span class="o">=</span> <span class="n">column</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">convert_tag_list_into_binary_vector</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">my_encoder</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_elements</span><span class="p">)))</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>    <span class="k">return</span> <span class="n">out</span>
+</code></pre></div>
+<p>If you wish to try this tutorial on the 17Zuoye dataset, which is located at <code>data_path</code> on Sherlock.
+Please make sure the <code>data_path</code> is correct if you are running on your local machine.</p>
+<p>Henry prepared these datasets in the <code>feather</code> format.
+Feather is a portable file format for storing Arrow tables or data frames (from languages like Python or R) that utilizes the Arrow IPC format internally. Feather was created early in the Arrow project as a proof of concept for fast, language-agnostic data frame storage for Python (pandas) and R (see <a href="https://arrow.apache.org/docs/python/feather.html">here</a> for more information about Feather data format).
+You can easily load the data using pandas.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">data_path</span> <span class="o">=</span> <span class="s1">&#39;/oak/stanford/groups/athey/17Zuoye/bayesian_measurement_17zy/bayes&#39;</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">response_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="s1">&#39;exam_response_with_attrib.feather&#39;</span><span class="p">)</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">attribute_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="s1">&#39;exam_response_ques_attrib.feather&#39;</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="the-user-item-and-label-dataset-ie-the-response-dataset">The User-Item and Label Dataset (i.e., The <strong>Response</strong> Dataset)</h3>
+<p>For the student response use case, the <strong>response</strong> dataset contains at least three columns: <code>{user_id, item_id, label}</code>.</p>
+<p>Where <code>user_id</code> is typically the student's ID, <code>item_id</code> is the question's ID, and <code>label</code> is the student's response to the question, which is a binary variable indicating whether the student answered the question correctly.</p>
+<p>In the <code>df_resp</code> dataset loaded below, the <code>student_id</code> column corresponds to the <code>user_id</code>, the <code>question_id</code> column corresponds to the <code>item_id</code>, and the <code>correct</code> column corresponds to the <code>label</code>.</p>
+<p>The length of the <code>df_resp</code> dataset is the total number of times students answer questions, this corresponds to the number of <strong>purchasing records</strong> following our terminology in the data management tutorial.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">df_resp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_feather</span><span class="p">(</span><span class="n">response_path</span><span class="p">)</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Number of student-question response pairs:&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df_resp</span><span class="p">))</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">df_resp</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Number of student-question response pairs: 8621720
+</code></pre></div>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>student_id</th>
+      <th>question_id</th>
+      <th>correct</th>
+      <th>subject</th>
+      <th>grade</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>90368</td>
+      <td>409</td>
+      <td>0</td>
+      <td>CHINESE</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>90368</td>
+      <td>409</td>
+      <td>0</td>
+      <td>CHINESE</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>90368</td>
+      <td>409</td>
+      <td>0</td>
+      <td>CHINESE</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>93193</td>
+      <td>409</td>
+      <td>0</td>
+      <td>CHINESE</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>93193</td>
+      <td>409</td>
+      <td>0</td>
+      <td>CHINESE</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>8621715</th>
+      <td>115131</td>
+      <td>2080</td>
+      <td>0</td>
+      <td>MATH</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>8621716</th>
+      <td>83680</td>
+      <td>2561</td>
+      <td>1</td>
+      <td>ENGLISH</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <th>8621717</th>
+      <td>83680</td>
+      <td>2564</td>
+      <td>1</td>
+      <td>ENGLISH</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <th>8621718</th>
+      <td>83680</td>
+      <td>2563</td>
+      <td>1</td>
+      <td>ENGLISH</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <th>8621719</th>
+      <td>83680</td>
+      <td>2562</td>
+      <td>1</td>
+      <td>ENGLISH</td>
+      <td>3</td>
+    </tr>
+  </tbody>
 </table>
+<p>8621720 rows × 5 columns</p>
+</div>
+
+<p>The dataset contains <code>261,756</code> students and <code>3,604</code> questions. Student IDs are already encoded as integers ranging from  <code>0</code> to <code>261,755</code>, and question IDs are already encoded as integers ranging from <code>0</code> to <code>3,603</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">df_resp</span><span class="p">[</span><span class="s1">&#39;student_id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">())</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">df_resp</span><span class="p">[</span><span class="s1">&#39;question_id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">())</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>261756
+3604
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">df_resp</span><span class="p">[</span><span class="s1">&#39;student_id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">df_resp</span><span class="p">[</span><span class="s1">&#39;question_id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>261755
+3603
+</code></pre></div>
+<h3 id="the-attribute-dataset">The Attribute Dataset</h3>
+<p>Researchers can optionally supply a separate <strong>attribute</strong> dataset including observables of users (i.e., students) and items (i.e., questions).</p>
+<p>Here we load the <code>df_attr</code> dataset, which has length equal to the number of questions. Each row of <code>df_attr</code> contains attributes/observables of each question.</p>
+<p>Specifically, <code>df_attr</code> contains a column called <code>question_id</code> and several other columns of attributes.
+For each question, we have two attribute as known as <code>capability</code> and <code>knowledge</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">df_attr</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_feather</span><span class="p">(</span><span class="n">attribute_path</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">&#39;question_id&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">df_attr</span>
+</code></pre></div>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>question_id</th>
+      <th>capability</th>
+      <th>knowledge</th>
+      <th>kp</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0</td>
+      <td>[{'id': 'TAG_10100001553832', 'type': 0}, {'id...</td>
+      <td>[{'id': '0101001', 'type': 0.0}, {'id': '01020...</td>
+      <td>[{'id': 'KP_10100071064944'}, {'id': 'KP_10100...</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>1</td>
+      <td>[{'id': 'TAG_10100001553832', 'type': 0}, {'id...</td>
+      <td>[{'id': '0101001', 'type': 0.0}, {'id': '01020...</td>
+      <td>[{'id': 'KP_10100050863402'}, {'id': 'KP_10100...</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2</td>
+      <td>[{'id': 'TAG_10100001553832', 'type': 0}, {'id...</td>
+      <td>[{'id': '0101001', 'type': 0.0}, {'id': '01020...</td>
+      <td>[{'id': 'KP_10100050866393'}]</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>3</td>
+      <td>[{'id': 'TAG_10100001553832', 'type': 0}, {'id...</td>
+      <td>[{'id': '0101001', 'type': 0.0}, {'id': '01020...</td>
+      <td>[{'id': 'KP_10100125674593'}, {'id': 'KP_10100...</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>4</td>
+      <td>[{'id': 'TAG_10100001553832', 'type': 0}, {'id...</td>
+      <td>[{'id': '0101001', 'type': 0.0}, {'id': '01020...</td>
+      <td>[{'id': 'KP_10100077305590'}, {'id': 'KP_10100...</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>3599</th>
+      <td>3599</td>
+      <td>[{'id': 'TAG_10300000827653', 'type': 0}, {'id...</td>
+      <td>[{'id': '0301001', 'type': 0.0}, {'id': '03020...</td>
+      <td>[{'id': 'KP_10300117105040'}]</td>
+    </tr>
+    <tr>
+      <th>3600</th>
+      <td>3600</td>
+      <td>[{'id': 'TAG_10300000827653', 'type': 0}, {'id...</td>
+      <td>[{'id': '0301001', 'type': 0.0}, {'id': '03020...</td>
+      <td>[{'id': 'KP_10300212870515'}]</td>
+    </tr>
+    <tr>
+      <th>3601</th>
+      <td>3601</td>
+      <td>[{'id': 'TAG_10300000827653', 'type': 0}, {'id...</td>
+      <td>[{'id': '0301001', 'type': 0.0}, {'id': '03020...</td>
+      <td>[{'id': 'KP_10300111435423'}]</td>
+    </tr>
+    <tr>
+      <th>3602</th>
+      <td>3602</td>
+      <td>[{'id': 'TAG_10300000827653', 'type': 0}, {'id...</td>
+      <td>[{'id': '0301001', 'type': 0.0}, {'id': '03020...</td>
+      <td>[{'id': 'KP_10300213265389'}]</td>
+    </tr>
+    <tr>
+      <th>3603</th>
+      <td>3603</td>
+      <td>[{'id': 'TAG_10300000827653', 'type': 0}, {'id...</td>
+      <td>[{'id': '0301001', 'type': 0.0}, {'id': '03020...</td>
+      <td>[{'id': 'KP_10300111316448'}]</td>
+    </tr>
+  </tbody>
+</table>
+<p>3604 rows × 4 columns</p>
+</div>
+
+<p>There are 90 types of capabilities and 34 types of knowledge required by different questions in ths dataset.
+We convert these attributes into two binary vectors named <code>capability_vec</code> and <code>knowledge_vec</code>.</p>
+<p>The <code>capability_vec</code> vector has shape <code>(number_of_questions, 90)</code> and the <code>knowledge_vec</code> vector has shape <code>(number_of_questions, 34)</code>.
+For example, <code>knowledge_vec[i, j] = 1</code>  indicates answering question <code>i</code> correctly requires type <code>j</code> of knowledge.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">z</span><span class="p">):</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="c1"># extract knowledge domain.</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="k">return</span> <span class="n">z</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="n">knowledge_domain</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">df_attr</span><span class="p">[</span><span class="s1">&#39;knowledge&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">]</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="n">df_attr</span><span class="p">[</span><span class="s1">&#39;capability_vec&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">convert_column_to_binary_vectors</span><span class="p">(</span><span class="n">df_attr</span><span class="p">[</span><span class="s1">&#39;capability&#39;</span><span class="p">])</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="n">df_attr</span><span class="p">[</span><span class="s1">&#39;knowledge_vec&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">convert_column_to_binary_vectors</span><span class="p">(</span><span class="n">df_attr</span><span class="p">[</span><span class="s1">&#39;knowledge&#39;</span><span class="p">])</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="n">capability_vec</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">df_attr</span><span class="p">[</span><span class="s1">&#39;capability_vec&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_list</span><span class="p">(),</span> <span class="n">dim</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="n">knowledge_vec</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">df_attr</span><span class="p">[</span><span class="s1">&#39;knowledge_vec&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_list</span><span class="p">(),</span> <span class="n">dim</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">knowledge_vec</span><span class="o">.</span><span class="n">shape</span><span class="si">=:}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">capability_vec</span><span class="o">.</span><span class="n">shape</span><span class="si">=:}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>knowledge_vec.shape=torch.Size([3604, 34])
+capability_vec.shape=torch.Size([3604, 90])
+</code></pre></div>
+<p>Lastly, we concatenate the <code>capability_vec</code> and <code>knowledge_vec</code> vectors into a single vector called <code>item_obs</code> with shape <code>(number_of_questions, 124)</code>. This vector encompasses all attributes/observables of items (i.e., questions in this context).</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">item_obs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">capability_vec</span><span class="p">,</span> <span class="n">knowledge_vec</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">item_obs</span><span class="o">.</span><span class="n">shape</span><span class="si">=:}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>item_obs.shape=torch.Size([3604, 124])
+</code></pre></div>
+<h3 id="construct-the-choicedataset-object">Construct the <code>ChoiceDataset</code> Object</h3>
+<p>The last step is to construct the <code>ChoiceDataset</code> object. The <code>item_index</code>(<code>user_index</code>) keyword argument holds the identify of question answered (student answering the question) in each student-question response pair respectively. The <code>label</code> argument is a binary tensor indicating whether the student answered the question correctly.
+Lastly, we put the <code>item_obs</code> to capture observables of questions to the dataset.
+In this tutorial, we don't have any user observables (i.e., observables of students).</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">choice_dataset</span> <span class="o">=</span> <span class="n">ChoiceDataset</span><span class="p">(</span><span class="n">item_index</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">df_resp</span><span class="p">[</span><span class="s1">&#39;question_id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">),</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>                               <span class="n">user_index</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">df_resp</span><span class="p">[</span><span class="s1">&#39;student_id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">),</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>                               <span class="n">label</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">df_resp</span><span class="p">[</span><span class="s1">&#39;correct&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">),</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>                               <span class="n">item_obs</span><span class="o">=</span><span class="n">item_obs</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>No `session_index` is provided, assume each choice instance is in its own session.
+</code></pre></div>
+<p>You can print the <code>choice_dataset</code> to see information about tensors encompassed.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">choice_dataset</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>ChoiceDataset(label=[8621720], item_index=[8621720], user_index=[8621720], session_index=[8621720], item_availability=[], item_obs=[3604, 124], device=cpu)
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">num_users</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">choice_dataset</span><span class="o">.</span><span class="n">user_index</span><span class="p">))</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">num_items</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">choice_dataset</span><span class="o">.</span><span class="n">item_index</span><span class="p">))</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="n">num_item_obs</span> <span class="o">=</span> <span class="n">choice_dataset</span><span class="o">.</span><span class="n">item_obs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</code></pre></div>
+<h3 id="splitting-data-into-training-validation-and-testing-sets">Splitting Data into Training, Validation, and Testing Sets</h3>
+<p>To test the generalizability of the model, we split the data into training, validation, and testing sets.
+Specifically, we randomly take 80% of student-question pairs as the training set, 10% as the validation set, and the rest 10% as the testing set.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1"># randomly permutate the index ranging from (0, 1, ..., len(choice_Dataset) - 1).</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">choice_dataset</span><span class="p">))</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="c1"># take the first 80% from the random permutation as indices for the training set.</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="n">train_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">0.8</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">choice_dataset</span><span class="p">))</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="n">val_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">0.1</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">choice_dataset</span><span class="p">))</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="n">train_idx</span> <span class="o">=</span> <span class="n">idx</span><span class="p">[:</span><span class="n">train_size</span><span class="p">]</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="n">val_idx</span> <span class="o">=</span> <span class="n">idx</span><span class="p">[</span><span class="n">train_size</span><span class="p">:</span> <span class="n">train_size</span> <span class="o">+</span> <span class="n">val_size</span><span class="p">]</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="n">test_idx</span> <span class="o">=</span> <span class="n">idx</span><span class="p">[</span><span class="n">train_size</span> <span class="o">+</span> <span class="n">val_size</span><span class="p">:]</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="c1"># we put train/validation/test datasets into a list.</span>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="n">dataset_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">choice_dataset</span><span class="p">[</span><span class="n">train_idx</span><span class="p">],</span> <span class="n">choice_dataset</span><span class="p">[</span><span class="n">val_idx</span><span class="p">],</span> <span class="n">choice_dataset</span><span class="p">[</span><span class="n">test_idx</span><span class="p">]]</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;[Training dataset]&#39;</span><span class="p">,</span> <span class="n">dataset_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;[Validation dataset]&#39;</span><span class="p">,</span> <span class="n">dataset_list</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;[Testing dataset]&#39;</span><span class="p">,</span> <span class="n">dataset_list</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[Training dataset] ChoiceDataset(label=[6897376], item_index=[6897376], user_index=[6897376], session_index=[6897376], item_availability=[], item_obs=[3604, 124], device=cpu)
+[Validation dataset] ChoiceDataset(label=[862172], item_index=[862172], user_index=[862172], session_index=[862172], item_availability=[], item_obs=[3604, 124], device=cpu)
+[Testing dataset] ChoiceDataset(label=[862172], item_index=[862172], user_index=[862172], session_index=[862172], item_availability=[], item_obs=[3604, 124], device=cpu)
+</code></pre></div>
+<h2 id="fitting-the-model">Fitting the Model</h2>
+<h3 id="one-basic-model">One Basic Model</h3>
+<p>Now let's fit a basic BEMB model to the data. Recall that an <code>user</code> <span class="arithmatex">\(u\)</span> corresponds to a student and an <code>item</code> <span class="arithmatex">\(i\)</span> corresponds to question in this tutorial.</p>
+<p>The basic model we will be fitting has utility representation</p>
+<div class="arithmatex">\[
+U_{ui} = \lambda_i + \theta_u^\top \alpha_i
+\]</div>
+<p>where</p>
+<div class="arithmatex">\[
+\theta_u, \alpha_i \in \mathbb{R}^{10}
+\]</div>
+<p>The predicted probability for student <span class="arithmatex">\(u\)</span> to correctly answer question <span class="arithmatex">\(i\)</span> is</p>
+<div class="arithmatex">\[
+\frac{1}{1 + e^{-U_{ui}}}
+\]</div>
+<p><strong>Important</strong>: be sure to set <code>pred_item=False</code> below since the model is predicting <code>choice_dataset.label</code> instead of <code>choice_dataset.item</code> as in traditional consumer choice modeling.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">obs2prior_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;lambda_item&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;theta_user&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;alpha_item&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="n">LATENT_DIM</span> <span class="o">=</span> <span class="mi">10</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="n">coef_dim_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;lambda_item&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;theta_user&#39;</span><span class="p">:</span> <span class="n">LATENT_DIM</span><span class="p">,</span> <span class="s1">&#39;alpha_item&#39;</span><span class="p">:</span> <span class="n">LATENT_DIM</span><span class="p">}</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="n">bemb</span> <span class="o">=</span> <span class="n">LitBEMBFlex</span><span class="p">(</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>    <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>    <span class="n">pred_item</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>    <span class="n">num_seeds</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>    <span class="n">utility_formula</span><span class="o">=</span><span class="s1">&#39;lambda_item + theta_user * alpha_item&#39;</span><span class="p">,</span>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>    <span class="n">num_users</span><span class="o">=</span><span class="n">num_users</span><span class="p">,</span>
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a>    <span class="n">num_items</span><span class="o">=</span><span class="n">num_items</span><span class="p">,</span>
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>    <span class="n">obs2prior_dict</span><span class="o">=</span><span class="n">obs2prior_dict</span><span class="p">,</span>
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a>    <span class="n">coef_dim_dict</span><span class="o">=</span><span class="n">coef_dim_dict</span><span class="p">,</span>
+<a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a>    <span class="n">trace_log_q</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a>    <span class="n">num_item_obs</span><span class="o">=</span><span class="n">num_item_obs</span><span class="p">,</span>
+<a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a>    <span class="n">prior_variance</span><span class="o">=</span><span class="mi">1</span>
+<a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a><span class="p">)</span>
+<a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a>
+<a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a><span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+<a id="__codelineno-16-20" name="__codelineno-16-20" href="#__codelineno-16-20"></a>    <span class="n">bemb</span> <span class="o">=</span> <span class="n">bemb</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">)</span>
+<a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a>
+<a id="__codelineno-16-22" name="__codelineno-16-22" href="#__codelineno-16-22"></a><span class="n">bemb</span> <span class="o">=</span> <span class="n">run</span><span class="p">(</span><span class="n">bemb</span><span class="p">,</span> <span class="n">dataset_list</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">choice_dataset</span><span class="p">)</span> <span class="o">//</span> <span class="mi">20</span><span class="p">,</span> <span class="n">num_epochs</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>BEMB: utility formula parsed:
+[{&#39;coefficient&#39;: [&#39;lambda_item&#39;], &#39;observable&#39;: None},
+ {&#39;coefficient&#39;: [&#39;theta_user&#39;, &#39;alpha_item&#39;], &#39;observable&#39;: None}]
+
+
+GPU available: True, used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+  | Name  | Type     | Params
+-----------------------------------
+0 | model | BEMBFlex | 5.3 M
+-----------------------------------
+5.3 M     Trainable params
+0         Non-trainable params
+5.3 M     Total params
+21.258    Total estimated model params size (MB)
+
+
+==================== model received ====================
+Bayesian EMBedding Model with U[user, item, session] = lambda_item + theta_user * alpha_item
+Total number of parameters: 5314408.
+With the following coefficients:
+ModuleDict(
+  (lambda_item): BayesianCoefficient(num_classes=3604, dimension=1, prior=N(0, I))
+  (theta_user): BayesianCoefficient(num_classes=261756, dimension=10, prior=N(0, I))
+  (alpha_item): BayesianCoefficient(num_classes=3604, dimension=10, prior=N(0, I))
+)
+[]
+==================== data set received ====================
+[Training dataset] ChoiceDataset(label=[6897376], item_index=[6897376], user_index=[6897376], session_index=[6897376], item_availability=[], item_obs=[3604, 124], device=cpu)
+[Validation dataset] ChoiceDataset(label=[862172], item_index=[862172], user_index=[862172], session_index=[862172], item_availability=[], item_obs=[3604, 124], device=cpu)
+[Testing dataset] ChoiceDataset(label=[862172], item_index=[862172], user_index=[862172], session_index=[862172], item_availability=[], item_obs=[3604, 124], device=cpu)
+==================== train the model ====================
+Sanity Checking: 0it [00:00, ?it/s]
+
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+
+time taken: 89.43709015846252
+==================== test performance ====================
+
+
+
+Testing: 0it [00:00, ?it/s]
+
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+       Test metric             DataLoader 0
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+        test_acc            0.8308121813280877
+         test_ll            -0.3618064307005444
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+</code></pre></div>
+<h3 id="leveraging-more-complex-utility-representations">Leveraging More Complex Utility Representations</h3>
+<p>Let's add the item-observable measuring capacities and knowledge required by answering each question to the utility representation.</p>
+<div class="arithmatex">\[
+U_{ui} = \lambda_i + \theta_u^\top \alpha_i + \eta_u^\top X^{(item\_obs)}_i
+\]</div>
+<p>where</p>
+<div class="arithmatex">\[
+\theta_u, \alpha_i \in \mathbb{R}^{10}
+\]</div>
+<p>and</p>
+<div class="arithmatex">\[
+\eta_u, X^{(item\_obs)}_i \in \mathbb{R}^{124}
+\]</div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">obs2prior_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;lambda_item&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;theta_user&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;alpha_item&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;eta_user&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="n">LATENT_DIM</span> <span class="o">=</span> <span class="mi">10</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="n">coef_dim_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;lambda_item&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;theta_user&#39;</span><span class="p">:</span> <span class="n">LATENT_DIM</span><span class="p">,</span> <span class="s1">&#39;alpha_item&#39;</span><span class="p">:</span> <span class="n">LATENT_DIM</span><span class="p">,</span> <span class="s1">&#39;eta_user&#39;</span><span class="p">:</span> <span class="n">num_item_obs</span><span class="p">}</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="n">bemb</span> <span class="o">=</span> <span class="n">LitBEMBFlex</span><span class="p">(</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>    <span class="c1"># trainings args.</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>    <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>    <span class="n">pred_item</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>    <span class="n">num_seeds</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>    <span class="c1"># model args, will be passed to BEMB constructor.</span>
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>    <span class="n">utility_formula</span><span class="o">=</span><span class="s1">&#39;lambda_item + theta_user * alpha_item + eta_user * item_obs&#39;</span><span class="p">,</span>
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>    <span class="n">num_users</span><span class="o">=</span><span class="n">num_users</span><span class="p">,</span>
+<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a>    <span class="n">num_items</span><span class="o">=</span><span class="n">num_items</span><span class="p">,</span>
+<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a>    <span class="n">obs2prior_dict</span><span class="o">=</span><span class="n">obs2prior_dict</span><span class="p">,</span>
+<a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>    <span class="n">coef_dim_dict</span><span class="o">=</span><span class="n">coef_dim_dict</span><span class="p">,</span>
+<a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a>    <span class="n">trace_log_q</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a>    <span class="n">num_item_obs</span><span class="o">=</span><span class="n">num_item_obs</span><span class="p">,</span>
+<a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a>    <span class="n">prior_variance</span><span class="o">=</span><span class="mi">1</span>
+<a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a><span class="p">)</span>
+<a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a>
+<a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a>
+<a id="__codelineno-17-22" name="__codelineno-17-22" href="#__codelineno-17-22"></a><span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+<a id="__codelineno-17-23" name="__codelineno-17-23" href="#__codelineno-17-23"></a>    <span class="n">bemb</span> <span class="o">=</span> <span class="n">bemb</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">)</span>
+<a id="__codelineno-17-24" name="__codelineno-17-24" href="#__codelineno-17-24"></a>
+<a id="__codelineno-17-25" name="__codelineno-17-25" href="#__codelineno-17-25"></a><span class="n">bemb</span> <span class="o">=</span> <span class="n">run</span><span class="p">(</span><span class="n">bemb</span><span class="p">,</span> <span class="n">dataset_list</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">choice_dataset</span><span class="p">)</span> <span class="o">//</span> <span class="mi">20</span><span class="p">,</span> <span class="n">num_epochs</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>BEMB: utility formula parsed:
+[{&#39;coefficient&#39;: [&#39;lambda_item&#39;], &#39;observable&#39;: None},
+ {&#39;coefficient&#39;: [&#39;theta_user&#39;, &#39;alpha_item&#39;], &#39;observable&#39;: None},
+ {&#39;coefficient&#39;: [&#39;eta_user&#39;], &#39;observable&#39;: &#39;item_obs&#39;}]
+
+
+GPU available: True, used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+  | Name  | Type     | Params
+-----------------------------------
+0 | model | BEMBFlex | 70.2 M
+-----------------------------------
+70.2 M    Trainable params
+0         Non-trainable params
+70.2 M    Total params
+280.920   Total estimated model params size (MB)
+
+
+==================== model received ====================
+Bayesian EMBedding Model with U[user, item, session] = lambda_item + theta_user * alpha_item + eta_user * item_obs
+Total number of parameters: 70229896.
+With the following coefficients:
+ModuleDict(
+  (lambda_item): BayesianCoefficient(num_classes=3604, dimension=1, prior=N(0, I))
+  (theta_user): BayesianCoefficient(num_classes=261756, dimension=10, prior=N(0, I))
+  (alpha_item): BayesianCoefficient(num_classes=3604, dimension=10, prior=N(0, I))
+  (eta_user): BayesianCoefficient(num_classes=261756, dimension=124, prior=N(0, I))
+)
+[]
+==================== data set received ====================
+[Training dataset] ChoiceDataset(label=[6897376], item_index=[6897376], user_index=[6897376], session_index=[6897376], item_availability=[], item_obs=[3604, 124], device=cpu)
+[Validation dataset] ChoiceDataset(label=[862172], item_index=[862172], user_index=[862172], session_index=[862172], item_availability=[], item_obs=[3604, 124], device=cpu)
+[Testing dataset] ChoiceDataset(label=[862172], item_index=[862172], user_index=[862172], session_index=[862172], item_availability=[], item_obs=[3604, 124], device=cpu)
+==================== train the model ====================
+
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+time taken: 185.29189801216125
+==================== test performance ====================
+
+
+
+Testing: 0it [00:00, ?it/s]
+
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+       Test metric             DataLoader 0
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+        test_acc             0.852068960717815
+         test_ll            -0.3408827750695644
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+</code></pre></div>
+<h3 id="leveraging-obs2prior">Leveraging <code>obs2prior</code></h3>
+<p>In both examples above, the prior of all coefficients were standard Gaussian distributions.</p>
+<p>We can improve the model by incorporating the <code>obs2prior</code> option and let the mean of prior distribution of item-specific coefficients (i.e., <span class="arithmatex">\(\lambda_i\)</span> and <span class="arithmatex">\(\alpha_i\)</span>) depend on item observables.</p>
+<p>One can turn on the <code>obs2prior</code> option easily by setting <code>obs2prior_dict['lambda_item'] = True</code> and <code>obs2prior_dict['alpha_item'] = True</code>.</p>
+<p><strong>Important</strong>: we recommend to set a small <code>prior_variance</code> to make <code>obs2prior</code> more effective. For example, if one set <code>prior_variance=</code><span class="arithmatex">\(\infty\)</span>, prior distributions do not matter at all to the optimization, and the <code>obs2prior</code> will be ineffectively as a result.</p>
+<div class="arithmatex">\[
+U_{ui} = \lambda_i + \theta_u^\top \alpha_i
+\]</div>
+<p>where</p>
+<div class="arithmatex">\[
+\theta_u, \alpha_i \in \mathbb{R}^{10}
+\]</div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">obs2prior_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;lambda_item&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;theta_user&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;alpha_item&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;eta_user&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="n">LATENT_DIM</span> <span class="o">=</span> <span class="mi">10</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="n">coef_dim_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;lambda_user&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;lambda_item&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;theta_user&#39;</span><span class="p">:</span> <span class="n">LATENT_DIM</span><span class="p">,</span> <span class="s1">&#39;alpha_item&#39;</span><span class="p">:</span> <span class="n">LATENT_DIM</span><span class="p">,</span> <span class="s1">&#39;eta_user&#39;</span><span class="p">:</span> <span class="n">num_item_obs</span><span class="p">}</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="n">bemb</span> <span class="o">=</span> <span class="n">LitBEMBFlex</span><span class="p">(</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>    <span class="c1"># trainings args.</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>    <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>    <span class="n">pred_item</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>    <span class="n">num_seeds</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a>    <span class="c1"># model args, will be passed to BEMB constructor.</span>
+<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a>    <span class="n">utility_formula</span><span class="o">=</span><span class="s1">&#39;lambda_item + theta_user * alpha_item + eta_user * item_obs&#39;</span><span class="p">,</span>
+<a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a>    <span class="n">num_users</span><span class="o">=</span><span class="n">num_users</span><span class="p">,</span>
+<a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a>    <span class="n">num_items</span><span class="o">=</span><span class="n">num_items</span><span class="p">,</span>
+<a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a>    <span class="n">obs2prior_dict</span><span class="o">=</span><span class="n">obs2prior_dict</span><span class="p">,</span>
+<a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a>    <span class="n">coef_dim_dict</span><span class="o">=</span><span class="n">coef_dim_dict</span><span class="p">,</span>
+<a id="__codelineno-18-16" name="__codelineno-18-16" href="#__codelineno-18-16"></a>    <span class="n">trace_log_q</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-18-17" name="__codelineno-18-17" href="#__codelineno-18-17"></a>    <span class="n">num_item_obs</span><span class="o">=</span><span class="n">num_item_obs</span><span class="p">,</span>
+<a id="__codelineno-18-18" name="__codelineno-18-18" href="#__codelineno-18-18"></a>    <span class="n">prior_variance</span><span class="o">=</span><span class="mf">0.01</span>
+<a id="__codelineno-18-19" name="__codelineno-18-19" href="#__codelineno-18-19"></a><span class="p">)</span>
+<a id="__codelineno-18-20" name="__codelineno-18-20" href="#__codelineno-18-20"></a>
+<a id="__codelineno-18-21" name="__codelineno-18-21" href="#__codelineno-18-21"></a><span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+<a id="__codelineno-18-22" name="__codelineno-18-22" href="#__codelineno-18-22"></a>    <span class="n">bemb</span> <span class="o">=</span> <span class="n">bemb</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">)</span>
+<a id="__codelineno-18-23" name="__codelineno-18-23" href="#__codelineno-18-23"></a>
+<a id="__codelineno-18-24" name="__codelineno-18-24" href="#__codelineno-18-24"></a><span class="n">bemb</span> <span class="o">=</span> <span class="n">run</span><span class="p">(</span><span class="n">bemb</span><span class="p">,</span> <span class="n">dataset_list</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">choice_dataset</span><span class="p">)</span> <span class="o">//</span> <span class="mi">20</span><span class="p">,</span> <span class="n">num_epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>BEMB: utility formula parsed:
+[{&#39;coefficient&#39;: [&#39;lambda_item&#39;], &#39;observable&#39;: None},
+ {&#39;coefficient&#39;: [&#39;theta_user&#39;, &#39;alpha_item&#39;], &#39;observable&#39;: None},
+ {&#39;coefficient&#39;: [&#39;eta_user&#39;], &#39;observable&#39;: &#39;item_obs&#39;}]
+
+
+GPU available: True, used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+  | Name  | Type     | Params
+-----------------------------------
+0 | model | BEMBFlex | 70.2 M
+-----------------------------------
+70.2 M    Trainable params
+0         Non-trainable params
+70.2 M    Total params
+280.930   Total estimated model params size (MB)
+
+
+==================== model received ====================
+Bayesian EMBedding Model with U[user, item, session] = lambda_item + theta_user * alpha_item + eta_user * item_obs
+Total number of parameters: 70232624.
+With the following coefficients:
+ModuleDict(
+  (lambda_item): BayesianCoefficient(num_classes=3604, dimension=1, prior=N(H*X_obs(H shape=torch.Size([1, 124]), X_obs shape=124), Ix0.01))
+  (theta_user): BayesianCoefficient(num_classes=261756, dimension=10, prior=N(0, I))
+  (alpha_item): BayesianCoefficient(num_classes=3604, dimension=10, prior=N(H*X_obs(H shape=torch.Size([10, 124]), X_obs shape=124), Ix0.01))
+  (eta_user): BayesianCoefficient(num_classes=261756, dimension=124, prior=N(0, I))
+)
+[]
+==================== data set received ====================
+[Training dataset] ChoiceDataset(label=[6897376], item_index=[6897376], user_index=[6897376], session_index=[6897376], item_availability=[], item_obs=[3604, 124], device=cpu)
+[Validation dataset] ChoiceDataset(label=[862172], item_index=[862172], user_index=[862172], session_index=[862172], item_availability=[], item_obs=[3604, 124], device=cpu)
+[Testing dataset] ChoiceDataset(label=[862172], item_index=[862172], user_index=[862172], session_index=[862172], item_availability=[], item_obs=[3604, 124], device=cpu)
+==================== train the model ====================
+
+Sanity Checking: 0it [00:00, ?it/s]
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+
+time taken: 941.1486117839813
+==================== test performance ====================
+
+
+
+Testing: 0it [00:00, ?it/s]
+
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+       Test metric             DataLoader 0
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+        test_acc            0.8209313222883601
+         test_ll            -0.3934649652798017
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+</code></pre></div>
+<h3 id="tuning-the-model">Tuning the Model</h3>
+<p>There are tons of parameters in models above, for example, we choose <code>LATENT_DIM = 10</code> based on our own experience. However, these choices of hyper-parameters can be sub-optimal.</p>
+<p>We recommend researchers to try out different combinations of hyper-parameters before sticking with a particular hyper-parameter configuration.</p>
+<p>We will be providing a script for effectively parameter tuning though the <code>learning-tool-competition</code> project.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>
+</code></pre></div>
 
               
             </article>
@@ -494,41 +1185,6 @@
       </main>
       
         <footer class="md-footer">
-  
-    <nav class="md-footer__inner md-grid" aria-label="Footer">
-      
-        
-        <a href="../projects/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Related Projects" rel="prev">
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
-          </div>
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Previous
-              </span>
-              Related Projects
-            </div>
-          </div>
-        </a>
-      
-      
-        
-        <a href="../api_torch_choice/" class="md-footer__link md-footer__link--next" aria-label="Next: API Reference Torch-Choice" rel="next">
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              API Reference Torch-Choice
-            </div>
-          </div>
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
-          </div>
-        </a>
-      
-    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">

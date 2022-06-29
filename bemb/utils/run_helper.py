@@ -17,7 +17,7 @@ def section_print(input_text):
     print('=' * 20, input_text, '=' * 20)
 
 
-def run(model: LitBEMBFlex, dataset_list: List[ChoiceDataset], batch_size: int=-1, num_epochs: int=10) -> LitBEMBFlex:
+def run(model: LitBEMBFlex, dataset_list: List[ChoiceDataset], batch_size: int=-1, num_epochs: int=10, num_workers: int=8) -> LitBEMBFlex:
     """A standard pipline of model training and evaluation.
 
     Args:
@@ -40,11 +40,11 @@ def run(model: LitBEMBFlex, dataset_list: List[ChoiceDataset], batch_size: int=-
     print('[Testing dataset]', dataset_list[2])
 
     # create pytorch dataloader objects.
-    train = create_data_loader(dataset_list[0], batch_size=batch_size, shuffle=True, num_workers=8)
-    validation = create_data_loader(dataset_list[1], batch_size=batch_size, shuffle=False, num_workers=8)
+    train = create_data_loader(dataset_list[0], batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    validation = create_data_loader(dataset_list[1], batch_size=batch_size, shuffle=False, num_workers=num_workers)
     # WARNING: the test step takes extensive memory cost since it computes likelihood for all items.
     # we run the test step with a much smaller batch_size.
-    test = create_data_loader(dataset_list[2], batch_size=batch_size // 10, shuffle=False, num_workers=8)
+    test = create_data_loader(dataset_list[2], batch_size=batch_size // 10, shuffle=False, num_workers=num_workers)
 
     section_print('train the model')
     trainer = pl.Trainer(gpus=1 if ('cuda' in str(model.device)) else 0,  # use GPU if the model is currently on the GPU.

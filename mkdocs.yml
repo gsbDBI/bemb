@@ -4,7 +4,8 @@ nav:
     - Home: index.md
     - About: intro.md
     - Get Started: install.md
-    - Tutorial for  Data Management: data_management.md
+    - Tutorial for Data Management: data_management.md
+    - Tutorial for Easy Data Management and Stata Users: easy_data_management.md
     - Tutorial for Conditional Logit Model: conditional_logit_model_mode_canada.md
     - Tutorial for Nested Logit Model: nested_logit_model_house_cooling.md
     - Tutorial for Bayesian Embedding (BEMB): bemb.md
@@ -35,6 +36,9 @@ markdown_extensions:
       options:
         custom_icons:
           - docs/overrides/.icons
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
 
 extra_javascript:
   - javascripts/mathjax.js

@@ -1,4 +1,5 @@
 import pathlib
+import setuptools
 from setuptools import setup
 
 # The directory containing this file
@@ -23,7 +24,8 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",
     ],
-    packages=["bemb"],
+    packages=setuptools.find_packages(),
+    # packages=["bemb"],
     include_package_data=True,
     # install_requires=["torch"],
     # entry_points={
