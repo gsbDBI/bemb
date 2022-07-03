@@ -91,6 +91,8 @@ class BEMBFlex(nn.Module):
                  coef_dim_dict: Dict[str, int],
                  num_items: int,
                  pred_item: bool,
+                 prior_mean: Union[float, Dict[str, float]] = 0.0,
+                 default_prior_mean: float = 0.0,
                  prior_variance: Union[float, Dict[str, float]] = 1.0,
                  num_users: Optional[int] = None,
                  num_sessions: Optional[int] = None,
@@ -139,6 +141,17 @@ class BEMBFlex(nn.Module):
                     object needs to contain a separate label.
                     NOTE: for now, we only support binary labels.
 
+            default_prior_mean (float): the default prior mean for coefficients,
+            if it is not specified in the prior_mean; defaults to 0.0.
+
+            prior_mean (Union[float, Dict[str, float]]): the mean of prior
+                distribution for coefficients. If a float is provided, all prior
+                mean will be diagonal matrix with the provided value.  If a
+                dictionary is provided, keys of prior_mean should be coefficient
+                names, and the mean of prior of coef_name would the provided
+                value Defaults to 0.0, which means all prior means are
+                initalized to 0.0
+
             prior_variance (Union[float, Dict[str, float]]): the variance of prior distribution for
                 coefficients. If a float is provided, all priors will be diagonal matrix with
                 prior_variance along the diagonal. If a dictionary is provided, keys of prior_variance
@@ -171,6 +184,8 @@ class BEMBFlex(nn.Module):
         self.obs2prior_dict = obs2prior_dict
         self.coef_dim_dict = coef_dim_dict
         self.prior_variance = prior_variance
+        self.default_prior_mean = default_prior_mean
+        self.prior_mean = prior_mean
 
         self.pred_item = pred_item
 
@@ -253,6 +268,8 @@ class BEMBFlex(nn.Module):
         for additive_term in self.formula:
             for coef_name in additive_term['coefficient']:
                 variation = coef_name.split('_')[-1]
+                mean = self.prior_mean[coef_name] if isinstance(
+                    self.prior_mean, dict) else self.default_prior_mean
                 s2 = self.prior_variance[coef_name] if isinstance(
                     self.prior_variance, dict) else self.prior_variance
                 coef_dict[coef_name] = BayesianCoefficient(variation=variation,
@@ -260,6 +277,7 @@ class BEMBFlex(nn.Module):
                                                            obs2prior=self.obs2prior_dict[coef_name],
                                                            num_obs=self.num_obs_dict[variation],
                                                            dim=self.coef_dim_dict[coef_name],
+                                                           prior_mean=mean,
                                                            prior_variance=s2)
         self.coef_dict = nn.ModuleDict(coef_dict)
 

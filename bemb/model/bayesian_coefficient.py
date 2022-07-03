@@ -18,6 +18,7 @@ class BayesianCoefficient(nn.Module):
                  obs2prior: bool,
                  num_obs: Optional[int] = None,
                  dim: int = 1,
+                 prior_mean: float = 0.0,
                  prior_variance: float = 1.0
                  ) -> None:
         """The Bayesian coefficient object represents a learnable tensor mu_i in R^k, where i is from a family (e.g., user, item)
@@ -43,6 +44,8 @@ class BayesianCoefficient(nn.Module):
                 Defaults to None.
             dim (int, optional): the dimension of the coefficient.
                 Defaults to 1.
+            prior_mean (float): the mean of the prior distribution of coefficient.
+                Defaults to 0.0.
             prior_variance (float): the variance of the prior distribution of coefficient.
                 Defaults to 1.0.
         """
@@ -58,8 +61,10 @@ class BayesianCoefficient(nn.Module):
         self.num_classes = num_classes
         self.num_obs = num_obs
         self.dim = dim  # the dimension of greek letter parameter.
+        self.prior_mean = prior_mean
         self.prior_variance = prior_variance
-        assert self.prior_variance > 0
+
+        # assert self.prior_variance > 0
 
         # create prior distribution.
         if self.obs2prior:
@@ -69,7 +74,7 @@ class BayesianCoefficient(nn.Module):
                                                dim=num_obs, prior_variance=1.0)
         else:
             self.register_buffer(
-                'prior_zero_mean', torch.zeros(num_classes, dim))
+                'prior_zero_mean', torch.zeros(num_classes, dim) + (self.prior_mean))
 
         # self.prior_cov_factor = nn.Parameter(torch.zeros(num_classes, dim, 1), requires_grad=False)
         # self.prior_cov_diag = nn.Parameter(torch.ones(num_classes, dim), requires_grad=False)
