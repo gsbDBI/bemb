@@ -843,9 +843,13 @@ class BEMBFlex(nn.Module):
         else:
             # compute log likelihood log p(choosing item i | user, item latents)
             # compute log softmax separately within each category.
-            log_p = scatter_log_softmax(
-                utility, self.item_to_category_tensor, dim=-1)
-            # output shape: (num_seeds, len(batch), num_items)
+            if self.pred_item:
+                # output shape: (num_seeds, len(batch), num_items)
+                log_p = scatter_log_softmax(
+                    utility, self.item_to_category_tensor, dim=-1)
+            else:
+                # when pred_item is False, this does not make sense; log_likelihood_item_index does what is required
+                raise NotImplementedError
             return log_p
 
     def log_likelihood_item_index(self, batch: ChoiceDataset, return_logit: bool, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
@@ -1064,11 +1068,16 @@ class BEMBFlex(nn.Module):
         if return_logit:
             log_p = utility
         else:
-            # compute the log probability from logits/utilities.
-            log_p = scatter_log_softmax(utility, reverse_indices, dim=-1)
-        # select the log-P of the item actually bought.
-        log_p = log_p[:, item_index_expanded == relevant_item_index]
-        # output shape: (num_seeds, num_purchases, num_items)
+            if self.pred_item:
+                # compute the log probability from logits/utilities.
+                # output shape: (num_seeds, len(batch), num_items)
+                log_p = scatter_log_softmax(utility, reverse_indices, dim=-1)
+                # select the log-P of the item actually bought.
+                log_p = log_p[:, item_index_expanded == relevant_item_index]
+            else:
+                # This is the binomial choice situation in which case we just report sigmoid log likelihood
+                bce = nn.BCELoss(reduction='none')
+                log_p = - bce(torch.sigmoid(utility.view(-1)), batch.label.to(torch.float32))
         return log_p
 
     def log_prior(self, batch: ChoiceDataset, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
