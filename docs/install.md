@@ -16,7 +16,5 @@ To install `torch_choice` and `bemb` from source,
 5. Check installation by running `python3 -c "import bemb; print(bemb.__version__)"`.
 
 ## Option 2: Install using Pip
-**Note**: We are working on publishing these packages to PIP.
-
-## Option 3: Install using Conda
-**Note**: We are working on publishing these packages to Conda.
+The `torch-choice` is available on PIP now [here](https://pypi.org/project/torch-choice/)! You can use `pip install torch-choice` to install it.
+**Note**: We are working on publishing BEMB to PIP.
