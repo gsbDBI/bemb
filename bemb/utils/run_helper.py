@@ -17,7 +17,7 @@ def section_print(input_text):
     print('=' * 20, input_text, '=' * 20)
 
 
-def run(model: LitBEMBFlex, dataset_list: List[ChoiceDataset], batch_size: int=-1, num_epochs: int=10, num_workers: int=8) -> LitBEMBFlex:
+def run(model: LitBEMBFlex, dataset_list: List[ChoiceDataset], batch_size: int=-1, num_epochs: int=10, num_workers: int=8, **kwargs) -> LitBEMBFlex:
     """A standard pipline of model training and evaluation.
 
     Args:
@@ -25,6 +25,7 @@ def run(model: LitBEMBFlex, dataset_list: List[ChoiceDataset], batch_size: int=-
         dataset_list (List[ChoiceDataset]): train_dataset, validation_test, and test_dataset in a list of length 3.
         batch_size (int, optional): batch_size for training and evaluation. Defaults to -1, which indicates full-batch training.
         num_epochs (int, optional): number of epochs for training. Defaults to 10.
+        **kwargs: additional keyword argument for the pytorch-lightning Trainer.
 
     Returns:
         LitBEMBFlex: the trained bemb model.
@@ -50,7 +51,8 @@ def run(model: LitBEMBFlex, dataset_list: List[ChoiceDataset], batch_size: int=-
     trainer = pl.Trainer(gpus=1 if ('cuda' in str(model.device)) else 0,  # use GPU if the model is currently on the GPU.
                          max_epochs=num_epochs,
                          check_val_every_n_epoch=1,
-                         log_every_n_steps=1)
+                         log_every_n_steps=1,
+                         **kwargs)
     start_time = time.time()
     trainer.fit(model, train_dataloaders=train, val_dataloaders=validation)
     print(f'time taken: {time.time() - start_time}')
