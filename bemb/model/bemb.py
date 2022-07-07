@@ -848,8 +848,7 @@ class BEMBFlex(nn.Module):
                 log_p = scatter_log_softmax(
                     utility, self.item_to_category_tensor, dim=-1)
             else:
-                # when pred_item is False, this does not make sense; log_likelihood_item_index does what is required
-                raise NotImplementedError
+                log_p = torch.logsigmoid(utility)
             return log_p
 
     def log_likelihood_item_index(self, batch: ChoiceDataset, return_logit: bool, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
