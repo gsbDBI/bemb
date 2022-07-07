@@ -52,7 +52,7 @@ def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]
             ]
     """
     # split additive terms
-    coefficient_suffix = ('_item', '_user', '_constant')
+    coefficient_suffix = ('_item', '_user', '_constant', '_category')
     observable_prefix = ('item_', 'user_', 'session_', 'price_', 'taste_')
 
     def is_coefficient(name: str) -> bool:
@@ -91,6 +91,8 @@ class BEMBFlex(nn.Module):
                  coef_dim_dict: Dict[str, int],
                  num_items: int,
                  pred_item: bool,
+                 prior_mean: Union[float, Dict[str, float]] = 0.0,
+                 default_prior_mean: float = 0.0,
                  prior_variance: Union[float, Dict[str, float]] = 1.0,
                  num_users: Optional[int] = None,
                  num_sessions: Optional[int] = None,
@@ -139,6 +141,17 @@ class BEMBFlex(nn.Module):
                     object needs to contain a separate label.
                     NOTE: for now, we only support binary labels.
 
+            default_prior_mean (float): the default prior mean for coefficients,
+            if it is not specified in the prior_mean; defaults to 0.0.
+
+            prior_mean (Union[float, Dict[str, float]]): the mean of prior
+                distribution for coefficients. If a float is provided, all prior
+                mean will be diagonal matrix with the provided value.  If a
+                dictionary is provided, keys of prior_mean should be coefficient
+                names, and the mean of prior of coef_name would the provided
+                value Defaults to 0.0, which means all prior means are
+                initalized to 0.0
+
             prior_variance (Union[float, Dict[str, float]]): the variance of prior distribution for
                 coefficients. If a float is provided, all priors will be diagonal matrix with
                 prior_variance along the diagonal. If a dictionary is provided, keys of prior_variance
@@ -171,6 +184,8 @@ class BEMBFlex(nn.Module):
         self.obs2prior_dict = obs2prior_dict
         self.coef_dim_dict = coef_dim_dict
         self.prior_variance = prior_variance
+        self.default_prior_mean = default_prior_mean
+        self.prior_mean = prior_mean
 
         self.pred_item = pred_item
 
@@ -233,6 +248,7 @@ class BEMBFlex(nn.Module):
         self.num_obs_dict = {
             'user': num_user_obs,
             'item': num_item_obs,
+            'category' : 0,
             'session': num_session_obs,
             'price': num_price_obs,
             'taste': num_taste_obs,
@@ -244,13 +260,16 @@ class BEMBFlex(nn.Module):
         variation_to_num_classes = {
             'user': self.num_users,
             'item': self.num_items,
-            'constant': 1
+            'constant': 1,
+            'category' : self.num_categories,
         }
 
         coef_dict = dict()
         for additive_term in self.formula:
             for coef_name in additive_term['coefficient']:
                 variation = coef_name.split('_')[-1]
+                mean = self.prior_mean[coef_name] if isinstance(
+                    self.prior_mean, dict) else self.default_prior_mean
                 s2 = self.prior_variance[coef_name] if isinstance(
                     self.prior_variance, dict) else self.prior_variance
                 coef_dict[coef_name] = BayesianCoefficient(variation=variation,
@@ -258,6 +277,7 @@ class BEMBFlex(nn.Module):
                                                            obs2prior=self.obs2prior_dict[coef_name],
                                                            num_obs=self.num_obs_dict[variation],
                                                            dim=self.coef_dim_dict[coef_name],
+                                                           prior_mean=mean,
                                                            prior_variance=s2)
         self.coef_dict = nn.ModuleDict(coef_dict)
 
@@ -324,7 +344,11 @@ class BEMBFlex(nn.Module):
         Returns:
         Tuple[torch.Tensor]: sampled choices; shape: (batch_size, num_categories)
         """
-        sample_dict = self.sample_coefficient_dictionary(num_seeds)
+        # Use the means of variational distributions as the sole MC sample.
+        sample_dict = dict()
+        for coef_name, coef in self.coef_dict.items():
+            sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+        # sample_dict = self.sample_coefficient_dictionary(num_seeds)
         maxes, out = self.sample_log_likelihoods(batch, sample_dict)
         return maxes.squeeze(), out.squeeze()
 
@@ -586,12 +610,14 @@ class BEMBFlex(nn.Module):
     def log_likelihood_all_items(self, batch: ChoiceDataset, return_logit: bool, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
         """
         NOTE to developers:
+        NOTE (akanodia to tianyudu): Is this really slow; even with log_likelihood you need log_prob which depends on logits of all items?
         This method computes utilities for all items available, which is a relatively slow operation. For
         training the model, you only need the utility/log-prob for the chosen/relevant item (i.e., item_index[i] for each i-th observation).
         Use this method for inference only.
         Use self.log_likelihood_item_index() for training instead.
 
         Computes the log probability of choosing `each` item in each session based on current model parameters.
+        NOTE (akanodiadu to tianyudu): What does the next line mean? I think it just says its allowing for samples instead of posterior mean.
         This method allows for specifying {user, item}_latent_value for Monte Carlo estimation in ELBO.
         For actual prediction tasks, use the forward() function, which will use means of variational
         distributions for user and item latents.
@@ -632,6 +658,7 @@ class BEMBFlex(nn.Module):
         S = self.num_sessions
         U = self.num_users
         I = self.num_items
+        NC = self.num_categories
 
         # ==============================================================================================================
         # Helper Functions for Reshaping.
@@ -644,6 +671,14 @@ class BEMBFlex(nn.Module):
             return C
 
         def reshape_item_coef_sample(C):
+            # input shape (R, I, *)
+            C = C.view(R, 1, I, -1).expand(-1, P, -1, -1)
+            assert C.shape == (R, P, I, positive_integer)
+            return C
+
+        def reshape_category_coef_sample(C):
+            # input shape (R, NC, *)
+            C = torch.repeat_interleave(C, self.category_to_size_tensor, dim=1)
             # input shape (R, I, *)
             C = C.view(R, 1, I, -1).expand(-1, P, -1, -1)
             assert C.shape == (R, P, I, positive_integer)
@@ -663,6 +698,9 @@ class BEMBFlex(nn.Module):
             elif name.endswith('_item'):
                 # (R, I, *) --> (R, P, I, *)
                 return reshape_item_coef_sample(sample)
+            elif name.endswith('_category'):
+                # (R, NC, *) --> (R, P, NC, *)
+                return reshape_category_coef_sample(sample)
             elif name.endswith('_constant'):
                 # (R, *) --> (R, P, I, *)
                 return reshape_constant_coef_sample(sample)
@@ -861,6 +899,7 @@ class BEMBFlex(nn.Module):
             torch.arange(len(batch), device=self.device), repeats)
         # expand the user_index and session_index.
         user_index = torch.repeat_interleave(batch.user_index, repeats)
+        repeat_category_index = torch.repeat_interleave(cate_index, repeats)
         session_index = torch.repeat_interleave(batch.session_index, repeats)
         # duplicate the item focused to match.
         item_index_expanded = torch.repeat_interleave(
@@ -873,6 +912,7 @@ class BEMBFlex(nn.Module):
         S = self.num_sessions
         U = self.num_users
         I = self.num_items
+        NC = self.num_categories
         # ==========================================================================================
         # Helper Functions for Reshaping.
         # ==========================================================================================
@@ -885,6 +925,9 @@ class BEMBFlex(nn.Module):
             elif name.endswith('_item'):
                 # (R, I, *) --> (R, total_computation, *)
                 return sample[:, relevant_item_index, :]
+            elif name.endswith('_category'):
+                # (R, NC, *) --> (R, total_computation, *)
+                return sample[:, repeat_category_index, :]
             elif name.endswith('_constant'):
                 # (R, *) --> (R, total_computation, *)
                 return sample.view(R, 1, -1).expand(-1, total_computation, -1)
