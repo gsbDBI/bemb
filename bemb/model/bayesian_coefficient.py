@@ -56,7 +56,8 @@ class BayesianCoefficient(nn.Module):
         self.variation = variation
         self.obs2prior = obs2prior
         if variation == 'constant' or variation == 'category':
-            assert not obs2prior
+            if obs2prior:
+                raise NotImplementedError('obs2prior is not supported for constant and category variation at present.')
 
         self.num_classes = num_classes
         self.num_obs = num_obs
