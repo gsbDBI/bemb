@@ -42,8 +42,10 @@ jobs:
 #         with:
 #           path: "requirements.txt"
 
+#       - name: install dependencies
+#         run: pip3 install -r requirements.txt
       - name: install dependencies
-        run: pip3 install -r requirements.txt
+        run: cat requirements.txt | xargs -n 1 -L 1 pip install
 
       - name: install the package
         run: |
