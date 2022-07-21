@@ -63,7 +63,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#torch-choice" class="md-skip">
+        <a href="#bayesian-embedding-bemb" class="md-skip">
           Skip to content
         </a>
       
@@ -255,28 +255,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#mode-canada-example" class="md-nav__link">
-    Mode Canada Example
-  </a>
-  
-    <nav class="md-nav" aria-label="Mode Canada Example">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#mode-canada-with-torch-choice" class="md-nav__link">
-    Mode Canada with Torch-Choice
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#mode-canada-with-r" class="md-nav__link">
-    Mode Canada with R
+  <a href="#example-usage-of-bemb" class="md-nav__link">
+    Example Usage of BEMB
   </a>
   
 </li>
@@ -312,8 +292,8 @@
   
   
     <li class="md-nav__item">
-      <a href="install/" class="md-nav__link">
-        Get Started
+      <a href="https://gsbdbi.github.io/torch-choice/" class="md-nav__link">
+        Documentation for Torch-Choice
       </a>
     </li>
   
@@ -458,28 +438,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#mode-canada-example" class="md-nav__link">
-    Mode Canada Example
-  </a>
-  
-    <nav class="md-nav" aria-label="Mode Canada Example">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#mode-canada-with-torch-choice" class="md-nav__link">
-    Mode Canada with Torch-Choice
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#mode-canada-with-r" class="md-nav__link">
-    Mode Canada with R
+  <a href="#example-usage-of-bemb" class="md-nav__link">
+    Example Usage of BEMB
   </a>
   
 </li>
@@ -498,90 +458,27 @@
                 
 
 
-<h1 id="torch-choice">torch-choice</h1>
+<h1 id="bayesian-embedding-bemb">Bayesian Embedding (BEMB)</h1>
 <blockquote>
 <p>Authors: Tianyu Du and Ayush Kanodia; PI: Susan Athey; Contact: tianyudu@stanford.edu</p>
 </blockquote>
-<p><code>torch-choice</code> is a flexible, fast choice modeling with PyTorch: logit and nested logit models, designed for both estimation and prediction. See the <a href="https://deepchoice-vcghm.ondigitalocean.app">complete documentation</a> for more details.
-Unique features:
-1. GPU support via torch for speed
-2. Specify customized models
-3. Specify availability sets
-4. Report standard errors</p>
+<p>BEMB is a flexible, fast Bayesian embedding model for modelling choice problems. The <code>bemb</code> package is built upon the <a href="https://gsbdbi.github.io/torch-choice/"><code>torch_choice</code></a> library.</p>
 <h2 id="installation">Installation</h2>
 <ol>
-<li>Clone the repository to your local machine or server.</li>
-<li>Install required dependencies using: <code>pip3 install -r requirements.txt</code>.</li>
-<li>Run <code>pip3 install torch-choice</code>.</li>
-<li>Check installation by running <code>python3 -c 'import torch_choice; print(torch_choice.__version__)'</code>.</li>
+<li>Install <code>torch-choice</code> following steps <a href="https://gsbdbi.github.io/torch-choice/">here</a>.</li>
+<li>Run the following script to install it.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Clone the repository to your local machine or server for tutorials.</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>git clone <span class="s2">&quot;git@github.com:gsbDBI/bemb.git&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Install required dependencies.</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>pip3 install -r requirements.txt
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># Install bemb from the Pip.</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>pip3 install bemb
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># Check installation.</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>python3 -c <span class="s1">&#39;import torch_choice; print(torch_choice.__version__)&#39;</span>
+</code></pre></div></li>
 </ol>
-<p>In this demonstration, we will guide you through a minimal example of fitting a conditional logit model using our package. We will be referencing to R code and Stata code as well to deliver a smooth knowledge transfer.</p>
-<h2 id="mode-canada-example">Mode Canada Example</h2>
-<p>In this demonstration, we will guide you through a minimal example of fitting a conditional logit model using our package. We will be referencing R code as well to deliver a smooth knowledge transfer.</p>
-<p>More information about the <a href="https://www.rdocumentation.org/packages/mlogit/versions/1.1-1/topics/ModeCanada">ModeCanada: Mode Choice for the Montreal-Toronto Corridor</a>.</p>
-<h3 id="mode-canada-with-torch-choice">Mode Canada with Torch-Choice</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># load packages.</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">import</span> <span class="nn">torch_choice</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># load data.</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;https://raw.githubusercontent.com/gsbDBI/torch-choice/main/tutorials/public_datasets/ModeCanada.csv?token=GHSAT0AAAAAABRGHCCSNNQARRMU63W7P7F4YWYP5HA&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;noalt == 4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># format data.</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">data</span> <span class="o">=</span> <span class="n">torch_choice</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">easy_data_wrapper</span><span class="o">.</span><span class="n">EasyDatasetWrapper</span><span class="p">(</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">main_data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">purchase_record_column</span><span class="o">=</span><span class="s1">&#39;case&#39;</span><span class="p">,</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="n">choice_column</span><span class="o">=</span><span class="s1">&#39;choice&#39;</span><span class="p">,</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">item_name_column</span><span class="o">=</span><span class="s1">&#39;alt&#39;</span><span class="p">,</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="n">user_index_column</span><span class="o">=</span><span class="s1">&#39;case&#39;</span><span class="p">,</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">session_index_column</span><span class="o">=</span><span class="s1">&#39;case&#39;</span><span class="p">,</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="n">session_observable_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;income&#39;</span><span class="p">],</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="n">price_observable_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;cost&#39;</span><span class="p">,</span> <span class="s1">&#39;freq&#39;</span><span class="p">,</span> <span class="s1">&#39;ovt&#39;</span><span class="p">,</span> <span class="s1">&#39;ivt&#39;</span><span class="p">])</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="c1"># define the conditional logit model.</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="n">model</span> <span class="o">=</span> <span class="n">torch_choice</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">ConditionalLogitModel</span><span class="p">(</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="n">coef_variation_dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;price_cost&#39;</span><span class="p">:</span> <span class="s1">&#39;constant&#39;</span><span class="p">,</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>                         <span class="s1">&#39;price_freq&#39;</span><span class="p">:</span> <span class="s1">&#39;constant&#39;</span><span class="p">,</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>                         <span class="s1">&#39;price_ovt&#39;</span><span class="p">:</span> <span class="s1">&#39;constant&#39;</span><span class="p">,</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>                         <span class="s1">&#39;session_income&#39;</span><span class="p">:</span> <span class="s1">&#39;item&#39;</span><span class="p">,</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>                         <span class="s1">&#39;price_ivt&#39;</span><span class="p">:</span> <span class="s1">&#39;item-full&#39;</span><span class="p">,</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>                         <span class="s1">&#39;intercept&#39;</span><span class="p">:</span> <span class="s1">&#39;item&#39;</span><span class="p">},</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>    <span class="n">num_items</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="c1"># fit the conditional logit model.</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="n">torch_choice</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">run_helper</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">choice_dataset</span><span class="p">,</span> <span class="n">num_epochs</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-</code></pre></div>
-<h2 id="mode-canada-with-r">Mode Canada with R</h2>
-<p>We include the R code for the ModeCanada example as well.
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a># load packages.
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>library(&quot;mlogit&quot;)
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a># load data.
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>ModeCanada &lt;- read.csv(&#39;https://raw.githubusercontent.com/gsbDBI/torch-choice/main/tutorials/public_datasets/ModeCanada.csv?token=GHSAT0AAAAAABRGHCCSNNQARRMU63W7P7F4YWYP5HA&#39;)
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>ModeCanada &lt;- select(ModeCanada, -X)
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>ModeCanada$alt &lt;- as.factor(ModeCanada$alt)
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a># format data.
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>MC &lt;- dfidx(ModeCanada, subset = noalt == 4)
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a># fit the data.
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>ml.MC1 &lt;- mlogit(choice ~ cost + freq + ovt | income | ivt, MC, reflevel=&#39;air&#39;)
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>summary(ml.MC1)
-</code></pre></div></p>
-<h1 id="whats-in-the-package">What's in the package?</h1>
-<ol>
-<li>
-<p>The package includes a data management tool based on <code>PyTorch</code>'s dataset called <code>ChoiceDataset</code>. Our dataset implementation allows users to easily move data between CPU and GPU. Unlike traditional long or wide formats, the <code>ChoiceDataset</code> offers a memory-efficient way to manage observables.</p>
-</li>
-<li>
-<p>The package provides a (1) conditional logit model for consumer choice modeling, (2) a nested logit model for consumer choice modeling. </p>
-</li>
-<li>
-<p>The package leverage GPU acceleration using PyTorch and easily scale to large dataset of millions of choice records. All models are trained using state-of-the-art optimizers by in PyTorch. These optimization algorithms are tested to be scalable by modern machine learning practitioners. However, you can rest assure that the package runs flawlessly when no GPU is used as well.</p>
-</li>
-<li>
-<p>For those without much experience in model PyTorch development, setting up optimizers and training loops can be frustrating. We provide easy-to-use <a href="https://www.pytorchlightning.ai">PyTorch lightning</a> wrapper of models to free researchers from the hassle from setting up PyTorch optimizers and training loops.</p>
-</li>
-</ol>
+<h2 id="example-usage-of-bemb">Example Usage of BEMB</h2>
+<p><a href="https://gsbdbi.github.io/bemb/bemb_obs2prior_simulation/">Here</a> is a simulation exercise of using <code>bemb</code>.</p>
 
               
             </article>
