@@ -1,0 +1,1 @@
+python3 -m pdb -c c main.py ./configs.yaml
