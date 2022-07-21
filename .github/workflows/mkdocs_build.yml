@@ -22,19 +22,24 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
+    
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.x'
 
       # Runs a single command using the runners shell
       - name: install mkdocs and plugins.
         run: |
-          pip install mkdocs
-          pip install mkdocstrings
-          pip install mkdocstrings-python-legacy
-          pip install mkdocs-material
+          pip3 install mkdocs
+          pip3 install mkdocstrings
+          pip3 install mkdocstrings-python-legacy
+          pip3 install mkdocs-material
 
       - name: install the package
         run: |
-          pip install torch_choice
-          python setup.py develop --user
+          pip3 install torch_choice
+          python3 setup.py develop --user
 
       - name: run mkdocs build to generate html files.
         run: mkdocs build
