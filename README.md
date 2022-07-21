@@ -4,6 +4,8 @@
 
 BEMB is a flexible, fast Bayesian embedding model for modelling choice problems. The `bemb` package is built upon the [`torch_choice`](https://gsbdbi.github.io/torch-choice/) library.
 
+The full documentation website for BEMB is [https://gsbdbi.github.io/bemb/](https://gsbdbi.github.io/bemb/).
+
 ## Installation
 1. Install `torch-choice` following steps [here](https://gsbdbi.github.io/torch-choice/).
 2. Run the following script to install it.
