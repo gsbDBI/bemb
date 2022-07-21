@@ -55,4 +55,9 @@ jobs:
 
       - name: run mkdocs build to generate html files.
         run: mkdocs build
-        
+      
+      - name: update the repo.
+        run: |
+          git add .docs
+          git commit -m 'build website by github action'
+          git push
