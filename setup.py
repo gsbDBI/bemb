@@ -11,7 +11,7 @@ README = (HERE / "README.md").read_text()
 # This call to setup() does all the work
 setup(
     name="bemb",
-    version="0.0.2",
+    version="0.1.0",
     description="A Pytorch Backend Library for Choice Modelling with Bayesian Matrix Factorization",
     long_description=README,
     long_description_content_type="text/markdown",
