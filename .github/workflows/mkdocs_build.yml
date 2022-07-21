@@ -30,6 +30,8 @@ jobs:
           pip install mkdocstrings
           pip install mkdocstrings-python-legacy
           pip install mkdocs-material
+      - name: install the package
+        run: python setup.py install
 
       - name: run mkdocs build to generate html files.
         run: mkdocs build
