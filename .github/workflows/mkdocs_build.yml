@@ -11,6 +11,9 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
@@ -55,4 +58,7 @@ jobs:
 
       - name: run mkdocs build to generate html files.
         run: mkdocs build
-        
+  
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: build website by github action

@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://example.com/bemb/">
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.2.13">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.3.9">
     
     
       
@@ -19,15 +19,16 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.e411adfe.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.1d29e8d0.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.cc9b2e1e.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.cbb835fc.min.css">
         
           
           
           <meta name="theme-color" content="#02a6f2">
         
+      
       
     
     
@@ -618,7 +619,7 @@
   src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML">
 </script>
 <h1 id="bemb-tutorial">BEMB Tutorial</h1>
-<p>This tutorial assumes the reader has ready gone through the <a href="../data_management/">Data Management</a> tutorial.
+<p>This tutorial assumes the reader has ready gone through the <a href="./data_management.md">Data Management</a> tutorial.
 Through this tutorial, we use Greek letters (except for <span class="arithmatex">\(\varepsilon\)</span> as error term) to denote learnable coefficients of the model. However, researchers are not restricted to use Greek letters in practice.</p>
 <p>Bayesian EMBedding (BEMB) is a hierarchical Bayesian model for modelling consumer choices.
 The model can naturally extend to other use cases which can be formulated into the consumer choice framework.
@@ -635,7 +636,7 @@ The variational distributions are Gaussian with learnable mean and standard devi
 <h2 id="running-bemb">Running BEMB</h2>
 <p>Running BEMB requires you to (1) build the <code>ChoiceDataset</code> object and (2) training the model.</p>
 <h2 id="the-choicedataset">The <code>ChoiceDataset</code></h2>
-<p>Please refer to the <a href="../data_management/">Data Management</a> tutorial for a detailed walk-through of how to constructing the dataset.
+<p>Please refer to the <a href="./data_management.md">Data Management</a> tutorial for a detailed walk-through of how to constructing the dataset.
 For simplicity, we assume that item/user/session/price observables are named as <code>{item, user, session, price}_obs</code> in the <code>ChoiceDataset</code>, the researcher can use arbitrary variable names as long as they satisfy the naming convention (e.g., user-level observables should start with <code>user_</code> and cannot be <code>user_index</code>) and have the correct shape (e.g., user-level observables should have shape <code>(num_users, num_obs)</code>).</p>
 <h2 id="setup-the-bemb-model-pytorch-lightning-interface">Setup the BEMB Model (PyTorch-Lightning Interface)</h2>
 <p>You will be constructing the <code>LitBEMBFlex</code> class, which is a PyTorch-lightning wrapper of the BEMB model implemented in plain PyTorch. The lighting wrapper free researchers from complications such as setting up the training loop and optimizers.</p>
@@ -731,7 +732,7 @@ P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i'=1}^I e^{\mathcal{U}(u, i', s
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="p">)</span>
 </code></pre></div></p>
 <h2 id="training-the-model">Training the Model</h2>
-<p>We provide a ready-to-use scrip to train the model, where <code>dataset_list</code> is a list consists of three <code>ChoiceDataset</code> objects (see the <a href="../data_management/">Data Management</a> tutorial for splitting datasets), the training, validation, and testing dataset.
+<p>We provide a ready-to-use scrip to train the model, where <code>dataset_list</code> is a list consists of three <code>ChoiceDataset</code> objects (see the <a href="./data_management.md">Data Management</a> tutorial for splitting datasets), the training, validation, and testing dataset.
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">)</span>  <span class="c1"># only if GPU is installed</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">model</span> <span class="o">=</span> <span class="n">bemb</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">run_helper</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dataset_list</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_epochs</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </code></pre></div></p>
@@ -747,6 +748,7 @@ You can either compute the utility for the purchased item or for all items, we p
 
               
             </article>
+            
           </div>
         </div>
         
@@ -754,7 +756,8 @@ You can either compute the utility for the purchased item or for all items, we p
       
         <footer class="md-footer">
   
-    <nav class="md-footer__inner md-grid" aria-label="Footer">
+    
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
       
         
         <a href="../intro/" class="md-footer__link md-footer__link--prev" aria-label="Previous: About" rel="prev">
@@ -809,10 +812,10 @@ You can either compute the utility for the purchased item or for all items, we p
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.2a1c317c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.b97dbffb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.ed9748b7.min.js"></script>
+      <script src="../assets/javascripts/bundle.6c7ad80a.min.js"></script>
       
         <script src="../javascripts/mathjax.js"></script>
       
