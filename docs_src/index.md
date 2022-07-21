@@ -15,7 +15,7 @@ pip3 install -r requirements.txt
 # Install bemb from the Pip.
 pip3 install bemb
 # Check installation.
-python3 -c 'import torch_choice; print(torch_choice.__version__)'
+python3 -c 'import torch_choice; print(bemb.__version__)'
 ```
 
 ## Example Usage of BEMB
