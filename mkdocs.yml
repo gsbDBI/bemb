@@ -20,6 +20,8 @@ theme:
     custom_dir: docs_src/overrides
     icon:
         logo: stanford/stanford
+    palette:
+        primary: light blue
 
 plugins:
     - search
