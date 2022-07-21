@@ -29,12 +29,16 @@ jobs:
           python-version: '3.x'
 
       # Runs a single command using the runners shell
-      - name: install mkdocs and plugins.
+      - name: install mkdocs and plugins
         run: |
           pip3 install mkdocs
           pip3 install mkdocstrings
           pip3 install mkdocstrings-python-legacy
           pip3 install mkdocs-material
+      
+      - name: install python packages
+        run: |
+          pip3 install numpy
 
       - name: install the package
         run: |
