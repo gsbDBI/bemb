@@ -36,9 +36,11 @@ jobs:
           pip3 install mkdocstrings-python-legacy
           pip3 install mkdocs-material
       
-      - name: install python packages
-        run: |
-          pip3 install numpy
+      # this Action should follow steps to set up Python build environment
+      - name: Install Python dependencies
+        uses: py-actions/py-dependency-install@v3
+        with:
+          path: "requirements.txt"
 
       - name: install the package
         run: |
