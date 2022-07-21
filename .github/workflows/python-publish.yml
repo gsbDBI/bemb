@@ -9,8 +9,7 @@
 name: publish-bemb-to-pip
 
 on:
-  release:
-    types: [published]
+  push
 
 permissions:
   contents: read
