@@ -150,7 +150,7 @@ class BEMBFlex(nn.Module):
                 dictionary is provided, keys of prior_mean should be coefficient
                 names, and the mean of prior of coef_name would the provided
                 value Defaults to 0.0, which means all prior means are
-                initalized to 0.0
+                initialized to 0.0
 
             prior_variance (Union[float, Dict[str, float]]): the variance of prior distribution for
                 coefficients. If a float is provided, all priors will be diagonal matrix with
