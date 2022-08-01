@@ -33,7 +33,7 @@ class BayesianCoefficient(nn.Module):
 
         Args:
             variation (str): the variation # TODO: this will be removed in the next version, after we have a complete
-                test pipline.
+                test pipeline.
             num_classes (int): number of classes in the coefficient. For example, if we have user-specific coefficients,
                 `theta_user`, the `num_classes` should be the number of users. If we have item-specific coefficients,
                 the the `num_classes` should be the number of items.
