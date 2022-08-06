@@ -405,6 +405,28 @@ class BEMBFlex(nn.Module):
 
         return log_likelihoods, log_likelihoods
 
+    def predict_proba(self, batch: ChoiceDataset) -> torch.Tensor:
+        """
+        Predicts the probability for each class in the label.
+
+        # TODO: refine this method.
+        """
+        if self.pred_items:
+            raise NotImplementedError('Cannot be used.')
+
+        proba_1 = self.forward(batch,
+                              return_type='logit',
+                              return_scope='item_index',
+                              deterministic=True,  # it doesn't make much sense to give stochastic predictions.
+                              sample_dict=None,
+                              num_seeds=None
+                              )  # (len(batch), 1)
+        proba_1 = torch.sigmoid(proba_1)
+        assert proba_1.shape == (len(batch), 1)
+        proba_0 = 1 - proba_1
+        proba = torch.cat([proba_0, proba_1], dim=1)  # (len(batch), 2)
+        return proba
+
     def forward(self, batch: ChoiceDataset,
                 return_type: str,
                 return_scope: str,
