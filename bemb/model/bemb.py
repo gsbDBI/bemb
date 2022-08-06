@@ -376,7 +376,7 @@ class BEMBFlex(nn.Module):
         return maxes.squeeze(), out.squeeze()
 
     def sample_log_likelihoods(self, batch:ChoiceDataset, sample_dict: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Samples log likelihoods given model paramaters and trips
+        """Samples log likelihoods given model parameters and trips
 
         Args:
         batch(ChoiceDataset): batch data containing trip information; item choice information is discarded
