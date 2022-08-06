@@ -91,6 +91,7 @@ class BEMBFlex(nn.Module):
                  coef_dim_dict: Dict[str, int],
                  num_items: int,
                  pred_item: bool,
+                 H_zero_mask_dict: Optional[Dict[str, torch.BoolTensor]] = None,
                  prior_mean: Union[float, Dict[str, float]] = 0.0,
                  default_prior_mean: float = 0.0,
                  prior_variance: Union[float, Dict[str, float]] = 1.0,
@@ -129,6 +130,13 @@ class BEMBFlex(nn.Module):
                     should be the number of observables in item_obs.
                 For factorized coefficient multiplied with observables like U = gamma_user * beta_item * price_obs,
                     the dim should be the latent dim multiplied by number of observables in price_obs.
+
+            H_zero_mask_dict (Dict[str, torch.BoolTensor]): A dictionary maps coefficient names to a boolean tensor,
+                you should only specify the H_zero_mask for coefficients with obs2prior turned on.
+                Recall that with obs2prior on, the prior of coefficient looks like N(H*X_obs, sigma * I), the H_zero_mask
+                the mask for this coefficient should have the same shape as H, and H[H_zero_mask] will be set to zeros
+                and non-learnable during the training.
+                Defaults to None.
 
             num_items (int): number of items.
 
@@ -183,6 +191,10 @@ class BEMBFlex(nn.Module):
         self.utility_formula = utility_formula
         self.obs2prior_dict = obs2prior_dict
         self.coef_dim_dict = coef_dim_dict
+        if H_zero_mask_dict is not None:
+            self.H_zero_mask_dict = H_zero_mask_dict
+        else:
+            self.H_zero_mask_dict = dict()
         self.prior_variance = prior_variance
         self.default_prior_mean = default_prior_mean
         self.prior_mean = prior_mean
@@ -272,13 +284,24 @@ class BEMBFlex(nn.Module):
                     self.prior_mean, dict) else self.default_prior_mean
                 s2 = self.prior_variance[coef_name] if isinstance(
                     self.prior_variance, dict) else self.prior_variance
+
+                if coef_name in self.H_zero_mask_dict.keys():
+                    H_zero_mask = self.H_zero_mask_dict[coef_name]
+                else:
+                    H_zero_mask = None
+
+                if (not self.obs2prior_dict[coef_name]) and (H_zero_mask is not None):
+                    raise ValueError(f'You specified H_zero_mask for {coef_name}, but obs2prior is False for this coefficient.')
+
                 coef_dict[coef_name] = BayesianCoefficient(variation=variation,
                                                            num_classes=variation_to_num_classes[variation],
                                                            obs2prior=self.obs2prior_dict[coef_name],
                                                            num_obs=self.num_obs_dict[variation],
                                                            dim=self.coef_dim_dict[coef_name],
                                                            prior_mean=mean,
-                                                           prior_variance=s2)
+                                                           prior_variance=s2,
+                                                           H_zero_mask=H_zero_mask,
+                                                           is_H=False)
         self.coef_dict = nn.ModuleDict(coef_dict)
 
         # ==============================================================================================================
