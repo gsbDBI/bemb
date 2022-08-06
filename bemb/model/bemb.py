@@ -889,7 +889,7 @@ class BEMBFlex(nn.Module):
 
         Args:
             batch (ChoiceDataset): a ChoiceDataset object containing relevant information.
-            return_logit(bool): if set to True, return the log-probability, otherwise return the logit/utility.
+            return_logit(bool): if set to True, return the logit/utility, otherwise return the log-probability.
             sample_dict(Dict[str, torch.Tensor]): Monte Carlo samples for model coefficients
                 (i.e., those Greek letters).
                 sample_dict.keys() should be the same as keys of self.obs2prior_dict, i.e., those
