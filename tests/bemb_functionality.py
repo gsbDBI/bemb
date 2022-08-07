@@ -32,6 +32,9 @@ class TestBEMBFlex(unittest.TestCase):
     #     pass
 
     def test_inference_predict_proba(self):
+        """
+        Check shape of object returned by the predict_proba method.
+        """
         self.assertTrue(True)
         dataset_list = simulate_choice_dataset.simulate_dataset(num_users=num_users, num_items=num_items, data_size=data_size)
 
