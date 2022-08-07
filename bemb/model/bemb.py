@@ -91,6 +91,7 @@ class BEMBFlex(nn.Module):
                  coef_dim_dict: Dict[str, int],
                  num_items: int,
                  pred_item: bool,
+                 num_classes: int = 2,
                  H_zero_mask_dict: Optional[Dict[str, torch.BoolTensor]] = None,
                  prior_mean: Union[float, Dict[str, float]] = 0.0,
                  default_prior_mean: float = 0.0,
@@ -200,6 +201,13 @@ class BEMBFlex(nn.Module):
         self.prior_mean = prior_mean
 
         self.pred_item = pred_item
+        if not self.pred_item:
+            assert isinstance(num_classes, int) and num_classes > 0, \
+                f"With pred_item being False, the num_classes should be a positive integer, received {num_classes} instead."
+            self.num_classes = num_classes
+            if self.num_classes != 2:
+                raise NotImplementedError('Multi-class classification is not supported yet.')
+            # we don't set the num_classes attribute when pred_item == False to avoid calling it accidentally.
 
         self.num_items = num_items
         self.num_users = num_users
@@ -405,27 +413,30 @@ class BEMBFlex(nn.Module):
 
         return log_likelihoods, log_likelihoods
 
+    @torch.no_grad()
     def predict_proba(self, batch: ChoiceDataset) -> torch.Tensor:
         """
-        Predicts the probability for each class in the label.
-
-        # TODO: refine this method.
         """
-        if self.pred_items:
-            raise NotImplementedError('Cannot be used.')
+        if self.pred_item:
+            # (len(batch), num_items)
+            log_p = self.forward(batch, return_type='log_prob', return_scope='all_items', deterministic=True)
+            p = log_p.exp()
+        else:
+            # (len(batch), num_items)
+            # log-probability of getting label = 1.
+            log_p_1 = self.forward(batch, return_type='utility', return_scope='all_items', deterministic=True)
+            # (len(batch), 1)
+            p_1 = log_p_1[torch.arange(len(batch)), batch.item_index].exp().view(len(batch), 1)
+            p_0 = 1 - p_1
+            # (len(batch), 2)
+            p = torch.cat([p_0, p_1], dim=1)
 
-        proba_1 = self.forward(batch,
-                              return_type='logit',
-                              return_scope='item_index',
-                              deterministic=True,  # it doesn't make much sense to give stochastic predictions.
-                              sample_dict=None,
-                              num_seeds=None
-                              )  # (len(batch), 1)
-        proba_1 = torch.sigmoid(proba_1)
-        assert proba_1.shape == (len(batch), 1)
-        proba_0 = 1 - proba_1
-        proba = torch.cat([proba_0, proba_1], dim=1)  # (len(batch), 2)
-        return proba
+        if self.pred_item:
+            assert p.shape == (len(batch), self.num_items)
+        else:
+            assert p.shape == (len(batch), self.num_classes)
+
+        return p
 
     def forward(self, batch: ChoiceDataset,
                 return_type: str,
@@ -782,7 +793,7 @@ class BEMBFlex(nn.Module):
             return obs
 
         # ==============================================================================================================
-        # Copmute the Utility Term by Term.
+        # Compute the Utility Term by Term.
         # ==============================================================================================================
         # P is the number of unique (user, session) pairs.
         # (random_seeds, P, num_items).
