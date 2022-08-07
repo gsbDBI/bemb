@@ -31,7 +31,7 @@ class TestBEMBFlex(unittest.TestCase):
     # def test_estimation(self):
     #     pass
 
-    def test_inference_predict_proba(self):
+    def test_predict_proba(self):
         """
         Check shape of object returned by the predict_proba method.
         """
