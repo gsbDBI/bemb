@@ -895,6 +895,7 @@ class BEMBFlex(nn.Module):
 
         if return_logit:
             # output shape: (num_seeds, len(batch), num_items)
+            assert utility.shape == (num_seeds, len(batch), self.num_items)
             return utility
         else:
             # compute log likelihood log p(choosing item i | user, item latents)
@@ -905,6 +906,7 @@ class BEMBFlex(nn.Module):
                     utility, self.item_to_category_tensor, dim=-1)
             else:
                 log_p = torch.nn.functional.logsigmoid(utility)
+            assert log_p.shape == (num_seeds, len(batch), self.num_items)
             return log_p
 
     def log_likelihood_item_index(self, batch: ChoiceDataset, return_logit: bool, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
@@ -1119,21 +1121,29 @@ class BEMBFlex(nn.Module):
             additive_term = additive_term[:, reverse_indices]
             assert additive_term.shape == (R, total_computation)
 
-        # compute log likelihood log p(choosing item i | user, item latents)
         if return_logit:
-            log_p = utility
+            # (num_seeds, len(batch))
+            u = utility[:, item_index_expanded == relevant_item_index]
+            assert u.shape == (R, len(batch))
+            return u
+
+        if self.pred_item:
+            # compute log likelihood log p(choosing item i | user, item latents)
+            # compute the log probability from logits/utilities.
+            # output shape: (num_seeds, len(batch), num_items)
+            log_p = scatter_log_softmax(utility, reverse_indices, dim=-1)
+            # select the log-P of the item actually bought.
+            log_p = log_p[:, item_index_expanded == relevant_item_index]
+            assert log_p.shape == (R, len(batch))
+            return log_p
         else:
-            if self.pred_item:
-                # compute the log probability from logits/utilities.
-                # output shape: (num_seeds, len(batch), num_items)
-                log_p = scatter_log_softmax(utility, reverse_indices, dim=-1)
-                # select the log-P of the item actually bought.
-                log_p = log_p[:, item_index_expanded == relevant_item_index]
-            else:
-                # This is the binomial choice situation in which case we just report sigmoid log likelihood
-                bce = nn.BCELoss(reduction='none')
-                log_p = - bce(torch.sigmoid(utility.view(-1)), batch.label.to(torch.float32))
-        return log_p
+            # This is the binomial choice situation in which case we just report sigmoid log likelihood
+            bce = nn.BCELoss(reduction='none')
+            # make num_seeds copies of the label.
+            label_expanded = batch.label.to(torch.float32).view(1, len(batch)).expand(R, -1)
+            log_p = - bce(torch.sigmoid(utility), label_expanded)
+            assert log_p.shape == (R, len(batch))
+            return log_p
 
     def log_prior(self, batch: ChoiceDataset, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
         """Calculates the log-likelihood of Monte Carlo samples of Bayesian coefficients under their
