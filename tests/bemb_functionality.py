@@ -31,6 +31,56 @@ class TestBEMBFlex(unittest.TestCase):
     # def test_estimation(self):
     #     pass
 
+    # ==================================================================================================================
+    # Test Arguments and Options in the Initialization Method
+    # ==================================================================================================================
+    def test_init(self):
+        pass
+
+    def test_H_zero_mask(self):
+        pass
+
+    # ==================================================================================================================
+    # Test API Methods
+    # ==================================================================================================================
+    def test_forward_shape(self):
+        dataset_list = simulate_choice_dataset.simulate_dataset(num_users=num_users, num_items=num_items, data_size=data_size)
+        batch = dataset_list[0]
+        # test different variations of the forward function.
+        # return_type X return_scope X deterministic X pred_items.
+        for return_type, return_scope, deterministic, pred_item in itertools.product(['utility', 'log_prob'], ['item_index', 'all_items'], [True, False], [True, False]):
+            if not pred_item:
+                # generate fake binary labels.
+                batch.label = torch.LongTensor(np.random.randint(2, size=len(batch)))
+
+            # initialize the model.
+            bemb = BEMBFlex(
+                pred_item=pred_item,
+                utility_formula='theta_user * alpha_item',
+                num_users=num_users,
+                num_items=num_items,
+                num_classes=None if pred_item else 2,
+                num_user_obs=batch.user_obs.shape[1],
+                num_item_obs=batch.item_obs.shape[1],
+                obs2prior_dict={'theta_user': True, 'alpha_item': True},
+                coef_dim_dict={'theta_user': 10, 'alpha_item': 10}
+            )
+
+            output = bemb.forward(batch,
+                                  return_type=return_type, return_scope=return_scope,
+                                  deterministic=deterministic,
+                                  sample_dict=None,
+                                  num_seeds=num_seeds)
+
+            if (return_scope == 'item_index') and (deterministic == True):
+                self.assertEqual(output.shape, (len(batch),))
+            elif (return_scope == 'all_items') and (deterministic == True):
+                self.assertEqual(output.shape, (len(batch), num_items))
+            elif (return_scope == 'item_index') and (deterministic == False):
+                self.assertEqual(output.shape, (num_seeds, len(batch)))
+            elif (return_scope == 'item_index') and (deterministic == False):
+                self.assertEqual(output.shape, (num_seeds, len(batch), num_items))
+
     def test_predict_proba(self):
         """
         Check shape of object returned by the predict_proba method.
