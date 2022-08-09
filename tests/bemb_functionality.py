@@ -5,6 +5,7 @@ Author: Tianyu Du
 Date: Aug. 6, 2022
 """
 import unittest
+import itertools
 
 import numpy as np
 import pandas as pd
@@ -16,6 +17,7 @@ global numUs, num_items, data_size
 num_users = 50
 num_items = 100
 data_size = 10000
+num_seeds = 32
 
 
 class TestBEMBFlex(unittest.TestCase):
@@ -81,12 +83,12 @@ class TestBEMBFlex(unittest.TestCase):
             elif (return_scope == 'item_index') and (deterministic == False):
                 self.assertEqual(output.shape, (num_seeds, len(batch), num_items))
 
-    def test_predict_proba(self):
+    def test_predict_proba_shape(self):
         """
         Check shape of object returned by the predict_proba method.
         """
-        self.assertTrue(True)
         dataset_list = simulate_choice_dataset.simulate_dataset(num_users=num_users, num_items=num_items, data_size=data_size)
+        batch = dataset_list[-1]
 
         for pred_item in [True, False]:
             bemb = BEMBFlex(
@@ -100,14 +102,12 @@ class TestBEMBFlex(unittest.TestCase):
                 obs2prior_dict={'theta_user': True, 'alpha_item': True},
                 coef_dim_dict={'theta_user': 10, 'alpha_item': 10}
             )
-            batch = dataset_list[-1]
             P = bemb.predict_proba(batch)
 
             if pred_item:
                 self.assertEqual(P.shape, (len(batch), num_items))
             else:
                 self.assertEqual(P.shape, (len(batch), 2))
-                self.assertTrue(torch.all(P.sum(dim=1) == 1))
 
 if __name__ == '__main__':
     unittest.main()
