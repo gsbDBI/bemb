@@ -108,6 +108,7 @@ class TestBEMBFlex(unittest.TestCase):
                 self.assertEqual(P.shape, (len(batch), num_items))
             else:
                 self.assertEqual(P.shape, (len(batch), 2))
+                self.assertTrue(torch.all(P.sum(dim=1) == 1))
 
 if __name__ == '__main__':
     unittest.main()
