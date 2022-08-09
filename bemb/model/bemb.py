@@ -1138,6 +1138,7 @@ class BEMBFlex(nn.Module):
             return log_p
         else:
             # This is the binomial choice situation in which case we just report sigmoid log likelihood
+            utility = utility[:, item_index_expanded == relevant_item_index]
             bce = nn.BCELoss(reduction='none')
             # make num_seeds copies of the label.
             label_expanded = batch.label.to(torch.float32).view(1, len(batch)).expand(R, -1)
