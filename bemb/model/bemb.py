@@ -912,8 +912,7 @@ class BEMBFlex(nn.Module):
             # compute log softmax separately within each category.
             if self.pred_item:
                 # output shape: (num_seeds, len(batch), num_items)
-                log_p = scatter_log_softmax(
-                    utility, self.item_to_category_tensor, dim=-1)
+                log_p = scatter_log_softmax(utility, self.item_to_category_tensor, dim=-1)
             else:
                 log_p = torch.nn.functional.logsigmoid(utility)
             assert log_p.shape == (num_seeds, len(batch), self.num_items)
