@@ -433,10 +433,10 @@ class BEMBFlex(nn.Module):
             p = log_p.exp()
         else:
             # (len(batch), num_items)
-            # log-probability of getting label = 1.
-            log_p_1 = self.forward(batch, return_type='utility', return_scope='all_items', deterministic=True)
+            # probability of getting label = 1.
+            p_1 = torch.nn.functional.sigmoid(self.forward(batch, return_type='utility', return_scope='all_items', deterministic=True))
             # (len(batch), 1)
-            p_1 = log_p_1[torch.arange(len(batch)), batch.item_index].exp().view(len(batch), 1)
+            p_1 = p_1[torch.arange(len(batch)), batch.item_index].view(len(batch), 1)
             p_0 = 1 - p_1
             # (len(batch), 2)
             p = torch.cat([p_0, p_1], dim=1)
@@ -914,7 +914,13 @@ class BEMBFlex(nn.Module):
                 # output shape: (num_seeds, len(batch), num_items)
                 log_p = scatter_log_softmax(utility, self.item_to_category_tensor, dim=-1)
             else:
-                log_p = torch.nn.functional.logsigmoid(utility)
+                # TODO: update this, log_p should be log_p of the label instead.
+                # ....
+                # need to change this.
+                label_expanded = batch.label.to(torch.float32).view(1, len(batch), 1).expand(num_seeds, -1, self.num_items)
+                assert label_expanded.shape == (num_seeds, len(batch), self.num_items)
+                bce = nn.BCELoss(reduction='none')
+                log_p = - bce(torch.sigmoid(utility), label_expanded)
             assert log_p.shape == (num_seeds, len(batch), self.num_items)
             return log_p
 
