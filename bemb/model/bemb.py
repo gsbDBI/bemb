@@ -4,6 +4,7 @@ The core class of the Bayesian EMBedding (BEMB) model.
 Author: Tianyu Du
 Update: Apr. 28, 2022
 """
+from cProfile import label
 from pprint import pprint
 from typing import Dict, List, Optional, Union, Tuple
 
@@ -1151,9 +1152,11 @@ class BEMBFlex(nn.Module):
         else:
             # This is the binomial choice situation in which case we just report sigmoid log likelihood
             utility = utility[:, item_index_expanded == relevant_item_index]
+            assert utility.shape == (R, len(batch))
             bce = nn.BCELoss(reduction='none')
-            # make num_seeds copies of the label.
+            # make num_seeds copies of the label, expand to (R, len(batch))
             label_expanded = batch.label.to(torch.float32).view(1, len(batch)).expand(R, -1)
+            assert label_expanded.shape == (R, len(batch))
             log_p = - bce(torch.sigmoid(utility), label_expanded)
             assert log_p.shape == (R, len(batch))
             return log_p
