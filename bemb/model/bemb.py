@@ -914,9 +914,6 @@ class BEMBFlex(nn.Module):
                 # output shape: (num_seeds, len(batch), num_items)
                 log_p = scatter_log_softmax(utility, self.item_to_category_tensor, dim=-1)
             else:
-                # TODO: update this, log_p should be log_p of the label instead.
-                # ....
-                # need to change this.
                 label_expanded = batch.label.to(torch.float32).view(1, len(batch), 1).expand(num_seeds, -1, self.num_items)
                 assert label_expanded.shape == (num_seeds, len(batch), self.num_items)
                 bce = nn.BCELoss(reduction='none')
