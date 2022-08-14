@@ -5,13 +5,13 @@ Author: Tianyu Du
 Update: Apr. 28, 2022
 """
 from pprint import pprint
-from typing import Dict, List, Optional, Union, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
 import torch.nn as nn
 from torch_choice.data import ChoiceDataset
-from torch_scatter import scatter_max, scatter_logsumexp
+from torch_scatter import scatter_logsumexp, scatter_max
 from torch_scatter.composite import scatter_log_softmax
 
 from bemb.model.bayesian_coefficient import BayesianCoefficient
@@ -91,6 +91,7 @@ class BEMBFlex(nn.Module):
                  coef_dim_dict: Dict[str, int],
                  num_items: int,
                  pred_item: bool,
+                 num_classes: int = 2,
                  H_zero_mask_dict: Optional[Dict[str, torch.BoolTensor]] = None,
                  prior_mean: Union[float, Dict[str, float]] = 0.0,
                  default_prior_mean: float = 0.0,
@@ -200,6 +201,13 @@ class BEMBFlex(nn.Module):
         self.prior_mean = prior_mean
 
         self.pred_item = pred_item
+        if not self.pred_item:
+            assert isinstance(num_classes, int) and num_classes > 0, \
+                f"With pred_item being False, the num_classes should be a positive integer, received {num_classes} instead."
+            self.num_classes = num_classes
+            if self.num_classes != 2:
+                raise NotImplementedError('Multi-class classification is not supported yet.')
+            # we don't set the num_classes attribute when pred_item == False to avoid calling it accidentally.
 
         self.num_items = num_items
         self.num_users = num_users
@@ -376,7 +384,7 @@ class BEMBFlex(nn.Module):
         return maxes.squeeze(), out.squeeze()
 
     def sample_log_likelihoods(self, batch:ChoiceDataset, sample_dict: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Samples log likelihoods given model paramaters and trips
+        """Samples log likelihoods given model parameters and trips
 
         Args:
         batch(ChoiceDataset): batch data containing trip information; item choice information is discarded
@@ -404,6 +412,41 @@ class BEMBFlex(nn.Module):
         log_likelihoods = log_likelihoods.sum(dim=1)
 
         return log_likelihoods, log_likelihoods
+
+    @torch.no_grad()
+    def predict_proba(self, batch: ChoiceDataset) -> torch.Tensor:
+        """
+        Draw prediction on a given batch of dataset.
+
+        Args:
+        batch (ChoiceDataset): the dataset to draw inference on.
+
+        Returns:
+        torch.Tensor: the predicted probabilities for each class, the behavior varies by self.pred_item.
+        (1: pred_item == True) While predicting items, the return tensor has shape (len(batch), num_items), out[i, j] is the predicted probability for choosing item j AMONG ALL ITEMS IN ITS CATEGORY in observation i. Please note that since probabilities are computed from within-category normalization, hence out.sum(dim=0) can be greater than 1 if there are multiple categories.
+        (2: pred_item == False) While predicting external labels for each observations, out[i, 0] is the predicted probability for label == 0 on the i-th observation, out[i, 1] is the predicted probability for label == 1 on the i-th observation. Generally, out[i, 0] + out[i, 1] = 1.0. However, this could be false if under-flowing/over-flowing issue is encountered.
+        We highly recommend users to use the forward function to get the log-prob instead.
+        """
+        if self.pred_item:
+            # (len(batch), num_items)
+            log_p = self.forward(batch, return_type='log_prob', return_scope='all_items', deterministic=True)
+            p = log_p.exp()
+        else:
+            # (len(batch), num_items)
+            # probability of getting label = 1.
+            p_1 = torch.nn.functional.sigmoid(self.forward(batch, return_type='utility', return_scope='all_items', deterministic=True))
+            # (len(batch), 1)
+            p_1 = p_1[torch.arange(len(batch)), batch.item_index].view(len(batch), 1)
+            p_0 = 1 - p_1
+            # (len(batch), 2)
+            p = torch.cat([p_0, p_1], dim=1)
+
+        if self.pred_item:
+            assert p.shape == (len(batch), self.num_items)
+        else:
+            assert p.shape == (len(batch), self.num_classes)
+
+        return p
 
     def forward(self, batch: ChoiceDataset,
                 return_type: str,
@@ -760,7 +803,7 @@ class BEMBFlex(nn.Module):
             return obs
 
         # ==============================================================================================================
-        # Copmute the Utility Term by Term.
+        # Compute the Utility Term by Term.
         # ==============================================================================================================
         # P is the number of unique (user, session) pairs.
         # (random_seeds, P, num_items).
@@ -862,16 +905,20 @@ class BEMBFlex(nn.Module):
 
         if return_logit:
             # output shape: (num_seeds, len(batch), num_items)
+            assert utility.shape == (num_seeds, len(batch), self.num_items)
             return utility
         else:
             # compute log likelihood log p(choosing item i | user, item latents)
             # compute log softmax separately within each category.
             if self.pred_item:
                 # output shape: (num_seeds, len(batch), num_items)
-                log_p = scatter_log_softmax(
-                    utility, self.item_to_category_tensor, dim=-1)
+                log_p = scatter_log_softmax(utility, self.item_to_category_tensor, dim=-1)
             else:
-                log_p = torch.nn.functional.logsigmoid(utility)
+                label_expanded = batch.label.to(torch.float32).view(1, len(batch), 1).expand(num_seeds, -1, self.num_items)
+                assert label_expanded.shape == (num_seeds, len(batch), self.num_items)
+                bce = nn.BCELoss(reduction='none')
+                log_p = - bce(torch.sigmoid(utility), label_expanded)
+            assert log_p.shape == (num_seeds, len(batch), self.num_items)
             return log_p
 
     def log_likelihood_item_index(self, batch: ChoiceDataset, return_logit: bool, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
@@ -889,7 +936,7 @@ class BEMBFlex(nn.Module):
 
         Args:
             batch (ChoiceDataset): a ChoiceDataset object containing relevant information.
-            return_logit(bool): if set to True, return the log-probability, otherwise return the logit/utility.
+            return_logit(bool): if set to True, return the logit/utility, otherwise return the log-probability.
             sample_dict(Dict[str, torch.Tensor]): Monte Carlo samples for model coefficients
                 (i.e., those Greek letters).
                 sample_dict.keys() should be the same as keys of self.obs2prior_dict, i.e., those
@@ -1086,21 +1133,32 @@ class BEMBFlex(nn.Module):
             additive_term = additive_term[:, reverse_indices]
             assert additive_term.shape == (R, total_computation)
 
-        # compute log likelihood log p(choosing item i | user, item latents)
         if return_logit:
-            log_p = utility
+            # (num_seeds, len(batch))
+            u = utility[:, item_index_expanded == relevant_item_index]
+            assert u.shape == (R, len(batch))
+            return u
+
+        if self.pred_item:
+            # compute log likelihood log p(choosing item i | user, item latents)
+            # compute the log probability from logits/utilities.
+            # output shape: (num_seeds, len(batch), num_items)
+            log_p = scatter_log_softmax(utility, reverse_indices, dim=-1)
+            # select the log-P of the item actually bought.
+            log_p = log_p[:, item_index_expanded == relevant_item_index]
+            assert log_p.shape == (R, len(batch))
+            return log_p
         else:
-            if self.pred_item:
-                # compute the log probability from logits/utilities.
-                # output shape: (num_seeds, len(batch), num_items)
-                log_p = scatter_log_softmax(utility, reverse_indices, dim=-1)
-                # select the log-P of the item actually bought.
-                log_p = log_p[:, item_index_expanded == relevant_item_index]
-            else:
-                # This is the binomial choice situation in which case we just report sigmoid log likelihood
-                bce = nn.BCELoss(reduction='none')
-                log_p = - bce(torch.sigmoid(utility.view(-1)), batch.label.to(torch.float32))
-        return log_p
+            # This is the binomial choice situation in which case we just report sigmoid log likelihood
+            utility = utility[:, item_index_expanded == relevant_item_index]
+            assert utility.shape == (R, len(batch))
+            bce = nn.BCELoss(reduction='none')
+            # make num_seeds copies of the label, expand to (R, len(batch))
+            label_expanded = batch.label.to(torch.float32).view(1, len(batch)).expand(R, -1)
+            assert label_expanded.shape == (R, len(batch))
+            log_p = - bce(torch.sigmoid(utility), label_expanded)
+            assert log_p.shape == (R, len(batch))
+            return log_p
 
     def log_prior(self, batch: ChoiceDataset, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
         """Calculates the log-likelihood of Monte Carlo samples of Bayesian coefficients under their
