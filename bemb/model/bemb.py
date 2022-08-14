@@ -4,15 +4,14 @@ The core class of the Bayesian EMBedding (BEMB) model.
 Author: Tianyu Du
 Update: Apr. 28, 2022
 """
-from cProfile import label
 from pprint import pprint
-from typing import Dict, List, Optional, Union, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
 import torch.nn as nn
 from torch_choice.data import ChoiceDataset
-from torch_scatter import scatter_max, scatter_logsumexp
+from torch_scatter import scatter_logsumexp, scatter_max
 from torch_scatter.composite import scatter_log_softmax
 
 from bemb.model.bayesian_coefficient import BayesianCoefficient
