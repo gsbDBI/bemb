@@ -425,7 +425,8 @@ class BEMBFlex(nn.Module):
         torch.Tensor: the predicted probabilities for each class, the behavior varies by self.pred_item.
         (1: pred_item == True) While predicting items, the return tensor has shape (len(batch), num_items), out[i, j] is the predicted probability for choosing item j AMONG ALL ITEMS IN ITS CATEGORY in observation i. Please note that since probabilities are computed from within-category normalization, hence out.sum(dim=0) can be greater than 1 if there are multiple categories.
         (2: pred_item == False) While predicting external labels for each observations, out[i, 0] is the predicted probability for label == 0 on the i-th observation, out[i, 1] is the predicted probability for label == 1 on the i-th observation. Generally, out[i, 0] + out[i, 1] = 1.0. However, this could be false if under-flowing/over-flowing issue is encountered.
-        We highly recommend users to use the forward function to get the log-prob instead.
+
+        We highly recommend users to get log-probs as those are less prone to overflow/underflow; those can be accessed using the forward() function.
         """
         if self.pred_item:
             # (len(batch), num_items)
