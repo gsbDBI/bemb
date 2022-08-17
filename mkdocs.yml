@@ -10,6 +10,7 @@ nav:
     - Tutorial for Easy Data Management and Stata Users: https://gsbdbi.github.io/torch-choice/easy_data_management/
     - Tutorial for Bayesian Embedding (BEMB): bemb.md
     - Tutorial for BEMB obs2prior feature: bemb_obs2prior_simulation.md
+    - Tutorial for Inference with BEMB: bemb_inference.md
     - Related Projects: projects.md
     - Compatibility Tests: test.md
     - API Reference BEMB: api_bemb.md
