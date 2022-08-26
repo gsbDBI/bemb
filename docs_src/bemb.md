@@ -85,10 +85,18 @@ However, `num_users` and `num_sessions` are required only if there is any user/s
 
 ### Specifying the Dimensions of Coefficients with the `coef_dim_dict` dictionary
 To correctly initialize the model, the constructor needs to know the shape of each learnable coefficients (i.e., Greek letters above). For item/user-specific parameters, the value of `coef_dim_dict` is the number of parameters for **each** user/item, not the total number of parameters.
-1. For standalone coefficients like `lambda_item`, `coef_dim_dict['lambda_item']` = 1 always.
-2. For matrix factorization coefficients like `theta_user` and `alpha_item`, `coef_dim_dict['theta_user'] = coef_dim_dict[alpha_item] = L`, where `L` is the desired latent dimension. For the inner product between $\alpha_i$ and $\theta_u$ to work properly, `coef_dim_dict['theta_user'] == coef_dim_dict['alpha_item']`.
-3. For terms like $\zeta_u^\top X^{item}_i$, `coef_dim_dict['zeta_user']` needs to be the dimension of $X^{item}_i$.
-4. For the most complicated matrix factorization coefficients, the dimension needs to be the latent dimension multiplied by the number of observables. For example, if you have a $K$-dimensional feature vector $\textbf{x} \in \mathbb{R}^K$, and the utility contains an additive component $\zeta_{u, i}^\top \textbf{x} \in \mathbb{R}$. The coefficient $\zeta_{u, i} \in \mathbb{R}^K$ comes from of the user-specific and item-specific parts so that the coefficient depends on both the user and the item. Let's use superscript $(k)$ to denote the $k^{th}$ component of a vector, the coefficient $\zeta_{ui}$ is defined as
+
+#### Intercept Terms
+For standalone coefficients like `lambda_item`, `coef_dim_dict['lambda_item']` = 1 always.
+
+#### Matrix Factorization Terms
+For matrix factorization coefficients like `theta_user` and `alpha_item`, `coef_dim_dict['theta_user'] = coef_dim_dict[alpha_item] = L`, where `L` is the desired latent dimension. For the inner product between $\alpha_i$ and $\theta_u$ to work properly, `coef_dim_dict['theta_user'] == coef_dim_dict['alpha_item']`.
+
+#### Coefficient and Observable Terms
+For terms like $\zeta_u^\top X^{item}_i$, `coef_dim_dict['zeta_user']` needs to be the dimension of $X^{item}_i$.
+
+#### Factorized Coefficient and Observable Terms
+For the most complicated matrix factorization coefficients, the dimension needs to be the latent dimension multiplied by the number of observables. For example, if you have a $K$-dimensional feature vector $\textbf{x} \in \mathbb{R}^K$, and the utility contains an additive component $\zeta_{u, i}^\top \textbf{x} \in \mathbb{R}$. The coefficient $\zeta_{u, i} \in \mathbb{R}^K$ comes from of the user-specific and item-specific parts so that the coefficient depends on both the user and the item. Let's use superscript $(k)$ to denote the $k^{th}$ component of a vector, the coefficient $\zeta_{ui}$ is defined as
 
 $$
 \zeta_{ui} = \begin{pmatrix} \gamma_{u, 1}^\top \beta_{i, 1} \\ \gamma_{u,2}^\top \beta_{i, 2} \\ \vdots \\ \gamma_{u, K}^\top \beta_{i, K} \end{pmatrix} \in \mathbb{R}^K
