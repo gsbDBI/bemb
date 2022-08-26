@@ -5,6 +5,8 @@ site_dir: docs
 nav:
     - Home: index.md
     - About: intro.md
+    - Torch Choice Documentation: https://gsbdbi.github.io/torch-choice/
+    - Introduction: https://gsbdbi.github.io/torch-choice/intro/
     - Documentation for Torch-Choice: https://gsbdbi.github.io/torch-choice/
     - Tutorial for Data Management: https://gsbdbi.github.io/torch-choice/data_management/
     - Tutorial for Easy Data Management and Stata Users: https://gsbdbi.github.io/torch-choice/easy_data_management/
