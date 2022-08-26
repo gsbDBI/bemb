@@ -368,6 +368,40 @@
     Specifying the Dimensions of Coefficients with the coef_dim_dict dictionary
   </a>
   
+    <nav class="md-nav" aria-label="Specifying the Dimensions of Coefficients with the coef_dim_dict dictionary">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#intercept-terms" class="md-nav__link">
+    Intercept Terms
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#matrix-factorization-terms" class="md-nav__link">
+    Matrix Factorization Terms
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#coefficient-and-observable-terms" class="md-nav__link">
+    Coefficient and Observable Terms
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#factorized-coefficient-and-observable-terms" class="md-nav__link">
+    Factorized Coefficient and Observable Terms
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -567,6 +601,40 @@
     Specifying the Dimensions of Coefficients with the coef_dim_dict dictionary
   </a>
   
+    <nav class="md-nav" aria-label="Specifying the Dimensions of Coefficients with the coef_dim_dict dictionary">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#intercept-terms" class="md-nav__link">
+    Intercept Terms
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#matrix-factorization-terms" class="md-nav__link">
+    Matrix Factorization Terms
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#coefficient-and-observable-terms" class="md-nav__link">
+    Coefficient and Observable Terms
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#factorized-coefficient-and-observable-terms" class="md-nav__link">
+    Factorized Coefficient and Observable Terms
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -694,19 +762,24 @@ In this case, the researcher should use separate tensors <code>item_obs_part1</c
 For every model, the <code>num_items</code> is <strong>required</strong>.
 However, <code>num_users</code> and <code>num_sessions</code> are required only if there is any user/session-specific observables or parameters involved in the <code>utility_formula</code>.</p>
 <h3 id="specifying-the-dimensions-of-coefficients-with-the-coef_dim_dict-dictionary">Specifying the Dimensions of Coefficients with the <code>coef_dim_dict</code> dictionary</h3>
-<p>To correctly initialize the model, the constructor needs to know the shape of each learnable coefficients (i.e., Greek letters above). For item/user-specific parameters, the value of <code>coef_dim_dict</code> is the number of parameters for <strong>each</strong> user/item, not the total number of parameters.
-1. For standalone coefficients like <code>lambda_item</code>, <code>coef_dim_dict['lambda_item']</code> = 1 always.
-2. For matrix factorization coefficients like <code>theta_user</code> and <code>alpha_item</code>, <code>coef_dim_dict['theta_user'] = coef_dim_dict[alpha_item] = L</code>, where <code>L</code> is the desired latent dimension. For the inner product between <span class="arithmatex">\(\alpha_i\)</span> and <span class="arithmatex">\(\theta_u\)</span> to work properly, <code>coef_dim_dict['theta_user'] == coef_dim_dict['alpha_item']</code>.
-3. For terms like <span class="arithmatex">\(\zeta_u^\top X^{item}_i\)</span>, <code>coef_dim_dict['zeta_user']</code> needs to be the dimension of <span class="arithmatex">\(X^{item}_i\)</span>.
-4. For the most complicated matrix factorization coefficients, the dimension needs to be the latent dimension multiplied by the number of observables. For example, if you have a <span class="arithmatex">\(K\)</span>-dimensional feature vector <span class="arithmatex">\(\textbf{x} \in \mathbb{R}^K\)</span>, and the utility contains an additive component <span class="arithmatex">\(\zeta_{u, i}^\top \textbf{x} \in \mathbb{R}\)</span>. The coefficient <span class="arithmatex">\(\zeta_{u, i} \in \mathbb{R}^K\)</span> comes from of the user-specific and item-specific parts so that the coefficient depends on both the user and the item. Let's use superscript <span class="arithmatex">\((k)\)</span> to denote the <span class="arithmatex">\(k^{th}\)</span> component of a vector, the coefficient <span class="arithmatex">\(\zeta_{ui}\)</span> is defined as</p>
+<p>To correctly initialize the model, the constructor needs to know the shape of each learnable coefficients (i.e., Greek letters above). For item/user-specific parameters, the value of <code>coef_dim_dict</code> is the number of parameters for <strong>each</strong> user/item, not the total number of parameters.</p>
+<h4 id="intercept-terms">Intercept Terms</h4>
+<p>For standalone coefficients like <code>lambda_item</code>, <code>coef_dim_dict['lambda_item']</code> = 1 always.</p>
+<h4 id="matrix-factorization-terms">Matrix Factorization Terms</h4>
+<p>For matrix factorization coefficients like <code>theta_user</code> and <code>alpha_item</code>, <code>coef_dim_dict['theta_user'] = coef_dim_dict[alpha_item] = L</code>, where <code>L</code> is the desired latent dimension. For the inner product between <span class="arithmatex">\(\alpha_i\)</span> and <span class="arithmatex">\(\theta_u\)</span> to work properly, <code>coef_dim_dict['theta_user'] == coef_dim_dict['alpha_item']</code>.</p>
+<h4 id="coefficient-and-observable-terms">Coefficient and Observable Terms</h4>
+<p>For terms like <span class="arithmatex">\(\zeta_u^\top X^{item}_i\)</span>, <code>coef_dim_dict['zeta_user']</code> needs to be the dimension of <span class="arithmatex">\(X^{item}_i\)</span>.</p>
+<h4 id="factorized-coefficient-and-observable-terms">Factorized Coefficient and Observable Terms</h4>
+<p>For the most complicated matrix factorization coefficients, the dimension needs to be the latent dimension multiplied by the number of observables. For example, if you have a <span class="arithmatex">\(K\)</span>-dimensional feature vector <span class="arithmatex">\(\textbf{x} \in \mathbb{R}^K\)</span>, and the utility contains an additive component <span class="arithmatex">\(\zeta_{u, i}^\top \textbf{x} \in \mathbb{R}\)</span>. The coefficient <span class="arithmatex">\(\zeta_{u, i} \in \mathbb{R}^K\)</span> comes from of the user-specific and item-specific parts so that the coefficient depends on both the user and the item.
+The coefficient <span class="arithmatex">\(\zeta_{ui}\)</span> is defined as</p>
 <div class="arithmatex">\[
 \zeta_{ui} = \begin{pmatrix} \gamma_{u, 1}^\top \beta_{i, 1} \\ \gamma_{u,2}^\top \beta_{i, 2} \\ \vdots \\ \gamma_{u, K}^\top \beta_{i, K} \end{pmatrix} \in \mathbb{R}^K
 \]</div>
-<p>where each <span class="arithmatex">\(\gamma_{u, k}, \beta_{i, k}\)</span> is a <span class="arithmatex">\(L\)</span>-dimensional vector, the dimension <span class="arithmatex">\(L\)</span> is called the <strong>latent dimension</strong>.</p>
-<p>The decomposition works as the following:</p>
+<p>for each <span class="arithmatex">\(k \in \{1, 2, \dots, K\}\)</span>, <span class="arithmatex">\(\gamma_{u, k}, \beta_{i, k}\)</span> is a <span class="arithmatex">\(L\)</span>-dimensional vector, the dimension <span class="arithmatex">\(L\)</span> is called the <strong>latent dimension</strong>.</p>
+<p>Let's use superscript <span class="arithmatex">\((k)\)</span> to denote the <span class="arithmatex">\(k^{th}\)</span> component of a vector, the decomposition works as the following:</p>
 <div class="arithmatex">\[
-\zeta_{u, i}^\top \textbf{x} = \sum_{k=1}^{K} \zeta_{u, i}^{(k)} \textbf{x}^{(k)}
-= \sum_{k=1}^{K} (\gamma_{u, k}^\top \beta_{i, k}) \textbf{x}^{(k)}
+\zeta_{u, i}^\top \textbf{x} = \sum_{k=1}^{K} \underbrace{\zeta_{u, i}^{(k)}}_{\in \mathbb{R}} \underbrace{\textbf{x}^{(k)}}_{\in \mathbb{R}}
+= \sum_{k=1}^{K} \underbrace{(\gamma_{u, k}^\top \beta_{i, k})}_{\in \mathbb{R}} \underbrace{\textbf{x}^{(k)}}_{\in \mathbb{R}}
 \]</div>
 <p>Equivalently and more succinctly, if we define matrices by concatenating the vectors,</p>
 <div class="arithmatex">\[
@@ -726,7 +799,7 @@ However, <code>num_users</code> and <code>num_sessions</code> are required only 
 -\beta_{i, K}-\\
 \end{pmatrix}
 \]</div>
-<p>both <span class="arithmatex">\(\gamma_u, \beta_i \in \mathbb{R}^{K, L}\)</span>, it's immediate that for each user <span class="arithmatex">\(u\)</span> or item <span class="arithmatex">\(i\)</span>, we have <span class="arithmatex">\(K \times L\)</span> learnable parameters/coefficients. Therefore, the <code>coef_dim_dict[gamma_user] = coef_dim_dict[beta_item] = K * L</code>.</p>
+<p>both <span class="arithmatex">\(\gamma_u, \beta_i \in \mathbb{R}^{K \times L}\)</span>, it's immediate that for each user <span class="arithmatex">\(u\)</span> or item <span class="arithmatex">\(i\)</span>, we have <span class="arithmatex">\(K \times L\)</span> learnable parameters/coefficients. Therefore, the <code>coef_dim_dict[gamma_user] = coef_dim_dict[beta_item] = K * L</code>.</p>
 <p>For example, suppose we have a two dimensional observable <span class="arithmatex">\(\textbf{x} = (x_1, x_2)\)</span> (so <span class="arithmatex">\(K = 2\)</span>), and we wish to include a term <span class="arithmatex">\(\zeta_{ui}^\top \textbf{x}\)</span> in the utility formula: <span class="arithmatex">\(\zeta_{ui}^{(1)} \times x_1 + \zeta_{ui}^{(2)} \times x_2\)</span>.</p>
 <p>Further, we want to decompose each of <span class="arithmatex">\(\zeta_{ui}^{(1)} \in \mathbb{R}\)</span> and <span class="arithmatex">\(\zeta_{ui}^{(2)} \in \mathbb{R}\)</span> into a 10-dimensional user component and 10-dimensional item component (so <span class="arithmatex">\(L = 10\)</span>): <span class="arithmatex">\(\zeta_{ui}^{(1)} = \gamma_{u, 1}^\top \beta_{i, 1}\)</span>, with <span class="arithmatex">\(\gamma_{u, 1}, \beta_{i, 1} \in \mathbb{R}^{10}\)</span> (similarly, <span class="arithmatex">\(\zeta_{ui}^{(2)} = \gamma_{u, 2}^\top \beta_{i, 2}\)</span>). In this example, we need to set <code>coef_dim_dict[gamma_user] = coef_dim_dict[beta_item] = 30</code>.</p>
 <p><strong>Note</strong>: since we need to compute the inner product between <span class="arithmatex">\(\gamma\)</span>'s and <span class="arithmatex">\(\beta\)</span>'s, the <code>coef_dim_dict[gamma_user]</code> and <code>coef_dim_dict[beta_item]</code> need to be the same.</p>
