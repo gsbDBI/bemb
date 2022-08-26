@@ -8,11 +8,8 @@ Through this tutorial, we use Greek letters (except for $\varepsilon$ as error t
 Bayesian EMBedding (BEMB) is a hierarchical Bayesian model for modelling consumer choices.
 The model can naturally extend to other use cases which can be formulated into the consumer choice framework.
 For example, in a job-transition modelling study, we formulated the starting job as the user and ending job as the item and applied the BEMB framework.
-Suppose we have a dataset of purchase records consisting of $U$ users, $I$ items, and $S$ sessions, at it's core (assume no $s$-level effect for now), the BEMB model aims to build user embeddings $\theta_u \in \mathbb{R}^{L}$ and item embeddings $\alpha_i \in \mathbb{R}^{L}$, then the model predicts the probability for user $u$ to purchase item $i$ as
-$$
-P(i|u,s) = F(\theta_u^\top \alpha_i),
-$$
-where $F: \mathbb{R} \to [0, 1]$ is an increasing function.
+Suppose we have a dataset of purchase records consisting of $U$ users, $I$ items, and $S$ sessions, at it's core (assume no $s$-level effect for now), the BEMB model aims to build user embeddings $\theta_u \in \mathbb{R}^{L}$ and item embeddings $\alpha_i \in \mathbb{R}^{L}$. The utility of user $u$ from purchasing item $i$ is $U_{ui} = \theta_u^\top \alpha_i$, and the model predicts the probability for user $u$ to purchase item $i$ as an increasing function of $U_{ui}$.
+Our package support more general form of utility $U_{ui}$ than the inner product of two latent vectors.
 
 Both of $\theta_u$ and $\alpha_i$ are *Bayesian*, which means there is a prior distribution and a variational distribution associated with each of them.
 By default, the prior distribution of all entries of $\theta_u$ and $\alpha_i$ are i.i.d. standard Gaussian distributions.
