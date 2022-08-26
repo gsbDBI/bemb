@@ -44,11 +44,14 @@ where $I_c$ is the set of items in the same category of item $i$.
 If there is no category information, the model considers all items to be in the same category, i.e., $I_c = \{1, 2, \dots I\}$.
 
 The BEMB admits a **linear additive form** of utility formula.
+This is a very flexible formulation because
+1. you can always build sophisticated observables, for instance by taking the log or a polynomial transformation of original observables and
+2. you can impose that the learnable coefficients depend on item $i$, user $u$, session $s$ or the combination of item and session.
 
 For example, the model parses utility formula string `lambda_item + theta_user * alpha_item + zeta_user * item_obs` into the following representation:
 
 $$
-\mathcal{U}(u, i, s)= \lambda_i + \theta_u^\top \alpha_i + \zeta_u^\top X^{item}_i + \varepsilon \in \mathbb{R}
+\mathcal{U}(u, i, s)= \lambda_i + \theta_u^\top \alpha_i + \zeta_u^\top X^{item}_i + \varepsilon_{uis} \in \mathbb{R}
 $$
 
 The `utility_formula` consists of two classes of objects:
@@ -85,15 +88,50 @@ To correctly initialize the model, the constructor needs to know the shape of ea
 1. For standalone coefficients like `lambda_item`, `coef_dim_dict['lambda_item']` = 1 always.
 2. For matrix factorization coefficients like `theta_user` and `alpha_item`, `coef_dim_dict['theta_user'] = coef_dim_dict[alpha_item] = L`, where `L` is the desired latent dimension. For the inner product between $\alpha_i$ and $\theta_u$ to work properly, `coef_dim_dict['theta_user'] == coef_dim_dict['alpha_item']`.
 3. For terms like $\zeta_u^\top X^{item}_i$, `coef_dim_dict['zeta_user']` needs to be the dimension of $X^{item}_i$.
-4. For matrix factorization coefficients, the dimension needs to be the latent dimension multiplied by the number of observables. For example, if you have a 3-dimensional feature $X = (x_1, x_2, x_3)$, the utility is $\mathcal{U}(u, i, s) = \zeta_{u, i}^\top X$, and $\zeta_{u, i}$ needs to be factorized into two an user-specific and item-specific part (both in $\mathbb{R}^L$) as below
+4. For the most complicated matrix factorization coefficients, the dimension needs to be the latent dimension multiplied by the number of observables. For example, if you have a $K$-dimensional feature vector $\textbf{x} \in \mathbb{R}^K$, and the utility contains an additive component $\zeta_{u, i}^\top \textbf{x} \in \mathbb{R}$. The coefficient $\zeta_{u, i} \in \mathbb{R}^K$ comes from of the user-specific and item-specific parts so that the coefficient depends on both the user and the item. Let's use superscript $(k)$ to denote the $k^{th}$ component of a vector, the coefficient $\zeta_{ui}$ is defined as
 
 $$
-\mathcal{U}(u, i, s) = \sum_{k=1}^3 (\gamma_u^{k\top} \beta_i^k) x_k
+\zeta_{ui} = \begin{pmatrix} \gamma_{u, 1}^\top \beta_{i, 1} \\ \gamma_{u,2}^\top \beta_{i, 2} \\ \vdots \\ \gamma_{u, K}^\top \beta_{i, K} \end{pmatrix} \in \mathbb{R}^K
 $$
 
-then `coef_dim_dict[gamma_user] = coef_dim_dict[beta_item] = 3 * L`.
+where each $\gamma_{u, k}, \beta_{i, k}$ is a $L$-dimensional vector, the dimension $L$ is called the **latent dimension**.
 
-**TODO**: sounds like a lot of work? we are currently developing helper function to infer all these information from the `ChoiceDataset`, but we will still provide researchers with the full control over the configuration.
+The decomposition works as the following:
+
+$$
+\zeta_{u, i}^\top \textbf{x} = \sum_{k=1}^{K} \zeta_{u, i}^{(k)} \textbf{x}^{(k)}
+= \sum_{k=1}^{K} (\gamma_{u, k}^\top \beta_{i, k}) \textbf{x}^{(k)}
+$$
+
+Equivalently and more succinctly, if we define matrices by concatenating the vectors,
+
+$$
+\gamma_u =
+\begin{pmatrix}
+-\gamma_{u, 1}-  \\
+-\gamma_{u, 2}-  \\
+\vdots \\
+-\gamma_{u, K}-  \\
+\end{pmatrix}
+,\quad
+\beta_i =
+\begin{pmatrix}
+-\beta_{i, 1}-\\
+-\beta_{i, 2}-\\
+\vdots \\
+-\beta_{i, K}-\\
+\end{pmatrix}
+$$
+
+both $\gamma_u, \beta_i \in \mathbb{R}^{K, L}$, it's immediate that for each user $u$ or item $i$, we have $K \times L$ learnable parameters/coefficients. Therefore, the `coef_dim_dict[gamma_user] = coef_dim_dict[beta_item] = K * L`.
+
+For example, suppose we have a two dimensional observable $\textbf{x} = (x_1, x_2)$ (so $K = 2$), and we wish to include a term $\zeta_{ui}^\top \textbf{x}$ in the utility formula: $\zeta_{ui}^{(1)} \times x_1 + \zeta_{ui}^{(2)} \times x_2$.
+
+Further, we want to decompose each of $\zeta_{ui}^{(1)} \in \mathbb{R}$ and $\zeta_{ui}^{(2)} \in \mathbb{R}$ into a 10-dimensional user component and 10-dimensional item component (so $L = 10$): $\zeta_{ui}^{(1)} = \gamma_{u, 1}^\top \beta_{i, 1}$, with $\gamma_{u, 1}, \beta_{i, 1} \in \mathbb{R}^{10}$ (similarly, $\zeta_{ui}^{(2)} = \gamma_{u, 2}^\top \beta_{i, 2}$). In this example, we need to set `coef_dim_dict[gamma_user] = coef_dim_dict[beta_item] = 30`.
+
+**Note**: since we need to compute the inner product between $\gamma$'s and $\beta$'s, the `coef_dim_dict[gamma_user]` and `coef_dim_dict[beta_item]` need to be the same.
+
+**Upcoming Updates**: sounds like a lot of work? we are currently developing helper function to infer all these information from the `ChoiceDataset`, but we will still provide researchers with the full control over the configuration.
 
 ### Specifying Variance of Coefficient Prior Distributions with `prior_variance`
 The `prior_variance` term can be either a scalar or a dictionary with the same keys of `coef_dim_dict`, which provides the variance of prior distribution for each learnable coefficients.
