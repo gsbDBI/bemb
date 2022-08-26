@@ -663,10 +663,13 @@ P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i' \in I_c} e^{\mathcal{U}(u, i
 \]</div>
 <p>where <span class="arithmatex">\(I_c\)</span> is the set of items in the same category of item <span class="arithmatex">\(i\)</span>.
 If there is no category information, the model considers all items to be in the same category, i.e., <span class="arithmatex">\(I_c = \{1, 2, \dots I\}\)</span>.</p>
-<p>The BEMB admits a <strong>linear additive form</strong> of utility formula.</p>
+<p>The BEMB admits a <strong>linear additive form</strong> of utility formula.
+This is a very flexible formulation because
+1. you can always build sophisticated observables, for instance by taking the log or a polynomial transformation of original observables and
+2. you can impose that the learnable coefficients depend on item <span class="arithmatex">\(i\)</span>, user <span class="arithmatex">\(u\)</span>, session <span class="arithmatex">\(s\)</span> or the combination of item and session.</p>
 <p>For example, the model parses utility formula string <code>lambda_item + theta_user * alpha_item + zeta_user * item_obs</code> into the following representation:</p>
 <div class="arithmatex">\[
-\mathcal{U}(u, i, s)= \lambda_i + \theta_u^\top \alpha_i + \zeta_u^\top X^{item}_i + \varepsilon \in \mathbb{R}
+\mathcal{U}(u, i, s)= \lambda_i + \theta_u^\top \alpha_i + \zeta_u^\top X^{item}_i + \varepsilon_{uis} \in \mathbb{R}
 \]</div>
 <p>The <code>utility_formula</code> consists of two classes of objects:
 1. <strong>learnable coefficients</strong> (i.e., Greek letters): the string-parser identifies learnable coefficients by looking at their suffix. These variables can be (1) constant across all items and users, (2) user-specific, or (3) item-specific. For example, the <span class="arithmatex">\(\lambda_i\)</span> term above is item-specific intercept and it is presented as <code>item_item</code> in the <code>utility_formula</code>. To ensure the string-parsing is working properly, learnable coefficients <strong>must</strong> ends with one of <code>{_item, _user, _constant}</code>.
@@ -695,12 +698,39 @@ However, <code>num_users</code> and <code>num_sessions</code> are required only 
 1. For standalone coefficients like <code>lambda_item</code>, <code>coef_dim_dict['lambda_item']</code> = 1 always.
 2. For matrix factorization coefficients like <code>theta_user</code> and <code>alpha_item</code>, <code>coef_dim_dict['theta_user'] = coef_dim_dict[alpha_item] = L</code>, where <code>L</code> is the desired latent dimension. For the inner product between <span class="arithmatex">\(\alpha_i\)</span> and <span class="arithmatex">\(\theta_u\)</span> to work properly, <code>coef_dim_dict['theta_user'] == coef_dim_dict['alpha_item']</code>.
 3. For terms like <span class="arithmatex">\(\zeta_u^\top X^{item}_i\)</span>, <code>coef_dim_dict['zeta_user']</code> needs to be the dimension of <span class="arithmatex">\(X^{item}_i\)</span>.
-4. For matrix factorization coefficients, the dimension needs to be the latent dimension multiplied by the number of observables. For example, if you have a 3-dimensional feature <span class="arithmatex">\(X = (x_1, x_2, x_3)\)</span>, the utility is <span class="arithmatex">\(\mathcal{U}(u, i, s) = \zeta_{u, i}^\top X\)</span>, and <span class="arithmatex">\(\zeta_{u, i}\)</span> needs to be factorized into two an user-specific and item-specific part (both in <span class="arithmatex">\(\mathbb{R}^L\)</span>) as below</p>
+4. For the most complicated matrix factorization coefficients, the dimension needs to be the latent dimension multiplied by the number of observables. For example, if you have a <span class="arithmatex">\(K\)</span>-dimensional feature vector <span class="arithmatex">\(\textbf{x} \in \mathbb{R}^K\)</span>, and the utility contains an additive component <span class="arithmatex">\(\zeta_{u, i}^\top \textbf{x} \in \mathbb{R}\)</span>. The coefficient <span class="arithmatex">\(\zeta_{u, i} \in \mathbb{R}^K\)</span> comes from of the user-specific and item-specific parts so that the coefficient depends on both the user and the item. Let's use superscript <span class="arithmatex">\((k)\)</span> to denote the <span class="arithmatex">\(k^{th}\)</span> component of a vector, the coefficient <span class="arithmatex">\(\zeta_{ui}\)</span> is defined as</p>
 <div class="arithmatex">\[
-\mathcal{U}(u, i, s) = \sum_{k=1}^3 (\gamma_u^{k\top} \beta_i^k) x_k
+\zeta_{ui} = \begin{pmatrix} \gamma_{u, 1}^\top \beta_{i, 1} \\ \gamma_{u,2}^\top \beta_{i, 2} \\ \vdots \\ \gamma_{u, K}^\top \beta_{i, K} \end{pmatrix} \in \mathbb{R}^K
 \]</div>
-<p>then <code>coef_dim_dict[gamma_user] = coef_dim_dict[beta_item] = 3 * L</code>.</p>
-<p><strong>TODO</strong>: sounds like a lot of work? we are currently developing helper function to infer all these information from the <code>ChoiceDataset</code>, but we will still provide researchers with the full control over the configuration.</p>
+<p>where each <span class="arithmatex">\(\gamma_{u, k}, \beta_{i, k}\)</span> is a <span class="arithmatex">\(L\)</span>-dimensional vector, the dimension <span class="arithmatex">\(L\)</span> is called the <strong>latent dimension</strong>.</p>
+<p>The decomposition works as the following:</p>
+<div class="arithmatex">\[
+\zeta_{u, i}^\top \textbf{x} = \sum_{k=1}^{K} \zeta_{u, i}^{(k)} \textbf{x}^{(k)}
+= \sum_{k=1}^{K} (\gamma_{u, k}^\top \beta_{i, k}) \textbf{x}^{(k)}
+\]</div>
+<p>Equivalently and more succinctly, if we define matrices by concatenating the vectors,</p>
+<div class="arithmatex">\[
+\gamma_u =
+\begin{pmatrix}
+-\gamma_{u, 1}-  \\
+-\gamma_{u, 2}-  \\
+\vdots \\
+-\gamma_{u, K}-  \\
+\end{pmatrix}
+,\quad
+\beta_i =
+\begin{pmatrix}
+-\beta_{i, 1}-\\
+-\beta_{i, 2}-\\
+\vdots \\
+-\beta_{i, K}-\\
+\end{pmatrix}
+\]</div>
+<p>both <span class="arithmatex">\(\gamma_u, \beta_i \in \mathbb{R}^{K, L}\)</span>, it's immediate that for each user <span class="arithmatex">\(u\)</span> or item <span class="arithmatex">\(i\)</span>, we have <span class="arithmatex">\(K \times L\)</span> learnable parameters/coefficients. Therefore, the <code>coef_dim_dict[gamma_user] = coef_dim_dict[beta_item] = K * L</code>.</p>
+<p>For example, suppose we have a two dimensional observable <span class="arithmatex">\(\textbf{x} = (x_1, x_2)\)</span> (so <span class="arithmatex">\(K = 2\)</span>), and we wish to include a term <span class="arithmatex">\(\zeta_{ui}^\top \textbf{x}\)</span> in the utility formula: <span class="arithmatex">\(\zeta_{ui}^{(1)} \times x_1 + \zeta_{ui}^{(2)} \times x_2\)</span>.</p>
+<p>Further, we want to decompose each of <span class="arithmatex">\(\zeta_{ui}^{(1)} \in \mathbb{R}\)</span> and <span class="arithmatex">\(\zeta_{ui}^{(2)} \in \mathbb{R}\)</span> into a 10-dimensional user component and 10-dimensional item component (so <span class="arithmatex">\(L = 10\)</span>): <span class="arithmatex">\(\zeta_{ui}^{(1)} = \gamma_{u, 1}^\top \beta_{i, 1}\)</span>, with <span class="arithmatex">\(\gamma_{u, 1}, \beta_{i, 1} \in \mathbb{R}^{10}\)</span> (similarly, <span class="arithmatex">\(\zeta_{ui}^{(2)} = \gamma_{u, 2}^\top \beta_{i, 2}\)</span>). In this example, we need to set <code>coef_dim_dict[gamma_user] = coef_dim_dict[beta_item] = 30</code>.</p>
+<p><strong>Note</strong>: since we need to compute the inner product between <span class="arithmatex">\(\gamma\)</span>'s and <span class="arithmatex">\(\beta\)</span>'s, the <code>coef_dim_dict[gamma_user]</code> and <code>coef_dim_dict[beta_item]</code> need to be the same.</p>
+<p><strong>Upcoming Updates</strong>: sounds like a lot of work? we are currently developing helper function to infer all these information from the <code>ChoiceDataset</code>, but we will still provide researchers with the full control over the configuration.</p>
 <h3 id="specifying-variance-of-coefficient-prior-distributions-with-prior_variance">Specifying Variance of Coefficient Prior Distributions with <code>prior_variance</code></h3>
 <p>The <code>prior_variance</code> term can be either a scalar or a dictionary with the same keys of <code>coef_dim_dict</code>, which provides the variance of prior distribution for each learnable coefficients.
 If a float is provided, all priors will be Gaussian distribution with diagonal covariance matrix with <code>prior_variance</code> along the diagonal.
