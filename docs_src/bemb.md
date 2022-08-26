@@ -142,40 +142,59 @@ Further, we want to decompose each of $\zeta_{ui}^{(1)} \in \mathbb{R}$ and $\ze
 
 **Upcoming Updates**: sounds like a lot of work? we are currently developing helper function to infer all these information from the `ChoiceDataset`, but we will still provide researchers with the full control over the configuration.
 
-### Specifying Variance of Coefficient Prior Distributions with `prior_variance`
+### Variance of Prior Distributions: Specifying Variance of Coefficient Prior Distributions with `prior_variance`
+The `bemb` package allows for specifying the variance of prior distributions for learnable parameters.
+
 The `prior_variance` term can be either a scalar or a dictionary with the same keys of `coef_dim_dict`, which provides the variance of prior distribution for each learnable coefficients.
 If a float is provided, all priors will be Gaussian distribution with diagonal covariance matrix with `prior_variance` along the diagonal.
 If a dictionary is provided, keys of `prior_variance` should be coefficient names, and the prior of each `coef_name` would be a Gaussian with diagonal covariance matrix with `prior_variance[coef_name]` along the diagonal.
 This value is default to be `1.0`, which means priors of all coefficients are standard Gaussian distributions.
 
-### Incorporating Observables to the Bayesian Prior with `obs2prior_dict`
-BEMB is a Bayesian factorization model trained by optimizing the evidence lower bound (ELBO). Each parameter (i.e., these with `_item, _user, _constant` suffix.) in the BEMB model carries a prior distribution, which is set to $\mathcal{N}(\mathbf{0}, \mathbf{I})$ by default. With `prior_variance` argument described above, one can specify different scales/variances for different learnable coefficients.
+### Expectations of Prior Distributions: Incorporating Observables to the Bayesian Prior with `obs2prior_dict`
+BEMB is a Bayesian factorization model trained by optimizing the evidence lower bound (ELBO). Each parameter (i.e., these with `_item, _user, _constant` suffix.) in the BEMB model carries a prior distribution, which is set to $\mathcal{N}(\mathbf{0}, Var)$.
+The variance of prior distribution is governed by the `prior_variance` term mentioned above.
 
 Beyond this baseline case, the hierarchical nature of BEMB allows the mean of the prior distribution to depend on observables as a (learnable) linear mapping. For example:
 
 $$
-\theta_{i} \overset{prior}{\sim} \mathcal{N}(HX^{item}_i, \mathbf{I})
+\theta_{i} \overset{prior}{\sim} \mathcal{N}(HX^{item}_i, Var)
 $$
 
 where the prior mean is a linear transformation of the item observable and $H: \mathbb{R}^{K_{item}} \to \mathbb{R}^L$.
 
+**Note**: the exact form of prior variance $Var$ depends on the `prior_variance` specified.
+
 To enable the observable-to-prior feature, one needs to set `obs2prior_dict['theta_item']=True`.
 In order to leverage obs-to-prior for item-specific coefficients like `theta_item`, the researchers need to include `item_obs` tensor to the `ChoiceDataset`, *the attribute name needs to be exactly `item_obs`, just with `item_` prefix is **not** sufficient.* Similarly, `user_obs` are required if obs-to-prior is turned on for **any** of user-specific coefficients.
 
+Please see the [dedicated `obs2prior` tutorial](https://gsbdbi.github.io/bemb/bemb_obs2prior_simulation/) for more details.
+
+#### Advanced Usage: Zeroing Out Entries of $H$ Matrix
+In certain cases, one wishes to enforce sparsity of the $H$ matrix, which is possible by setting the `H_zero_mask_dict`.
+For example, this feature is particularly useful in cases when the researcher want the first coordinate of latent prior to be independent from certain observables, which can be achieved by setting corresponding entries in $H$ to be zero.
+
+The `H_zero_mask_dict` is a dictionary with the same keys of `coef_dim_dict`, and the value of each key is a boolean matrix with the same shape of $H$ indicating whether the corresponding $H$ entry is zeroed out.
+
+Please refer to [this tutorial](https://github.com/gsbDBI/bemb/blob/main/tutorials/simulation_H_zero_mask/simulation_H_zero_mask.ipynb) for more details of this feature.
+
+**Summary**: the `prior_variance` term controls the variance of prior distribution and `obs2prior` term controls the expectation of prior distribution.
+
 ### Grouping Items into Categories with `category_to_item`
-In some cases the researcher wishes to provide additional guidance to the model by providing the category of the bought item in teach purchasing record.
-In this case, the probability of purchasing each $i$ will be normalized only across other items from the same category rather than all items.
-The `category_to_item` argument provides a dictionary with category id or name as keys, and `category_to_item[C]` contains the list of item ids belonging to category `C`.
-With `category_to_item` provided, for the probability of purchasing item $i$ by user $u$ in session, let $I_c$ denote the set of items belonging to the same category $i$, the probability of purchasing is
-
-$$
-P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i' \in I_c} e^{\mathcal{U}(u, i', s)}}
-$$
-
-If `category_to_item` is not provided (or `None` is provided), the probability of purchasing item $i$ by user $u$ in session $s$ is (note the difference in summation scope, this is computed as if all items are from the same category):
+By default, the probability of purchasing item $i$ by user $u$ in session $s$ is, where the summation in the denominator is over all items $i$:
 
 $$
 P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i'=1}^I e^{\mathcal{U}(u, i', s)}}
+$$
+
+In some cases, the researcher wishes to provide additional guidance to the model by providing the category of the bought item in teach purchasing record.
+In this case, the probability of purchasing each $i$ will be normalized only across other items from the same category rather than all items.
+
+The `category_to_item` argument provides a dictionary with category id or name as keys, and `category_to_item[C]` contains the list of item ids belonging to category `C`.
+
+With `category_to_item` provided, for the probability of purchasing item $i$ by user $u$ in session, let $I_c$ denote the set of items belonging to the same category $i$, the probability of purchasing is (note the difference in summation scope, it's over items in the same category as $i$ only):
+
+$$
+P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i' \in I_c} e^{\mathcal{U}(u, i', s)}}
 $$
 
 ### Last Step: Create the `LitBEMBFlex` wrapper
