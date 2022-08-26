@@ -372,29 +372,29 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#intercept-terms" class="md-nav__link">
-    Intercept Terms
+  <a href="#1-intercept-terms" class="md-nav__link">
+    1. Intercept Terms
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#matrix-factorization-terms" class="md-nav__link">
-    Matrix Factorization Terms
+  <a href="#2-matrix-factorization-terms" class="md-nav__link">
+    2. Matrix Factorization Terms
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#coefficient-and-observable-terms" class="md-nav__link">
-    Coefficient and Observable Terms
+  <a href="#3-coefficient-and-observable-terms" class="md-nav__link">
+    3. Coefficient and Observable Terms
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#factorized-coefficient-and-observable-terms" class="md-nav__link">
-    Factorized Coefficient and Observable Terms
+  <a href="#4-factorized-coefficient-and-observable-terms" class="md-nav__link">
+    4. Factorized Coefficient and Observable Terms
   </a>
   
 </li>
@@ -405,16 +405,29 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#specifying-variance-of-coefficient-prior-distributions-with-prior_variance" class="md-nav__link">
-    Specifying Variance of Coefficient Prior Distributions with prior_variance
+  <a href="#variance-of-prior-distributions-specifying-variance-of-coefficient-prior-distributions-with-prior_variance" class="md-nav__link">
+    Variance of Prior Distributions: Specifying Variance of Coefficient Prior Distributions with prior_variance
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#incorporating-observables-to-the-bayesian-prior-with-obs2prior_dict" class="md-nav__link">
-    Incorporating Observables to the Bayesian Prior with obs2prior_dict
+  <a href="#expectations-of-prior-distributions-incorporating-observables-to-the-bayesian-prior-with-obs2prior_dict" class="md-nav__link">
+    Expectations of Prior Distributions: Incorporating Observables to the Bayesian Prior with obs2prior_dict
   </a>
+  
+    <nav class="md-nav" aria-label="Expectations of Prior Distributions: Incorporating Observables to the Bayesian Prior with obs2prior_dict">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#advanced-usage-zeroing-out-entries-of-h-matrix" class="md-nav__link">
+    Advanced Usage: Zeroing Out Entries of \(H\) Matrix
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -605,29 +618,29 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#intercept-terms" class="md-nav__link">
-    Intercept Terms
+  <a href="#1-intercept-terms" class="md-nav__link">
+    1. Intercept Terms
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#matrix-factorization-terms" class="md-nav__link">
-    Matrix Factorization Terms
+  <a href="#2-matrix-factorization-terms" class="md-nav__link">
+    2. Matrix Factorization Terms
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#coefficient-and-observable-terms" class="md-nav__link">
-    Coefficient and Observable Terms
+  <a href="#3-coefficient-and-observable-terms" class="md-nav__link">
+    3. Coefficient and Observable Terms
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#factorized-coefficient-and-observable-terms" class="md-nav__link">
-    Factorized Coefficient and Observable Terms
+  <a href="#4-factorized-coefficient-and-observable-terms" class="md-nav__link">
+    4. Factorized Coefficient and Observable Terms
   </a>
   
 </li>
@@ -638,16 +651,29 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#specifying-variance-of-coefficient-prior-distributions-with-prior_variance" class="md-nav__link">
-    Specifying Variance of Coefficient Prior Distributions with prior_variance
+  <a href="#variance-of-prior-distributions-specifying-variance-of-coefficient-prior-distributions-with-prior_variance" class="md-nav__link">
+    Variance of Prior Distributions: Specifying Variance of Coefficient Prior Distributions with prior_variance
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#incorporating-observables-to-the-bayesian-prior-with-obs2prior_dict" class="md-nav__link">
-    Incorporating Observables to the Bayesian Prior with obs2prior_dict
+  <a href="#expectations-of-prior-distributions-incorporating-observables-to-the-bayesian-prior-with-obs2prior_dict" class="md-nav__link">
+    Expectations of Prior Distributions: Incorporating Observables to the Bayesian Prior with obs2prior_dict
   </a>
+  
+    <nav class="md-nav" aria-label="Expectations of Prior Distributions: Incorporating Observables to the Bayesian Prior with obs2prior_dict">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#advanced-usage-zeroing-out-entries-of-h-matrix" class="md-nav__link">
+    Advanced Usage: Zeroing Out Entries of \(H\) Matrix
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -763,13 +789,13 @@ For every model, the <code>num_items</code> is <strong>required</strong>.
 However, <code>num_users</code> and <code>num_sessions</code> are required only if there is any user/session-specific observables or parameters involved in the <code>utility_formula</code>.</p>
 <h3 id="specifying-the-dimensions-of-coefficients-with-the-coef_dim_dict-dictionary">Specifying the Dimensions of Coefficients with the <code>coef_dim_dict</code> dictionary</h3>
 <p>To correctly initialize the model, the constructor needs to know the shape of each learnable coefficients (i.e., Greek letters above). For item/user-specific parameters, the value of <code>coef_dim_dict</code> is the number of parameters for <strong>each</strong> user/item, not the total number of parameters.</p>
-<h4 id="intercept-terms">Intercept Terms</h4>
+<h4 id="1-intercept-terms">1. Intercept Terms</h4>
 <p>For standalone coefficients like <code>lambda_item</code>, <code>coef_dim_dict['lambda_item']</code> = 1 always.</p>
-<h4 id="matrix-factorization-terms">Matrix Factorization Terms</h4>
+<h4 id="2-matrix-factorization-terms">2. Matrix Factorization Terms</h4>
 <p>For matrix factorization coefficients like <code>theta_user</code> and <code>alpha_item</code>, <code>coef_dim_dict['theta_user'] = coef_dim_dict[alpha_item] = L</code>, where <code>L</code> is the desired latent dimension. For the inner product between <span class="arithmatex">\(\alpha_i\)</span> and <span class="arithmatex">\(\theta_u\)</span> to work properly, <code>coef_dim_dict['theta_user'] == coef_dim_dict['alpha_item']</code>.</p>
-<h4 id="coefficient-and-observable-terms">Coefficient and Observable Terms</h4>
+<h4 id="3-coefficient-and-observable-terms">3. Coefficient and Observable Terms</h4>
 <p>For terms like <span class="arithmatex">\(\zeta_u^\top X^{item}_i\)</span>, <code>coef_dim_dict['zeta_user']</code> needs to be the dimension of <span class="arithmatex">\(X^{item}_i\)</span>.</p>
-<h4 id="factorized-coefficient-and-observable-terms">Factorized Coefficient and Observable Terms</h4>
+<h4 id="4-factorized-coefficient-and-observable-terms">4. Factorized Coefficient and Observable Terms</h4>
 <p>For the most complicated matrix factorization coefficients, the dimension needs to be the latent dimension multiplied by the number of observables. For example, if you have a <span class="arithmatex">\(K\)</span>-dimensional feature vector <span class="arithmatex">\(\textbf{x} \in \mathbb{R}^K\)</span>, and the utility contains an additive component <span class="arithmatex">\(\zeta_{u, i}^\top \textbf{x} \in \mathbb{R}\)</span>. The coefficient <span class="arithmatex">\(\zeta_{u, i} \in \mathbb{R}^K\)</span> comes from of the user-specific and item-specific parts so that the coefficient depends on both the user and the item.
 The coefficient <span class="arithmatex">\(\zeta_{ui}\)</span> is defined as</p>
 <div class="arithmatex">\[
@@ -804,31 +830,41 @@ The coefficient <span class="arithmatex">\(\zeta_{ui}\)</span> is defined as</p>
 <p>Further, we want to decompose each of <span class="arithmatex">\(\zeta_{ui}^{(1)} \in \mathbb{R}\)</span> and <span class="arithmatex">\(\zeta_{ui}^{(2)} \in \mathbb{R}\)</span> into a 10-dimensional user component and 10-dimensional item component (so <span class="arithmatex">\(L = 10\)</span>): <span class="arithmatex">\(\zeta_{ui}^{(1)} = \gamma_{u, 1}^\top \beta_{i, 1}\)</span>, with <span class="arithmatex">\(\gamma_{u, 1}, \beta_{i, 1} \in \mathbb{R}^{10}\)</span> (similarly, <span class="arithmatex">\(\zeta_{ui}^{(2)} = \gamma_{u, 2}^\top \beta_{i, 2}\)</span>). In this example, we need to set <code>coef_dim_dict[gamma_user] = coef_dim_dict[beta_item] = 30</code>.</p>
 <p><strong>Note</strong>: since we need to compute the inner product between <span class="arithmatex">\(\gamma\)</span>'s and <span class="arithmatex">\(\beta\)</span>'s, the <code>coef_dim_dict[gamma_user]</code> and <code>coef_dim_dict[beta_item]</code> need to be the same.</p>
 <p><strong>Upcoming Updates</strong>: sounds like a lot of work? we are currently developing helper function to infer all these information from the <code>ChoiceDataset</code>, but we will still provide researchers with the full control over the configuration.</p>
-<h3 id="specifying-variance-of-coefficient-prior-distributions-with-prior_variance">Specifying Variance of Coefficient Prior Distributions with <code>prior_variance</code></h3>
+<h3 id="variance-of-prior-distributions-specifying-variance-of-coefficient-prior-distributions-with-prior_variance">Variance of Prior Distributions: Specifying Variance of Coefficient Prior Distributions with <code>prior_variance</code></h3>
+<p>The <code>bemb</code> package allows for specifying the variance of prior distributions for learnable parameters.</p>
 <p>The <code>prior_variance</code> term can be either a scalar or a dictionary with the same keys of <code>coef_dim_dict</code>, which provides the variance of prior distribution for each learnable coefficients.
 If a float is provided, all priors will be Gaussian distribution with diagonal covariance matrix with <code>prior_variance</code> along the diagonal.
 If a dictionary is provided, keys of <code>prior_variance</code> should be coefficient names, and the prior of each <code>coef_name</code> would be a Gaussian with diagonal covariance matrix with <code>prior_variance[coef_name]</code> along the diagonal.
 This value is default to be <code>1.0</code>, which means priors of all coefficients are standard Gaussian distributions.</p>
-<h3 id="incorporating-observables-to-the-bayesian-prior-with-obs2prior_dict">Incorporating Observables to the Bayesian Prior with <code>obs2prior_dict</code></h3>
-<p>BEMB is a Bayesian factorization model trained by optimizing the evidence lower bound (ELBO). Each parameter (i.e., these with <code>_item, _user, _constant</code> suffix.) in the BEMB model carries a prior distribution, which is set to <span class="arithmatex">\(\mathcal{N}(\mathbf{0}, \mathbf{I})\)</span> by default. With <code>prior_variance</code> argument described above, one can specify different scales/variances for different learnable coefficients.</p>
+<h3 id="expectations-of-prior-distributions-incorporating-observables-to-the-bayesian-prior-with-obs2prior_dict">Expectations of Prior Distributions: Incorporating Observables to the Bayesian Prior with <code>obs2prior_dict</code></h3>
+<p>BEMB is a Bayesian factorization model trained by optimizing the evidence lower bound (ELBO). Each parameter (i.e., these with <code>_item, _user, _constant</code> suffix.) in the BEMB model carries a prior distribution, which is set to <span class="arithmatex">\(\mathcal{N}(\mathbf{0}, Var)\)</span>.
+The variance of prior distribution is governed by the <code>prior_variance</code> term mentioned above.</p>
 <p>Beyond this baseline case, the hierarchical nature of BEMB allows the mean of the prior distribution to depend on observables as a (learnable) linear mapping. For example:</p>
 <div class="arithmatex">\[
-\theta_{i} \overset{prior}{\sim} \mathcal{N}(HX^{item}_i, \mathbf{I})
+\theta_{i} \overset{prior}{\sim} \mathcal{N}(HX^{item}_i, Var)
 \]</div>
 <p>where the prior mean is a linear transformation of the item observable and <span class="arithmatex">\(H: \mathbb{R}^{K_{item}} \to \mathbb{R}^L\)</span>.</p>
+<p><strong>Note</strong>: the exact form of prior variance <span class="arithmatex">\(Var\)</span> depends on the <code>prior_variance</code> specified.</p>
 <p>To enable the observable-to-prior feature, one needs to set <code>obs2prior_dict['theta_item']=True</code>.
 In order to leverage obs-to-prior for item-specific coefficients like <code>theta_item</code>, the researchers need to include <code>item_obs</code> tensor to the <code>ChoiceDataset</code>, <em>the attribute name needs to be exactly <code>item_obs</code>, just with <code>item_</code> prefix is </em><em>not</em><em> sufficient.</em> Similarly, <code>user_obs</code> are required if obs-to-prior is turned on for <strong>any</strong> of user-specific coefficients.</p>
+<p>Please see the <a href="https://gsbdbi.github.io/bemb/bemb_obs2prior_simulation/">dedicated <code>obs2prior</code> tutorial</a> for more details.</p>
+<h4 id="advanced-usage-zeroing-out-entries-of-h-matrix">Advanced Usage: Zeroing Out Entries of <span class="arithmatex">\(H\)</span> Matrix</h4>
+<p>In certain cases, one wishes to enforce sparsity of the <span class="arithmatex">\(H\)</span> matrix, which is possible by setting the <code>H_zero_mask_dict</code>.
+For example, this feature is particularly useful in cases when the researcher want the first coordinate of latent prior to be independent from certain observables, which can be achieved by setting corresponding entries in <span class="arithmatex">\(H\)</span> to be zero.</p>
+<p>The <code>H_zero_mask_dict</code> is a dictionary with the same keys of <code>coef_dim_dict</code>, and the value of each key is a boolean matrix with the same shape of <span class="arithmatex">\(H\)</span> indicating whether the corresponding <span class="arithmatex">\(H\)</span> entry is zeroed out.</p>
+<p>Please refer to <a href="https://github.com/gsbDBI/bemb/blob/main/tutorials/simulation_H_zero_mask/simulation_H_zero_mask.ipynb">this tutorial</a> for more details of this feature.</p>
+<p><strong>Summary</strong>: the <code>prior_variance</code> term controls the variance of prior distribution and <code>obs2prior</code> term controls the expectation of prior distribution.</p>
 <h3 id="grouping-items-into-categories-with-category_to_item">Grouping Items into Categories with <code>category_to_item</code></h3>
-<p>In some cases the researcher wishes to provide additional guidance to the model by providing the category of the bought item in teach purchasing record.
-In this case, the probability of purchasing each <span class="arithmatex">\(i\)</span> will be normalized only across other items from the same category rather than all items.
-The <code>category_to_item</code> argument provides a dictionary with category id or name as keys, and <code>category_to_item[C]</code> contains the list of item ids belonging to category <code>C</code>.
-With <code>category_to_item</code> provided, for the probability of purchasing item <span class="arithmatex">\(i\)</span> by user <span class="arithmatex">\(u\)</span> in session, let <span class="arithmatex">\(I_c\)</span> denote the set of items belonging to the same category <span class="arithmatex">\(i\)</span>, the probability of purchasing is</p>
-<div class="arithmatex">\[
-P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i' \in I_c} e^{\mathcal{U}(u, i', s)}}
-\]</div>
-<p>If <code>category_to_item</code> is not provided (or <code>None</code> is provided), the probability of purchasing item <span class="arithmatex">\(i\)</span> by user <span class="arithmatex">\(u\)</span> in session <span class="arithmatex">\(s\)</span> is (note the difference in summation scope, this is computed as if all items are from the same category):</p>
+<p>By default, the probability of purchasing item <span class="arithmatex">\(i\)</span> by user <span class="arithmatex">\(u\)</span> in session <span class="arithmatex">\(s\)</span> is, where the summation in the denominator is over all items <span class="arithmatex">\(i\)</span>:</p>
 <div class="arithmatex">\[
 P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i'=1}^I e^{\mathcal{U}(u, i', s)}}
+\]</div>
+<p>In some cases, the researcher wishes to provide additional guidance to the model by providing the category of the bought item in teach purchasing record.
+In this case, the probability of purchasing each <span class="arithmatex">\(i\)</span> will be normalized only across other items from the same category rather than all items.</p>
+<p>The <code>category_to_item</code> argument provides a dictionary with category id or name as keys, and <code>category_to_item[C]</code> contains the list of item ids belonging to category <code>C</code>.</p>
+<p>With <code>category_to_item</code> provided, for the probability of purchasing item <span class="arithmatex">\(i\)</span> by user <span class="arithmatex">\(u\)</span> in session, let <span class="arithmatex">\(I_c\)</span> denote the set of items belonging to the same category <span class="arithmatex">\(i\)</span>, the probability of purchasing is (note the difference in summation scope, it's over items in the same category as <span class="arithmatex">\(i\)</span> only):</p>
+<div class="arithmatex">\[
+P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i' \in I_c} e^{\mathcal{U}(u, i', s)}}
 \]</div>
 <h3 id="last-step-create-the-litbembflex-wrapper">Last Step: Create the <code>LitBEMBFlex</code> wrapper</h3>
 <p>The last step is to create the <code>LitBEMBFlex</code> object which contains all information we gathered above. You will also need to provide a <code>learning_rate</code> for the the optimizer and a <code>num_seeds</code> for the Monte-Carlo estimator of gradient in ELBO.
