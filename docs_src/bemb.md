@@ -96,19 +96,20 @@ For matrix factorization coefficients like `theta_user` and `alpha_item`, `coef_
 For terms like $\zeta_u^\top X^{item}_i$, `coef_dim_dict['zeta_user']` needs to be the dimension of $X^{item}_i$.
 
 #### Factorized Coefficient and Observable Terms
-For the most complicated matrix factorization coefficients, the dimension needs to be the latent dimension multiplied by the number of observables. For example, if you have a $K$-dimensional feature vector $\textbf{x} \in \mathbb{R}^K$, and the utility contains an additive component $\zeta_{u, i}^\top \textbf{x} \in \mathbb{R}$. The coefficient $\zeta_{u, i} \in \mathbb{R}^K$ comes from of the user-specific and item-specific parts so that the coefficient depends on both the user and the item. Let's use superscript $(k)$ to denote the $k^{th}$ component of a vector, the coefficient $\zeta_{ui}$ is defined as
+For the most complicated matrix factorization coefficients, the dimension needs to be the latent dimension multiplied by the number of observables. For example, if you have a $K$-dimensional feature vector $\textbf{x} \in \mathbb{R}^K$, and the utility contains an additive component $\zeta_{u, i}^\top \textbf{x} \in \mathbb{R}$. The coefficient $\zeta_{u, i} \in \mathbb{R}^K$ comes from of the user-specific and item-specific parts so that the coefficient depends on both the user and the item.
+The coefficient $\zeta_{ui}$ is defined as
 
 $$
 \zeta_{ui} = \begin{pmatrix} \gamma_{u, 1}^\top \beta_{i, 1} \\ \gamma_{u,2}^\top \beta_{i, 2} \\ \vdots \\ \gamma_{u, K}^\top \beta_{i, K} \end{pmatrix} \in \mathbb{R}^K
 $$
 
-where each $\gamma_{u, k}, \beta_{i, k}$ is a $L$-dimensional vector, the dimension $L$ is called the **latent dimension**.
+for each $k \in \{1, 2, \dots, K\}$, $\gamma_{u, k}, \beta_{i, k}$ is a $L$-dimensional vector, the dimension $L$ is called the **latent dimension**.
 
-The decomposition works as the following:
+Let's use superscript $(k)$ to denote the $k^{th}$ component of a vector, the decomposition works as the following:
 
 $$
-\zeta_{u, i}^\top \textbf{x} = \sum_{k=1}^{K} \zeta_{u, i}^{(k)} \textbf{x}^{(k)}
-= \sum_{k=1}^{K} (\gamma_{u, k}^\top \beta_{i, k}) \textbf{x}^{(k)}
+\zeta_{u, i}^\top \textbf{x} = \sum_{k=1}^{K} \underbrace{\zeta_{u, i}^{(k)}}_{\in \mathbb{R}} \underbrace{\textbf{x}^{(k)}}_{\in \mathbb{R}}
+= \sum_{k=1}^{K} \underbrace{(\gamma_{u, k}^\top \beta_{i, k})}_{\in \mathbb{R}} \underbrace{\textbf{x}^{(k)}}_{\in \mathbb{R}}
 $$
 
 Equivalently and more succinctly, if we define matrices by concatenating the vectors,
