@@ -132,7 +132,7 @@ $$
 \end{pmatrix}
 $$
 
-both $\gamma_u, \beta_i \in \mathbb{R}^{K, L}$, it's immediate that for each user $u$ or item $i$, we have $K \times L$ learnable parameters/coefficients. Therefore, the `coef_dim_dict[gamma_user] = coef_dim_dict[beta_item] = K * L`.
+both $\gamma_u, \beta_i \in \mathbb{R}^{K \times L}$, it's immediate that for each user $u$ or item $i$, we have $K \times L$ learnable parameters/coefficients. Therefore, the `coef_dim_dict[gamma_user] = coef_dim_dict[beta_item] = K * L`.
 
 For example, suppose we have a two dimensional observable $\textbf{x} = (x_1, x_2)$ (so $K = 2$), and we wish to include a term $\zeta_{ui}^\top \textbf{x}$ in the utility formula: $\zeta_{ui}^{(1)} \times x_1 + \zeta_{ui}^{(2)} \times x_2$.
 
