@@ -824,7 +824,7 @@ This section covers how to convert the utility representation in a choice proble
 <p>The core of specifying a BEMB model is to <strong>specify the utility function</strong> <span class="arithmatex">\(U(u,i,s)\)</span> for user <span class="arithmatex">\(u\)</span> to purchase item <span class="arithmatex">\(i\)</span> in session <span class="arithmatex">\(s\)</span>, the <code>bemb</code> package provides an easy-to-use string-parsing mechanism for researchers to provide their ideal utility representations.
 With the utility representation, the probability for consumer <span class="arithmatex">\(u\)</span> to purchase item <span class="arithmatex">\(i\)</span> in session <span class="arithmatex">\(s\)</span> is the following</p>
 <div class="arithmatex">\[
-P(i|u,s) = \frac{e^{U(u, i, s)}}{\sum_{i' \in I_c} e^{U}(u, i', s)}}
+P(i|u,s) = \frac{e^{U(u, i, s)}}{\sum_{i' \in I_c} e^{U(u, i', s)}}
 \]</div>
 <p>where <span class="arithmatex">\(I_c\)</span> is the set of items in the same category of item <span class="arithmatex">\(i\)</span>.
 If there is no category information, the model considers all items to be in the same category, i.e., <span class="arithmatex">\(I_c = \{1, 2, \dots I\}\)</span>.</p>
