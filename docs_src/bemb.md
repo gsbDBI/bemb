@@ -8,7 +8,47 @@ Through this tutorial, we use Greek letters (except for $\varepsilon$ as error t
 Bayesian EMBedding (BEMB) is a hierarchical Bayesian model for modelling consumer choices.
 The model can naturally extend to other use cases which can be formulated into the consumer choice framework.
 For example, in a job-transition modelling study, we formulated the starting job as the user and ending job as the item and applied the BEMB framework.
-Suppose we have a dataset of purchase records consisting of $U$ users, $I$ items, and $S$ sessions, at it's core (assume no $s$-level effect for now), the BEMB model aims to build user embeddings $\theta_u \in \mathbb{R}^{L}$ and item embeddings $\alpha_i \in \mathbb{R}^{L}$. The utility of user $u$ from purchasing item $i$ is $U_{ui} = \theta_u^\top \alpha_i$, and the model predicts the probability for user $u$ to purchase item $i$ as an increasing function of $U_{ui}$.
+
+## The BEMB Model
+This section offers some technical background of the BEMB model
+
+The BEMB model is a general Bayesian version of random utility models with independence of irrelevant alternatives.
+
+Suppose we have a dataset of purchase records from $U$ users, $I$ items, and $S$ sessions (the [introduction tutorial](https://gsbdbi.github.io/torch-choice/intro/) helps you could revise these terminologies).
+Further, the set items can be partitioned into $C$ **categories** indexed by $c \in \{1,2,\dots,C\}$. Let $I_c$ denote the collection of items in category $c$. It's easy to see that the union of all $I_c$ is the entire set of items $\{1, 2, \dots I\}$.
+
+The model assumes unit demand for each category, independent choices across categories.
+
+We aim to capture the utility of user $u$ from purchasing item $i$ in the context of session $s$, denoted as $\mathcal{U}_{uis}$.
+The utility can be decomposed into a deterministic utility $U_{uis}$ and an error term $\varepsilon_{uis}$ following the Gumbel distribution (logit):
+
+$$
+\mathcal{U}_{uis} = U_{uis} + \varepsilon_{uis}
+$$
+
+The `bemb` package allows researchers to specify various formulations of the deterministic term $U_{uis}$, for example:
+
+$$
+U_{uis} = \alpha + \beta^\top \gamma + \delta \times X + (\eta^\top \zeta) \times Z
+$$
+
+Our package allows for four kinds of additive terms in $U_{uis}$.
+In the example above, Greek letters denote the learnable coefficients of the model.
+Coefficients are versatile: they can be constant, user-specific, or item-specific. $X$ and $Z$ denote observables.
+
+The package allows for four types of additive term in $U_{uis}$:
+1. intercept terms like $\alpha$;
+2. interaction terms like $\beta^\top \gamma$;
+3. observable terms like $\delta \times X$;
+4. observable terms with interactive coefficient like $(\eta^\top \zeta) \times Z$.
+
+Finally, the model predicts the probability of user $u$ choosing item $i$ among items in the same category $I_c$ in the context of session $s$ as:
+
+$$
+P(i|u,s) = \frac{e^{U(u, i, s)}}{\sum_{i' \in I_c} e^{U(u, i', s)}}
+$$
+
+For example, at BEMB's core (assume no $s$-level effect for now), the BEMB model aims to build user embeddings $\theta_u \in \mathbb{R}^{L}$ and item embeddings $\alpha_i \in \mathbb{R}^{L}$. The utility of user $u$ from purchasing item $i$ is $U_{ui} = \theta_u^\top \alpha_i$, and the model predicts the probability for user $u$ to purchase item $i$ as an increasing function of $U_{ui}$.
 Our package support more general form of utility $U_{ui}$ than the inner product of two latent vectors.
 
 Both of $\theta_u$ and $\alpha_i$ are *Bayesian*, which means there is a prior distribution and a variational distribution associated with each of them.
@@ -33,11 +73,11 @@ To initialize the `LitBEMBFlex` class, the researcher needs to provide it with t
 **Note**: for the string parsing to work correctly, please **do** add spaces around `+` and `*`.
 This section covers how to convert the utility representation in a choice problem into the `utility_formula` argument of the `BEMBFlex` model and `LitBEMBFlex` wrapper.
 
-The core of specifying a BEMB model is to **specify the utility function** $\mathcal{U}(u,i,s)$ for user $u$ to purchase item $i$ in session $s$, the `bemb` package provides an easy-to-use string-parsing mechanism for researchers to provide their ideal utility representations.
+The core of specifying a BEMB model is to **specify the utility function** $U(u,i,s)$ for user $u$ to purchase item $i$ in session $s$, the `bemb` package provides an easy-to-use string-parsing mechanism for researchers to provide their ideal utility representations.
 With the utility representation, the probability for consumer $u$ to purchase item $i$ in session $s$ is the following
 
 $$
-P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i' \in I_c} e^{\mathcal{U}(u, i', s)}}
+P(i|u,s) = \frac{e^{U(u, i, s)}}{\sum_{i' \in I_c} e^{U}(u, i', s)}}
 $$
 
 where $I_c$ is the set of items in the same category of item $i$.
@@ -51,7 +91,7 @@ This is a very flexible formulation because
 For example, the model parses utility formula string `lambda_item + theta_user * alpha_item + zeta_user * item_obs` into the following representation:
 
 $$
-\mathcal{U}(u, i, s)= \lambda_i + \theta_u^\top \alpha_i + \zeta_u^\top X^{item}_i + \varepsilon_{uis} \in \mathbb{R}
+U(u, i, s)= \lambda_i + \theta_u^\top \alpha_i + \zeta_u^\top X^{item}_i + \varepsilon_{uis} \in \mathbb{R}
 $$
 
 The `utility_formula` consists of two classes of objects:
@@ -65,12 +105,12 @@ Overall, there are four types of additive component, except the error term $\eps
 1. Standalone coefficients $\lambda, \lambda_i, \lambda_u \in \mathbb{R}$ representing intercepts and item/user level fixed effects.
 2. “Matrix factorization” coefficients $\theta_u^\top \alpha_i$, where $\theta_u,\alpha_i \in \mathbb{R}^L$ are embedding/latent of users and items, $L$ is the latent dimension specified by the researcher.
 3. Observable terms $\zeta_u^\top X^{item}_i$, where each $\zeta_u \in \mathbb{R}^{K_{item}}$ is the user specific coefficients for item observables. This type of component is written as `zeta_user * item_obs` in the utility formula. For sure, one can use coefficients constant among users by simply putting `zeta_constant` in the utility formula.
-4.  “Matrix factorization” coefficients of observables written as `gamma_user * beta_item * price_obs`.  This type of component factorizes the coefficient of observables into user and item latents. For example, suppose there are $K_{price}$ price observables (i.e., observables varying by both item and session, price is one of them!), for each of price observable $X^{price}_{is}[k] \in \mathbb{R}$, a pair of latent $\gamma_u^k, \beta_i^k \in \mathbb{R}^L$ is trained to construct the coefficient of the $k^{th}$ price observable, where $L$ is the latent dimension specified by the researcher. In this case, the utility is  $\mathcal{U}(u, i, s) = \sum_{k=1}^K (\gamma_u^{k\top} \beta_i^k) X^{price}_{is}[k]$. One can for sure replace the `price_obs` with any of `{user, item, session}_obs`.
+4.  “Matrix factorization” coefficients of observables written as `gamma_user * beta_item * price_obs`.  This type of component factorizes the coefficient of observables into user and item latents. For example, suppose there are $K_{price}$ price observables (i.e., observables varying by both item and session, price is one of them!), for each of price observable $X^{price}_{is}[k] \in \mathbb{R}$, a pair of latent $\gamma_u^k, \beta_i^k \in \mathbb{R}^L$ is trained to construct the coefficient of the $k^{th}$ price observable, where $L$ is the latent dimension specified by the researcher. In this case, the utility is  $U(u, i, s) = \sum_{k=1}^K (\gamma_u^{k\top} \beta_i^k) X^{price}_{is}[k]$. One can for sure replace the `price_obs` with any of `{user, item, session}_obs`.
 
 If the researcher wish to treat different part of item observable differently, for example,
 
 $$
-\mathcal{U}(u, i, s) = \dots + \zeta_u^\top Y^{item}_i + \omega^\top Z^{item}_i + \dots
+U(u, i, s) = \dots + \zeta_u^\top Y^{item}_i + \omega^\top Z^{item}_i + \dots
 $$
 
 where we partition item observables into two parts $X^{item}_i = [Y^{item}_i, Z^{item}_i]$, and the coefficient for $Y^{item}_i$ is user-specific but the coefficient for the second part is constant across all users.
@@ -183,7 +223,7 @@ Please refer to [this tutorial](https://github.com/gsbDBI/bemb/blob/main/tutoria
 By default, the probability of purchasing item $i$ by user $u$ in session $s$ is, where the summation in the denominator is over all items $i$:
 
 $$
-P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i'=1}^I e^{\mathcal{U}(u, i', s)}}
+P(i|u,s) = \frac{e^{U(u, i, s)}}{\sum_{i'=1}^I e^{U(u, i', s)}}
 $$
 
 In some cases, the researcher wishes to provide additional guidance to the model by providing the category of the bought item in teach purchasing record.
@@ -194,7 +234,7 @@ The `category_to_item` argument provides a dictionary with category id or name a
 With `category_to_item` provided, for the probability of purchasing item $i$ by user $u$ in session, let $I_c$ denote the set of items belonging to the same category $i$, the probability of purchasing is (note the difference in summation scope, it's over items in the same category as $i$ only):
 
 $$
-P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i' \in I_c} e^{\mathcal{U}(u, i', s)}}
+P(i|u,s) = \frac{e^{U(u, i, s)}}{\sum_{i' \in I_c} e^{U(u, i', s)}}
 $$
 
 ### Last Step: Create the `LitBEMBFlex` wrapper
