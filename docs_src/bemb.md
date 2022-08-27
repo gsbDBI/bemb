@@ -77,7 +77,7 @@ The core of specifying a BEMB model is to **specify the utility function** $U(u,
 With the utility representation, the probability for consumer $u$ to purchase item $i$ in session $s$ is the following
 
 $$
-P(i|u,s) = \frac{e^{U(u, i, s)}}{\sum_{i' \in I_c} e^{U}(u, i', s)}}
+P(i|u,s) = \frac{e^{U(u, i, s)}}{\sum_{i' \in I_c} e^{U(u, i', s)}}
 $$
 
 where $I_c$ is the set of items in the same category of item $i$.
