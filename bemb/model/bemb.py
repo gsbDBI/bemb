@@ -55,6 +55,9 @@ def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]
     coefficient_suffix = ('_item', '_user', '_constant', '_category')
     observable_prefix = ('item_', 'user_', 'session_', 'price_', 'taste_')
 
+    # Programmers can now specify itemsession for price observables, this enables easier understanding.
+    utility_string = utility_string.replace('itemsession_', 'price_')
+
     def is_coefficient(name: str) -> bool:
         return any(name.endswith(suffix) for suffix in coefficient_suffix)
 
@@ -340,6 +343,20 @@ class BEMBFlex(nn.Module):
         """
         if coef_name in self.coef_dict.keys():
             return self.coef_dict[coef_name].variational_mean
+        else:
+            raise KeyError(f'{coef_name} is not a valid coefficient name in {self.utility_formula}.')
+
+    def posterior_distribution(self, coef_name: str) -> torch.distributions.lowrank_multivariate_normal.LowRankMultivariateNormal:
+        """Returns the posterior distribution of coefficient `coef_name`.
+
+        Args:
+            coef_name (str): name of the coefficient to query.
+
+        Returns:
+            torch.Tensor: variance of the estimated posterior distribution of `coef_name`.
+        """
+        if coef_name in self.coef_dict.keys():
+            return self.coef_dict[coef_name].variational_distribution
         else:
             raise KeyError(f'{coef_name} is not a valid coefficient name in {self.utility_formula}.')
 
