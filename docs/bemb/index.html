@@ -250,6 +250,36 @@
   
     <li class="md-nav__item">
       <a href="https://gsbdbi.github.io/torch-choice/" class="md-nav__link">
+        Torch Choice Documentation
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://gsbdbi.github.io/torch-choice/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://gsbdbi.github.io/torch-choice/" class="md-nav__link">
         Documentation for Torch-Choice
       </a>
     </li>
@@ -326,6 +356,13 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-bemb-model" class="md-nav__link">
+    The BEMB Model
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#running-bemb" class="md-nav__link">
@@ -574,6 +611,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#the-bemb-model" class="md-nav__link">
+    The BEMB Model
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#running-bemb" class="md-nav__link">
     Running BEMB
   </a>
@@ -732,8 +776,35 @@
 Through this tutorial, we use Greek letters (except for <span class="arithmatex">\(\varepsilon\)</span> as error term) to denote learnable coefficients of the model. However, researchers are not restricted to use Greek letters in practice.</p>
 <p>Bayesian EMBedding (BEMB) is a hierarchical Bayesian model for modelling consumer choices.
 The model can naturally extend to other use cases which can be formulated into the consumer choice framework.
-For example, in a job-transition modelling study, we formulated the starting job as the user and ending job as the item and applied the BEMB framework.
-Suppose we have a dataset of purchase records consisting of <span class="arithmatex">\(U\)</span> users, <span class="arithmatex">\(I\)</span> items, and <span class="arithmatex">\(S\)</span> sessions, at it's core (assume no <span class="arithmatex">\(s\)</span>-level effect for now), the BEMB model aims to build user embeddings <span class="arithmatex">\(\theta_u \in \mathbb{R}^{L}\)</span> and item embeddings <span class="arithmatex">\(\alpha_i \in \mathbb{R}^{L}\)</span>. The utility of user <span class="arithmatex">\(u\)</span> from purchasing item <span class="arithmatex">\(i\)</span> is <span class="arithmatex">\(U_{ui} = \theta_u^\top \alpha_i\)</span>, and the model predicts the probability for user <span class="arithmatex">\(u\)</span> to purchase item <span class="arithmatex">\(i\)</span> as an increasing function of <span class="arithmatex">\(U_{ui}\)</span>.
+For example, in a job-transition modelling study, we formulated the starting job as the user and ending job as the item and applied the BEMB framework.</p>
+<h2 id="the-bemb-model">The BEMB Model</h2>
+<p>This section offers some technical background of the BEMB model</p>
+<p>The BEMB model is a general Bayesian version of random utility models with independence of irrelevant alternatives.</p>
+<p>Suppose we have a dataset of purchase records from <span class="arithmatex">\(U\)</span> users, <span class="arithmatex">\(I\)</span> items, and <span class="arithmatex">\(S\)</span> sessions (the <a href="https://gsbdbi.github.io/torch-choice/intro/">introduction tutorial</a> helps you could revise these terminologies).
+Further, the set items can be partitioned into <span class="arithmatex">\(C\)</span> <strong>categories</strong> indexed by <span class="arithmatex">\(c \in \{1,2,\dots,C\}\)</span>. Let <span class="arithmatex">\(I_c\)</span> denote the collection of items in category <span class="arithmatex">\(c\)</span>. It's easy to see that the union of all <span class="arithmatex">\(I_c\)</span> is the entire set of items <span class="arithmatex">\(\{1, 2, \dots I\}\)</span>.</p>
+<p>The model assumes unit demand for each category, independent choices across categories.</p>
+<p>We aim to capture the utility of user <span class="arithmatex">\(u\)</span> from purchasing item <span class="arithmatex">\(i\)</span> in the context of session <span class="arithmatex">\(s\)</span>, denoted as <span class="arithmatex">\(\mathcal{U}_{uis}\)</span>.
+The utility can be decomposed into a deterministic utility <span class="arithmatex">\(U_{uis}\)</span> and an error term <span class="arithmatex">\(\varepsilon_{uis}\)</span> following the Gumbel distribution (logit):</p>
+<div class="arithmatex">\[
+\mathcal{U}_{uis} = U_{uis} + \varepsilon_{uis}
+\]</div>
+<p>The <code>bemb</code> package allows researchers to specify various formulations of the deterministic term <span class="arithmatex">\(U_{uis}\)</span>, for example:</p>
+<div class="arithmatex">\[
+U_{uis} = \alpha + \beta^\top \gamma + \delta \times X + (\eta^\top \zeta) \times Z
+\]</div>
+<p>Our package allows for four kinds of additive terms in <span class="arithmatex">\(U_{uis}\)</span>.
+In the example above, Greek letters denote the learnable coefficients of the model.
+Coefficients are versatile: they can be constant, user-specific, or item-specific. <span class="arithmatex">\(X\)</span> and <span class="arithmatex">\(Z\)</span> denote observables.</p>
+<p>The package allows for four types of additive term in <span class="arithmatex">\(U_{uis}\)</span>:
+1. intercept terms like <span class="arithmatex">\(\alpha\)</span>;
+2. interaction terms like <span class="arithmatex">\(\beta^\top \gamma\)</span>;
+3. observable terms like <span class="arithmatex">\(\delta \times X\)</span>;
+4. observable terms with interactive coefficient like <span class="arithmatex">\((\eta^\top \zeta) \times Z\)</span>.</p>
+<p>Finally, the model predicts the probability of user <span class="arithmatex">\(u\)</span> choosing item <span class="arithmatex">\(i\)</span> among items in the same category <span class="arithmatex">\(I_c\)</span> in the context of session <span class="arithmatex">\(s\)</span> as:</p>
+<div class="arithmatex">\[
+P(i|u,s) = \frac{e^{U(u, i, s)}}{\sum_{i' \in I_c} e^{U(u, i', s)}}
+\]</div>
+<p>For example, at BEMB's core (assume no <span class="arithmatex">\(s\)</span>-level effect for now), the BEMB model aims to build user embeddings <span class="arithmatex">\(\theta_u \in \mathbb{R}^{L}\)</span> and item embeddings <span class="arithmatex">\(\alpha_i \in \mathbb{R}^{L}\)</span>. The utility of user <span class="arithmatex">\(u\)</span> from purchasing item <span class="arithmatex">\(i\)</span> is <span class="arithmatex">\(U_{ui} = \theta_u^\top \alpha_i\)</span>, and the model predicts the probability for user <span class="arithmatex">\(u\)</span> to purchase item <span class="arithmatex">\(i\)</span> as an increasing function of <span class="arithmatex">\(U_{ui}\)</span>.
 Our package support more general form of utility <span class="arithmatex">\(U_{ui}\)</span> than the inner product of two latent vectors.</p>
 <p>Both of <span class="arithmatex">\(\theta_u\)</span> and <span class="arithmatex">\(\alpha_i\)</span> are <em>Bayesian</em>, which means there is a prior distribution and a variational distribution associated with each of them.
 By default, the prior distribution of all entries of <span class="arithmatex">\(\theta_u\)</span> and <span class="arithmatex">\(\alpha_i\)</span> are i.i.d. standard Gaussian distributions.
@@ -750,10 +821,10 @@ For simplicity, we assume that item/user/session/price observables are named as 
 <h3 id="utility-formula-utility_formula">Utility Formula: <code>utility_formula</code></h3>
 <p><strong>Note</strong>: for the string parsing to work correctly, please <strong>do</strong> add spaces around <code>+</code> and <code>*</code>.
 This section covers how to convert the utility representation in a choice problem into the <code>utility_formula</code> argument of the <code>BEMBFlex</code> model and <code>LitBEMBFlex</code> wrapper.</p>
-<p>The core of specifying a BEMB model is to <strong>specify the utility function</strong> <span class="arithmatex">\(\mathcal{U}(u,i,s)\)</span> for user <span class="arithmatex">\(u\)</span> to purchase item <span class="arithmatex">\(i\)</span> in session <span class="arithmatex">\(s\)</span>, the <code>bemb</code> package provides an easy-to-use string-parsing mechanism for researchers to provide their ideal utility representations.
+<p>The core of specifying a BEMB model is to <strong>specify the utility function</strong> <span class="arithmatex">\(U(u,i,s)\)</span> for user <span class="arithmatex">\(u\)</span> to purchase item <span class="arithmatex">\(i\)</span> in session <span class="arithmatex">\(s\)</span>, the <code>bemb</code> package provides an easy-to-use string-parsing mechanism for researchers to provide their ideal utility representations.
 With the utility representation, the probability for consumer <span class="arithmatex">\(u\)</span> to purchase item <span class="arithmatex">\(i\)</span> in session <span class="arithmatex">\(s\)</span> is the following</p>
 <div class="arithmatex">\[
-P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i' \in I_c} e^{\mathcal{U}(u, i', s)}}
+P(i|u,s) = \frac{e^{U(u, i, s)}}{\sum_{i' \in I_c} e^{U}(u, i', s)}}
 \]</div>
 <p>where <span class="arithmatex">\(I_c\)</span> is the set of items in the same category of item <span class="arithmatex">\(i\)</span>.
 If there is no category information, the model considers all items to be in the same category, i.e., <span class="arithmatex">\(I_c = \{1, 2, \dots I\}\)</span>.</p>
@@ -763,7 +834,7 @@ This is a very flexible formulation because
 2. you can impose that the learnable coefficients depend on item <span class="arithmatex">\(i\)</span>, user <span class="arithmatex">\(u\)</span>, session <span class="arithmatex">\(s\)</span> or the combination of item and session.</p>
 <p>For example, the model parses utility formula string <code>lambda_item + theta_user * alpha_item + zeta_user * item_obs</code> into the following representation:</p>
 <div class="arithmatex">\[
-\mathcal{U}(u, i, s)= \lambda_i + \theta_u^\top \alpha_i + \zeta_u^\top X^{item}_i + \varepsilon_{uis} \in \mathbb{R}
+U(u, i, s)= \lambda_i + \theta_u^\top \alpha_i + \zeta_u^\top X^{item}_i + \varepsilon_{uis} \in \mathbb{R}
 \]</div>
 <p>The <code>utility_formula</code> consists of two classes of objects:
 1. <strong>learnable coefficients</strong> (i.e., Greek letters): the string-parser identifies learnable coefficients by looking at their suffix. These variables can be (1) constant across all items and users, (2) user-specific, or (3) item-specific. For example, the <span class="arithmatex">\(\lambda_i\)</span> term above is item-specific intercept and it is presented as <code>item_item</code> in the <code>utility_formula</code>. To ensure the string-parsing is working properly, learnable coefficients <strong>must</strong> ends with one of <code>{_item, _user, _constant}</code>.
@@ -774,11 +845,11 @@ This is a very flexible formulation because
 <li>Standalone coefficients <span class="arithmatex">\(\lambda, \lambda_i, \lambda_u \in \mathbb{R}\)</span> representing intercepts and item/user level fixed effects.</li>
 <li>“Matrix factorization” coefficients <span class="arithmatex">\(\theta_u^\top \alpha_i\)</span>, where <span class="arithmatex">\(\theta_u,\alpha_i \in \mathbb{R}^L\)</span> are embedding/latent of users and items, <span class="arithmatex">\(L\)</span> is the latent dimension specified by the researcher.</li>
 <li>Observable terms <span class="arithmatex">\(\zeta_u^\top X^{item}_i\)</span>, where each <span class="arithmatex">\(\zeta_u \in \mathbb{R}^{K_{item}}\)</span> is the user specific coefficients for item observables. This type of component is written as <code>zeta_user * item_obs</code> in the utility formula. For sure, one can use coefficients constant among users by simply putting <code>zeta_constant</code> in the utility formula.</li>
-<li>“Matrix factorization” coefficients of observables written as <code>gamma_user * beta_item * price_obs</code>.  This type of component factorizes the coefficient of observables into user and item latents. For example, suppose there are <span class="arithmatex">\(K_{price}\)</span> price observables (i.e., observables varying by both item and session, price is one of them!), for each of price observable <span class="arithmatex">\(X^{price}_{is}[k] \in \mathbb{R}\)</span>, a pair of latent <span class="arithmatex">\(\gamma_u^k, \beta_i^k \in \mathbb{R}^L\)</span> is trained to construct the coefficient of the <span class="arithmatex">\(k^{th}\)</span> price observable, where <span class="arithmatex">\(L\)</span> is the latent dimension specified by the researcher. In this case, the utility is  <span class="arithmatex">\(\mathcal{U}(u, i, s) = \sum_{k=1}^K (\gamma_u^{k\top} \beta_i^k) X^{price}_{is}[k]\)</span>. One can for sure replace the <code>price_obs</code> with any of <code>{user, item, session}_obs</code>.</li>
+<li>“Matrix factorization” coefficients of observables written as <code>gamma_user * beta_item * price_obs</code>.  This type of component factorizes the coefficient of observables into user and item latents. For example, suppose there are <span class="arithmatex">\(K_{price}\)</span> price observables (i.e., observables varying by both item and session, price is one of them!), for each of price observable <span class="arithmatex">\(X^{price}_{is}[k] \in \mathbb{R}\)</span>, a pair of latent <span class="arithmatex">\(\gamma_u^k, \beta_i^k \in \mathbb{R}^L\)</span> is trained to construct the coefficient of the <span class="arithmatex">\(k^{th}\)</span> price observable, where <span class="arithmatex">\(L\)</span> is the latent dimension specified by the researcher. In this case, the utility is  <span class="arithmatex">\(U(u, i, s) = \sum_{k=1}^K (\gamma_u^{k\top} \beta_i^k) X^{price}_{is}[k]\)</span>. One can for sure replace the <code>price_obs</code> with any of <code>{user, item, session}_obs</code>.</li>
 </ol>
 <p>If the researcher wish to treat different part of item observable differently, for example,</p>
 <div class="arithmatex">\[
-\mathcal{U}(u, i, s) = \dots + \zeta_u^\top Y^{item}_i + \omega^\top Z^{item}_i + \dots
+U(u, i, s) = \dots + \zeta_u^\top Y^{item}_i + \omega^\top Z^{item}_i + \dots
 \]</div>
 <p>where we partition item observables into two parts <span class="arithmatex">\(X^{item}_i = [Y^{item}_i, Z^{item}_i]\)</span>, and the coefficient for <span class="arithmatex">\(Y^{item}_i\)</span> is user-specific but the coefficient for the second part is constant across all users.
 In this case, the researcher should use separate tensors <code>item_obs_part1</code> and <code>item_obs_part2</code> while constructing the <code>ChoiceDataset</code> (both of them needs to start with <code>item_</code>), and use the <code>utility formula</code> with <code>zeta_user * item_obs_part1 + omega_constant * item_obs_part2</code>.</p>
@@ -857,14 +928,14 @@ For example, this feature is particularly useful in cases when the researcher wa
 <h3 id="grouping-items-into-categories-with-category_to_item">Grouping Items into Categories with <code>category_to_item</code></h3>
 <p>By default, the probability of purchasing item <span class="arithmatex">\(i\)</span> by user <span class="arithmatex">\(u\)</span> in session <span class="arithmatex">\(s\)</span> is, where the summation in the denominator is over all items <span class="arithmatex">\(i\)</span>:</p>
 <div class="arithmatex">\[
-P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i'=1}^I e^{\mathcal{U}(u, i', s)}}
+P(i|u,s) = \frac{e^{U(u, i, s)}}{\sum_{i'=1}^I e^{U(u, i', s)}}
 \]</div>
 <p>In some cases, the researcher wishes to provide additional guidance to the model by providing the category of the bought item in teach purchasing record.
 In this case, the probability of purchasing each <span class="arithmatex">\(i\)</span> will be normalized only across other items from the same category rather than all items.</p>
 <p>The <code>category_to_item</code> argument provides a dictionary with category id or name as keys, and <code>category_to_item[C]</code> contains the list of item ids belonging to category <code>C</code>.</p>
 <p>With <code>category_to_item</code> provided, for the probability of purchasing item <span class="arithmatex">\(i\)</span> by user <span class="arithmatex">\(u\)</span> in session, let <span class="arithmatex">\(I_c\)</span> denote the set of items belonging to the same category <span class="arithmatex">\(i\)</span>, the probability of purchasing is (note the difference in summation scope, it's over items in the same category as <span class="arithmatex">\(i\)</span> only):</p>
 <div class="arithmatex">\[
-P(i|u,s) = \frac{e^{\mathcal{U}(u, i, s)}}{\sum_{i' \in I_c} e^{\mathcal{U}(u, i', s)}}
+P(i|u,s) = \frac{e^{U(u, i, s)}}{\sum_{i' \in I_c} e^{U(u, i', s)}}
 \]</div>
 <h3 id="last-step-create-the-litbembflex-wrapper">Last Step: Create the <code>LitBEMBFlex</code> wrapper</h3>
 <p>The last step is to create the <code>LitBEMBFlex</code> object which contains all information we gathered above. You will also need to provide a <code>learning_rate</code> for the the optimizer and a <code>num_seeds</code> for the Monte-Carlo estimator of gradient in ELBO.
