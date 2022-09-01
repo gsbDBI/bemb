@@ -5,6 +5,7 @@ Author: Tianyu Du
 Update: Apr. 28, 2022
 """
 from pprint import pprint
+import warnings
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -293,6 +294,11 @@ class BEMBFlex(nn.Module):
                 variation = coef_name.split('_')[-1]
                 mean = self.prior_mean[coef_name] if isinstance(
                     self.prior_mean, dict) else self.default_prior_mean
+                if isinstance(self.prior_variance, dict):
+                    if coef_name not in self.prior_variance.keys():
+                        warnings.warn(f'You provided a dictionary of prior variance, but coefficient {coef_name} is not a key in it, assuming unit variance for coefficient {coef_name}.')
+                        self.prior_variance[coef_name] = 1.0
+
                 s2 = self.prior_variance[coef_name] if isinstance(
                     self.prior_variance, dict) else self.prior_variance
 
