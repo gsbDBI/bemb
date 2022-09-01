@@ -2,52 +2,52 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://example.com/</loc>
-         <lastmod>2022-08-27</lastmod>
+         <lastmod>2022-09-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://example.com/api_bemb/</loc>
-         <lastmod>2022-08-27</lastmod>
+         <lastmod>2022-09-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://example.com/bemb/</loc>
-         <lastmod>2022-08-27</lastmod>
+         <lastmod>2022-09-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://example.com/bemb_inference/</loc>
-         <lastmod>2022-08-27</lastmod>
+         <lastmod>2022-09-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://example.com/bemb_obs2prior_simulation/</loc>
-         <lastmod>2022-08-27</lastmod>
+         <lastmod>2022-09-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://example.com/education_data/</loc>
-         <lastmod>2022-08-27</lastmod>
+         <lastmod>2022-09-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://example.com/intro/</loc>
-         <lastmod>2022-08-27</lastmod>
+         <lastmod>2022-09-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://example.com/projects/</loc>
-         <lastmod>2022-08-27</lastmod>
+         <lastmod>2022-09-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://example.com/test/</loc>
-         <lastmod>2022-08-27</lastmod>
+         <lastmod>2022-09-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://example.com/tutorials/</loc>
-         <lastmod>2022-08-27</lastmod>
+         <lastmod>2022-09-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>

@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://example.com/bemb/">
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.1">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.2">
     
     
       
@@ -915,7 +915,7 @@ The variance of prior distribution is governed by the <code>prior_variance</code
 \theta_{i} \overset{prior}{\sim} \mathcal{N}(HX^{item}_i, Var)
 \]</div>
 <p>where the prior mean is a linear transformation of the item observable and <span class="arithmatex">\(H: \mathbb{R}^{K_{item}} \to \mathbb{R}^L\)</span>.</p>
-<p><strong>Note</strong>: the exact form of prior variance <span class="arithmatex">\(Var\)</span> depends on the <code>prior_variance</code> specified.</p>
+<p><strong>Note</strong>: the exact form of prior variance <span class="arithmatex">\(Var\)</span> depends on the <code>prior_variance</code> specified. The default <span class="arithmatex">\(Var\)</span> the identity matrix <span class="arithmatex">\(I\)</span>, so that all entries of coefficients are independent and have unit variance.</p>
 <p>To enable the observable-to-prior feature, one needs to set <code>obs2prior_dict['theta_item']=True</code>.
 In order to leverage obs-to-prior for item-specific coefficients like <code>theta_item</code>, the researchers need to include <code>item_obs</code> tensor to the <code>ChoiceDataset</code>, <em>the attribute name needs to be exactly <code>item_obs</code>, just with <code>item_</code> prefix is </em><em>not</em><em> sufficient.</em> Similarly, <code>user_obs</code> are required if obs-to-prior is turned on for <strong>any</strong> of user-specific coefficients.</p>
 <p>Please see the <a href="https://gsbdbi.github.io/bemb/bemb_obs2prior_simulation/">dedicated <code>obs2prior</code> tutorial</a> for more details.</p>
