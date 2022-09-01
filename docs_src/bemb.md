@@ -202,7 +202,7 @@ $$
 
 where the prior mean is a linear transformation of the item observable and $H: \mathbb{R}^{K_{item}} \to \mathbb{R}^L$.
 
-**Note**: the exact form of prior variance $Var$ depends on the `prior_variance` specified.
+**Note**: the exact form of prior variance $Var$ depends on the `prior_variance` specified. The default $Var$ the identity matrix $I$, so that all entries of coefficients are independent and have unit variance.
 
 To enable the observable-to-prior feature, one needs to set `obs2prior_dict['theta_item']=True`.
 In order to leverage obs-to-prior for item-specific coefficients like `theta_item`, the researchers need to include `item_obs` tensor to the `ChoiceDataset`, *the attribute name needs to be exactly `item_obs`, just with `item_` prefix is **not** sufficient.* Similarly, `user_obs` are required if obs-to-prior is turned on for **any** of user-specific coefficients.
