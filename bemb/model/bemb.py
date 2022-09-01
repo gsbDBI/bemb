@@ -170,6 +170,12 @@ class BEMBFlex(nn.Module):
                 prior_variance along the diagonal. If a dictionary is provided, keys of prior_variance
                 should be coefficient names, and the variance of prior of coef_name would be a diagonal
                 matrix with prior_variance[coef_name] along the diagonal.
+
+                If a dictionary prior_variance is supplied, for coefficient names not in the prior_variance.keys(), the
+                can add a `prior_variance['default']` value to specify the variance for those coefficients.
+                If no `prior_variance['default']` is provided, the default prior variance will be 1.0 for those coefficients
+                not in the prior_variance.keys().
+
                 Defaults to 1.0, which means all prior have identity matrix as the covariance matrix.
 
             num_users (int, optional): number of users, required only if coefficient or observable
@@ -294,10 +300,17 @@ class BEMBFlex(nn.Module):
                 variation = coef_name.split('_')[-1]
                 mean = self.prior_mean[coef_name] if isinstance(
                     self.prior_mean, dict) else self.default_prior_mean
+
                 if isinstance(self.prior_variance, dict):
+                    # the user didn't specify prior variance for this coefficient.
                     if coef_name not in self.prior_variance.keys():
-                        warnings.warn(f'You provided a dictionary of prior variance, but coefficient {coef_name} is not a key in it, assuming unit variance for coefficient {coef_name}.')
-                        self.prior_variance[coef_name] = 1.0
+                        # the user may specify 'default' prior variance through the prior_variance dictionary.
+                        if 'default' in self.prior_variance.keys():
+                            warnings.warn(f"You provided a dictionary of prior variance, but coefficient {coef_name} is not a key in it. We fund a key 'default' in the dictionary, so we use the value of 'default' as the prior variance for coefficient {coef_name}.")
+                            self.prior_variance[coef_name] = self.prior_variance['default']
+                        else:
+                            warnings.warn(f"You provided a dictionary of prior variance, but coefficient {coef_name} is not a key in it. 'default' is not a key of prior variance dictionary, assuming unit variance for coefficient {coef_name}.")
+                            self.prior_variance[coef_name] = 1.0
 
                 s2 = self.prior_variance[coef_name] if isinstance(
                     self.prior_variance, dict) else self.prior_variance
