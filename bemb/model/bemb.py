@@ -309,7 +309,7 @@ class BEMBFlex(nn.Module):
                             warnings.warn(f"You provided a dictionary of prior variance, but coefficient {coef_name} is not a key in it. We fund a key 'default' in the dictionary, so we use the value of 'default' as the prior variance for coefficient {coef_name}.")
                             self.prior_variance[coef_name] = self.prior_variance['default']
                         else:
-                            warnings.warn(f"You provided a dictionary of prior variance, but coefficient {coef_name} is not a key in it. 'default' is not a key of prior variance dictionary, assuming unit variance for coefficient {coef_name}.")
+                            warnings.warn(f"You provided a dictionary of prior variance, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the prior_variance dictionary to use that as default value (e.g., prior_variance['default'] = 0.3); now using variance=1.0 since this is not supplied.")
                             self.prior_variance[coef_name] = 1.0
 
                 s2 = self.prior_variance[coef_name] if isinstance(
