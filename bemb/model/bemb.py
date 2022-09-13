@@ -5,6 +5,7 @@ Author: Tianyu Du
 Update: Apr. 28, 2022
 """
 from pprint import pprint
+import warnings
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -164,11 +165,23 @@ class BEMBFlex(nn.Module):
                 value Defaults to 0.0, which means all prior means are
                 initialized to 0.0
 
-            prior_variance (Union[float, Dict[str, float]]): the variance of prior distribution for
-                coefficients. If a float is provided, all priors will be diagonal matrix with
-                prior_variance along the diagonal. If a dictionary is provided, keys of prior_variance
-                should be coefficient names, and the variance of prior of coef_name would be a diagonal
-                matrix with prior_variance[coef_name] along the diagonal.
+            prior_variance (Union[float, Dict[str, float]], Dict[str, torch. Tensor]): the variance of prior distribution
+                for coefficients.
+                If a float is provided, all priors will be diagonal matrix with prior_variance along the diagonal.
+                If a float-valued dictionary is provided, keys of prior_variance should be coefficient names, and the
+                variance of prior of coef_name would be a diagonal matrix with prior_variance[coef_name] along the diagonal.
+                If a tensor-valued dictionary is provided, keys of prior_variance should be coefficient names, and the
+                values need to be tensor with shape (num_classes, coef_dim_dict[coef_name]). For example, for `beta_user` in
+                `U = beta_user * item_obs`, the prior_variance should be a tensor with shape (num_classes, dimension_of_item_obs).
+                In this case, every single entry in the coefficient has its own prior variance.
+                Following the `beta_user` example, for every `i` and `j`, `beta_user[i, j]` is a scalar with prior variance
+                `prior_variance['beta_user'][i, j]`. Moreover, `beta_user[i, j]`'s are independent for different `i, j`.
+
+                If a dictionary prior_variance is supplied, for coefficient names not in the prior_variance.keys(), the
+                can add a `prior_variance['default']` value to specify the variance for those coefficients.
+                If no `prior_variance['default']` is provided, the default prior variance will be 1.0 for those coefficients
+                not in the prior_variance.keys().
+
                 Defaults to 1.0, which means all prior have identity matrix as the covariance matrix.
 
             num_users (int, optional): number of users, required only if coefficient or observable
@@ -293,6 +306,18 @@ class BEMBFlex(nn.Module):
                 variation = coef_name.split('_')[-1]
                 mean = self.prior_mean[coef_name] if isinstance(
                     self.prior_mean, dict) else self.default_prior_mean
+
+                if isinstance(self.prior_variance, dict):
+                    # the user didn't specify prior variance for this coefficient.
+                    if coef_name not in self.prior_variance.keys():
+                        # the user may specify 'default' prior variance through the prior_variance dictionary.
+                        if 'default' in self.prior_variance.keys():
+                            warnings.warn(f"You provided a dictionary of prior variance, but coefficient {coef_name} is not a key in it. We found a key 'default' in the dictionary, so we use the value of 'default' as the prior variance for coefficient {coef_name}.")
+                            self.prior_variance[coef_name] = self.prior_variance['default']
+                        else:
+                            warnings.warn(f"You provided a dictionary of prior variance, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the prior_variance dictionary to use that as default value (e.g., prior_variance['default'] = 0.3); now using variance=1.0 since this is not supplied.")
+                            self.prior_variance[coef_name] = 1.0
+
                 s2 = self.prior_variance[coef_name] if isinstance(
                     self.prior_variance, dict) else self.prior_variance
 

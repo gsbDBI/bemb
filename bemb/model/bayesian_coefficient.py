@@ -21,7 +21,7 @@ class BayesianCoefficient(nn.Module):
                  num_obs: Optional[int] = None,
                  dim: int = 1,
                  prior_mean: float = 0.0,
-                 prior_variance: float = 1.0
+                 prior_variance: Union[float, torch.Tensor] = 1.0
                  ) -> None:
         """The Bayesian coefficient object represents a learnable tensor mu_i in R^k, where i is from a family (e.g., user, item)
             so there are num_classes * num_obs learnable weights in total.
@@ -56,7 +56,12 @@ class BayesianCoefficient(nn.Module):
                 Defaults to 1.
             prior_mean (float): the mean of the prior distribution of coefficient.
                 Defaults to 0.0.
-            prior_variance (float): the variance of the prior distribution of coefficient.
+            prior_variance (Union[float, torch.Tensor]): the variance of the prior distribution of coefficient.
+                Recall that the coefficient has shape (num_classes, dim), so there are num_classes * dim learnable entries.
+                No matter what prior_variance is provided, entires in the coefficient tensor are independent.
+                If a float or torch.scalar_tensor is provided, the variance is assumed to be the same for all entries.
+                If a tensor with shape (num_classes, dim) is supplied, supplying a (num_classes, dim) tensor is amount
+                to specifying a different prior variance for each entry in the coefficient.
                 Defaults to 1.0.
         """
         super(BayesianCoefficient, self).__init__()
@@ -100,6 +105,11 @@ class BayesianCoefficient(nn.Module):
         # self.prior_cov_diag = nn.Parameter(torch.ones(num_classes, dim), requires_grad=False)
         self.register_buffer('prior_cov_factor',
                              torch.zeros(num_classes, dim, 1))
+
+        # if a tensor but not a scalar_tensor is provided, it must have shape (num_classes, dim)
+        if torch.is_tensor(self.prior_variance, torch.Tensor) and len(self.prior_variance.shape) > 0:
+            assert self.prior_variance.shape == (num_classes, dim), f"You supplied a tensor with shape {self.prior_variance.shape} to specify prior variances, it must have shape (num_classes, dim), which is ({num_classes}, {dim}) for this coefficient."
+
         self.register_buffer('prior_cov_diag', torch.ones(
             num_classes, dim) * self.prior_variance)
 
