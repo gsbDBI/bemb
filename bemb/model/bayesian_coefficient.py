@@ -107,7 +107,7 @@ class BayesianCoefficient(nn.Module):
                              torch.zeros(num_classes, dim, 1))
 
         # if a tensor but not a scalar_tensor is provided, it must have shape (num_classes, dim)
-        if torch.is_tensor(self.prior_variance, torch.Tensor) and len(self.prior_variance.shape) > 0:
+        if torch.is_tensor(self.prior_variance) and len(self.prior_variance.shape) > 0:
             assert self.prior_variance.shape == (num_classes, dim), f"You supplied a tensor with shape {self.prior_variance.shape} to specify prior variances, it must have shape (num_classes, dim), which is ({num_classes}, {dim}) for this coefficient."
 
         self.register_buffer('prior_cov_diag', torch.ones(
