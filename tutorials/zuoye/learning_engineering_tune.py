@@ -49,7 +49,12 @@ def main(dataset):
         )
 
         bemb = bemb.to('cuda')
-        bemb = run(bemb, dataset_list, batch_size=len(dataset) // 20, num_epochs=50)
+        bemb = run(
+            bemb,
+            dataset_list,
+            batch_size=len(dataset) //
+            20,
+            num_epochs=50)
         return bemb
 
     # ==============================================================================================
@@ -101,7 +106,6 @@ def main(dataset):
     #     'prior_variance': 10,
     # })
 
-
     # =======
     # for prior_std in [0.001, 0.003, 0.01, 0.03, 0.1, 1, 10]:
     #     for obs2prior in [True, False]:
@@ -113,12 +117,21 @@ def main(dataset):
     #         })
 
     # =======
-    hparam_list.append({
-        'obs2prior_dict': {'lambda_item': True, 'theta_user': False, 'alpha_item': True, 'eta_user': False},
-        'coef_dim_dict': {'lambda_item': 1, 'theta_user': 5, 'alpha_item': 5, 'eta_user': num_item_obs},
-        'utility_formula': 'lambda_item + theta_user * alpha_item + eta_user * item_obs',
-        'prior_variance': 100,
-    })
+    hparam_list.append(
+        {
+            'obs2prior_dict': {
+                'lambda_item': True,
+                'theta_user': False,
+                'alpha_item': True,
+                'eta_user': False},
+            'coef_dim_dict': {
+                'lambda_item': 1,
+                'theta_user': 5,
+                'alpha_item': 5,
+                'eta_user': num_item_obs},
+            'utility_formula': 'lambda_item + theta_user * alpha_item + eta_user * item_obs',
+            'prior_variance': 100,
+        })
 
     # =======
     # for NUM_LATENTS in [3, 5, 10, 20]:
@@ -141,6 +154,7 @@ def main(dataset):
     for hparam in hparam_list:
         bemb = compute(hparam)
         # torch.save(bemb.state_dict(), './bemb.state_dict.pt')
+
 
 if __name__ == '__main__':
     print('=' * 80)

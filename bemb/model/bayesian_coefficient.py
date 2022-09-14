@@ -72,7 +72,8 @@ class BayesianCoefficient(nn.Module):
         self.obs2prior = obs2prior
         if variation == 'constant' or variation == 'category':
             if obs2prior:
-                raise NotImplementedError('obs2prior is not supported for constant and category variation at present.')
+                raise NotImplementedError(
+                    'obs2prior is not supported for constant and category variation at present.')
 
         self.num_classes = num_classes
         self.num_obs = num_obs
@@ -88,27 +89,34 @@ class BayesianCoefficient(nn.Module):
         # create prior distribution.
         if self.obs2prior:
             # the mean of prior distribution depends on observables.
-            # initiate a Bayesian Coefficient with shape (dim, num_obs) standard Gaussian.
-            self.prior_H = BayesianCoefficient(variation='constant',
-                                               num_classes=dim,
-                                               obs2prior=False,
-                                               dim=num_obs,
-                                               prior_variance=1.0,
-                                               H_zero_mask=self.H_zero_mask,
-                                               is_H=True)  # this is a distribution responsible for the obs2prior H term.
+            # initiate a Bayesian Coefficient with shape (dim, num_obs)
+            # standard Gaussian.
+            self.prior_H = BayesianCoefficient(
+                variation='constant',
+                num_classes=dim,
+                obs2prior=False,
+                dim=num_obs,
+                prior_variance=1.0,
+                H_zero_mask=self.H_zero_mask,
+                is_H=True)  # this is a distribution responsible for the obs2prior H term.
 
         else:
-            self.register_buffer(
-                'prior_zero_mean', torch.zeros(num_classes, dim) + (self.prior_mean))
+            self.register_buffer('prior_zero_mean', torch.zeros(
+                num_classes, dim) + (self.prior_mean))
 
         # self.prior_cov_factor = nn.Parameter(torch.zeros(num_classes, dim, 1), requires_grad=False)
         # self.prior_cov_diag = nn.Parameter(torch.ones(num_classes, dim), requires_grad=False)
         self.register_buffer('prior_cov_factor',
                              torch.zeros(num_classes, dim, 1))
 
-        # if a tensor but not a scalar_tensor is provided, it must have shape (num_classes, dim)
-        if torch.is_tensor(self.prior_variance, torch.Tensor) and len(self.prior_variance.shape) > 0:
-            assert self.prior_variance.shape == (num_classes, dim), f"You supplied a tensor with shape {self.prior_variance.shape} to specify prior variances, it must have shape (num_classes, dim), which is ({num_classes}, {dim}) for this coefficient."
+        # if a tensor but not a scalar_tensor is provided, it must have shape
+        # (num_classes, dim)
+        if torch.is_tensor(
+                self.prior_variance,
+                torch.Tensor) and len(
+                self.prior_variance.shape) > 0:
+            assert self.prior_variance.shape == (
+                num_classes, dim), f"You supplied a tensor with shape {self.prior_variance.shape} to specify prior variances, it must have shape (num_classes, dim), which is ({num_classes}, {dim}) for this coefficient."
 
         self.register_buffer('prior_cov_diag', torch.ones(
             num_classes, dim) * self.prior_variance)
@@ -170,7 +178,8 @@ class BayesianCoefficient(nn.Module):
             mask = torch.logical_not(self.H_zero_mask).float()
             return M * mask
         else:
-            # a H-variable without zero-entry restriction or just a coefficient.
+            # a H-variable without zero-entry restriction or just a
+            # coefficient.
             return M
 
     def log_prior(self,
@@ -211,9 +220,10 @@ class BayesianCoefficient(nn.Module):
 
         else:
             mu = self.prior_zero_mean
-        out = LowRankMultivariateNormal(loc=mu,
-                                        cov_factor=self.prior_cov_factor,
-                                        cov_diag=self.prior_cov_diag).log_prob(sample)
+        out = LowRankMultivariateNormal(
+            loc=mu,
+            cov_factor=self.prior_cov_factor,
+            cov_diag=self.prior_cov_diag).log_prob(sample)
         assert out.shape == (num_seeds, num_classes)
         return out
 
@@ -235,7 +245,9 @@ class BayesianCoefficient(nn.Module):
         assert out.shape == (num_seeds, num_classes)
         return out
 
-    def rsample(self, num_seeds: int = 1) -> Union[torch.Tensor, Tuple[torch.Tensor]]:
+    def rsample(self,
+                num_seeds: int = 1) -> Union[torch.Tensor,
+                                             Tuple[torch.Tensor]]:
         """Samples values of the coefficient from the variational distribution using re-parameterization trick.
 
         Args:
@@ -261,9 +273,11 @@ class BayesianCoefficient(nn.Module):
     def variational_distribution(self) -> LowRankMultivariateNormal:
         """Constructs the current variational distribution of the coefficient from current variational mean and covariance.
         """
-        return LowRankMultivariateNormal(loc=self.variational_mean,
-                                         cov_factor=self.variational_cov_factor,
-                                         cov_diag=torch.exp(self.variational_logstd))
+        return LowRankMultivariateNormal(
+            loc=self.variational_mean,
+            cov_factor=self.variational_cov_factor,
+            cov_diag=torch.exp(
+                self.variational_logstd))
 
     @property
     def device(self) -> torch.device:

@@ -30,11 +30,13 @@ from sklearn import metrics
 
 np.random.seed(42)
 
+
 def load_configs(yaml_file: str):
     with open(yaml_file, 'r') as file:
         data_loaded = yaml.safe_load(file)
     configs = argparse.Namespace(**data_loaded)
     return configs
+
 
 # sys.argv[1] should be the yaml file.
 configs = load_configs(sys.argv[1])
@@ -43,11 +45,21 @@ configs = load_configs(sys.argv[1])
 # Loading the dataset.
 # ==================================================================================================
 
-data_mover_stayer = pd.read_csv(os.path.join(configs.data_dir, 'psid_long_panel.csv'), index_col=0) \
-    .rename(columns={'state_1': 'user_id', 'state_2': 'item_id'})
+data_mover_stayer = pd.read_csv(
+    os.path.join(
+        configs.data_dir,
+        'psid_long_panel.csv'),
+    index_col=0) .rename(
+    columns={
+        'state_1': 'user_id',
+        'state_2': 'item_id'})
 
 # format year from 2 digits to 4 digits.
-f = lambda y: y + 1900 if y > 50 else y + 2000
+
+
+def f(y): return y + 1900 if y > 50 else y + 2000
+
+
 data_mover_stayer['Year_1'] = data_mover_stayer['Year_1'].apply(f)
 data_mover_stayer['Year_2'] = data_mover_stayer['Year_2'].apply(f)
 
@@ -55,10 +67,19 @@ data_mover_stayer['Year_2'] = data_mover_stayer['Year_2'].apply(f)
 # data_all = data_mover_stayer[data_mover_stayer['user_id'] != data_mover_stayer['item_id']]
 data_all = data_mover_stayer
 
-print(f"{len(data_all)} movers found, year_1 scope is {data_all['Year_1'].unique()} ")
-state_obs = pd.read_csv(os.path.join(configs.data_dir, 'state_observables.csv'), index_col=0)
+print(
+    f"{len(data_all)} movers found, year_1 scope is {data_all['Year_1'].unique()} ")
+state_obs = pd.read_csv(
+    os.path.join(
+        configs.data_dir,
+        'state_observables.csv'),
+    index_col=0)
 print('Number of state(s):', len(state_obs))
-print('Number of raw state observables:', state_obs.shape[1], list(state_obs.columns))
+print(
+    'Number of raw state observables:',
+    state_obs.shape[1],
+    list(
+        state_obs.columns))
 
 # state obs from O*NET.
 onet_raw = pd.read_csv(os.path.join(configs.data_dir, 'occ_obs_onet.csv'))
@@ -71,12 +92,18 @@ onet_obs.columns = [f'ONET_PCA_{i}' for i in range(onet_obs.shape[-1])]
 state_obs = state_obs.reset_index()
 
 # match using the 1990dd code.
-state_obs['occ1990dd'] = state_obs['state'].map(lambda x: x.split('_')[0]).astype(int)
-state_obs = state_obs.merge(onet_obs, how='left', left_on='occ1990dd', right_on='occ1990dd') \
-                     .drop(columns=['occ1990dd'])
+state_obs['occ1990dd'] = state_obs['state'].map(
+    lambda x: x.split('_')[0]).astype(int)
+state_obs = state_obs.merge(
+    onet_obs,
+    how='left',
+    left_on='occ1990dd',
+    right_on='occ1990dd') .drop(
+        columns=['occ1990dd'])
 state_obs.set_index('state', inplace=True)
 state_obs.fillna(state_obs.mean(), inplace=True)
-print('Number of state observables after adding ONET:', state_obs.shape[1], list(state_obs.columns))
+print('Number of state observables after adding ONET:',
+      state_obs.shape[1], list(state_obs.columns))
 print(f'{len(data_all)} transitions identified with {len(state_obs)} states in total.')
 
 # ==================================================================================================
@@ -102,10 +129,15 @@ configs.num_item_obs = item_obs.shape[1]
 # NOTE: in this model, each row in the dataset is a session.
 # ==============================================================================================
 # one hot encode categorical variables.
-s1 = torch.Tensor(OneHotEncoder().fit_transform(data_all[['SEX', 'RACE', 'Year_1']]).todense())
+s1 = torch.Tensor(OneHotEncoder().fit_transform(
+    data_all[['SEX', 'RACE', 'Year_1']]).todense())
 # continuous variables, fill NANs with the average.
-continuous_variables = data_all[['AGE OF INDIVIDUAL_1', 'INCOME_1','NUMBER OF CHILDREN_1', 'YEARS OF EDUCATION_1']]
-s2 = torch.Tensor(torch.Tensor(continuous_variables.fillna(continuous_variables.mean()).values))
+continuous_variables = data_all[[
+    'AGE OF INDIVIDUAL_1', 'INCOME_1', 'NUMBER OF CHILDREN_1', 'YEARS OF EDUCATION_1']]
+s2 = torch.Tensor(
+    torch.Tensor(
+        continuous_variables.fillna(
+            continuous_variables.mean()).values))
 # combine them to session level observables.
 session_obs = torch.cat([s1, s2], dim=1)
 configs.num_session_obs = session_obs.shape[1]
@@ -131,7 +163,9 @@ configs.coef_dim_dict['delta_constant'] = configs.num_session_obs
 
 # encode the starting year of each row (session) of the dataset.
 year_encoder = LabelEncoder().fit(data_all['Year_1'].values)
-session_year = torch.LongTensor(year_encoder.transform(data_all['Year_1'].values))
+session_year = torch.LongTensor(
+    year_encoder.transform(
+        data_all['Year_1'].values))
 configs.num_years = len(year_encoder.classes_)
 # ==============================================================================================
 # item availability, with shape (num_sessions, num_items/num_states)
@@ -140,8 +174,10 @@ configs.num_years = len(year_encoder.classes_)
 USE_AVAILABILITY = False
 
 if USE_AVAILABILITY:
-    data_all['user_id_encoded'] = state_encoder.transform(data_all['user_id'].values)
-    data_all['item_id_encoded'] = state_encoder.transform(data_all['item_id'].values)
+    data_all['user_id_encoded'] = state_encoder.transform(
+        data_all['user_id'].values)
+    data_all['item_id_encoded'] = state_encoder.transform(
+        data_all['item_id'].values)
 
     item_availability_dict = dict()
     for year in data_all['Year_1'].unique():
@@ -153,7 +189,8 @@ if USE_AVAILABILITY:
             # mask out infrequent items.
             item_availability_dict[year] = torch.zeros(configs.num_items)
             item_frequency = data_before['item_id_encoded'].value_counts()
-            available_item_list = list(item_frequency[item_frequency >= 1].index)
+            available_item_list = list(
+                item_frequency[item_frequency >= 1].index)
             item_availability_dict[year][available_item_list] = 1
 
             if item_availability_dict[year].sum() == 0:
@@ -162,15 +199,22 @@ if USE_AVAILABILITY:
     # create the item_availability tensor.
     item_availability = torch.zeros(configs.num_sessions, configs.num_items)
     for year, item_availability_year in item_availability_dict.items():
-        item_availability[session_year == int(year_encoder.transform([year])), :] = item_availability_year
+        item_availability[session_year == int(
+            year_encoder.transform([year])), :] = item_availability_year
 else:
     # assume everything to be available.
-    item_availability = torch.ones(configs.num_sessions, configs.num_items).bool()
+    item_availability = torch.ones(
+        configs.num_sessions,
+        configs.num_items).bool()
 # ==============================================================================================
 # create datasets, split into train, validation and test sets with ratio 0.8:0.15:0.15.
 # ==============================================================================================
-user_index = torch.LongTensor(state_encoder.transform(data_all['user_id'].values))
-item_index = torch.LongTensor(state_encoder.transform(data_all['item_id'].values))
+user_index = torch.LongTensor(
+    state_encoder.transform(
+        data_all['user_id'].values))
+item_index = torch.LongTensor(
+    state_encoder.transform(
+        data_all['item_id'].values))
 
 dataset_mover_stayer = ChoiceDataset(item_index=item_index,
                                      user_index=user_index,
@@ -183,7 +227,8 @@ dataset_mover_stayer = ChoiceDataset(item_index=item_index,
 
 print('Number of MOVER+STAYER observations:', len(dataset_mover_stayer))
 
-dataset_mover = dataset_mover_stayer[dataset_mover_stayer.item_index != dataset_mover_stayer.user_index]
+dataset_mover = dataset_mover_stayer[dataset_mover_stayer.item_index !=
+                                     dataset_mover_stayer.user_index]
 print('Number of MOVER observations:', len(dataset_mover))
 
 # shuffle the dataset.
@@ -195,11 +240,16 @@ validation_index = shuffle_index[int(0.7 * N): int(0.85 * N)]
 test_index = shuffle_index[int(0.85 * N):]
 
 # splits of dataset.
-dataset_mover_splits = [dataset_mover[train_index], dataset_mover[validation_index], dataset_mover[test_index]]
+dataset_mover_splits = [
+    dataset_mover[train_index],
+    dataset_mover[validation_index],
+    dataset_mover[test_index]]
 
 # ==================================================================================================
 # Pytorch lightning wrapper of BEMB.
 # ==================================================================================================
+
+
 class YearTrendPreprocessor(nn.Module):
     def __init__(self, num_years: int, latent_dim: int):
         super().__init__()
@@ -208,13 +258,20 @@ class YearTrendPreprocessor(nn.Module):
     def forward(self, batch):
         # batch.session_obs_w expected, (num_session, 1)
         # convert to batch.session_delta, (num_session, num_latent)
-        # session_delta will be considered as a session-specific observable by BEMB.
+        # session_delta will be considered as a session-specific observable by
+        # BEMB.
         batch.session_year_emb = self.emb(batch.session_year)
         return batch
 
 
 class LitBEMBFlex(pl.LightningModule):
-    def __init__(self, hparams, train_dataset, val_dataset, test_dataset, **kwargs):
+    def __init__(
+            self,
+            hparams,
+            train_dataset,
+            val_dataset,
+            test_dataset,
+            **kwargs):
         # use kwargs to pass parameter to BEMB Torch.
         super().__init__()
 
@@ -223,7 +280,8 @@ class LitBEMBFlex(pl.LightningModule):
         self.test_dataset = test_dataset
 
         if 'session_year_emb' in hparams['utility_formula']:
-            self.year_embedding = YearTrendPreprocessor(configs.num_years, configs.coef_dim_dict['kappa_constant'])
+            self.year_embedding = YearTrendPreprocessor(
+                configs.num_years, configs.coef_dim_dict['kappa_constant'])
         else:
             self.year_embedding = None
 
@@ -241,40 +299,66 @@ class LitBEMBFlex(pl.LightningModule):
 
     @torch.no_grad()
     def performance_dict(self, batch):
-        log_prob = self.model(batch, return_type='log_prob', return_scope='all_items', deterministic=True).cpu().numpy()
+        log_prob = self.model(
+            batch,
+            return_type='log_prob',
+            return_scope='all_items',
+            deterministic=True).cpu().numpy()
         num_classes = log_prob.shape[1]
         pred_prob = np.exp(log_prob)
         y_pred = np.argmax(log_prob, axis=1)
         y_true = batch.item_index.cpu().numpy()
-        performance = {'acc': metrics.accuracy_score(y_true=y_true, y_pred=y_pred.astype(int)),
-                       'll': - metrics.log_loss(y_true=y_true, y_pred=pred_prob, eps=1E-5, labels=np.arange(num_classes))}
+        performance = {
+            'acc': metrics.accuracy_score(
+                y_true=y_true,
+                y_pred=y_pred.astype(int)),
+            'll': - metrics.log_loss(
+                y_true=y_true,
+                y_pred=pred_prob,
+                eps=1E-5,
+                labels=np.arange(num_classes))}
         return performance
 
     def training_step(self, batch, batch_idx):
-        self.log_dict({'train_'+key: val for (key, val) in self.performance_dict(batch).items()}, prog_bar=True)
+        self.log_dict({'train_' + key: val for (key, val)
+                       in self.performance_dict(batch).items()}, prog_bar=True)
         elbo = self.model.elbo(batch, num_seeds=self.num_needs)
         self.log('train_elbo', elbo)
         return - elbo
 
     def validation_step(self, batch, batch_idx):
-        self.log_dict({'val_'+key: val for (key, val) in self.performance_dict(batch).items()}, prog_bar=True)
+        self.log_dict({'val_' + key: val for (key, val)
+                       in self.performance_dict(batch).items()}, prog_bar=True)
 
     def test_step(self, batch, batch_idx):
-        self.log_dict({'test_'+key: val for (key, val) in self.performance_dict(batch).items()}, prog_bar=True)
+        self.log_dict({'test_' + key: val for (key, val)
+                       in self.performance_dict(batch).items()}, prog_bar=True)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer
 
     def train_dataloader(self):
-        return create_data_loader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=8)
+        return create_data_loader(
+            self.train_dataset,
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=8)
 
     def val_dataloader(self):
-        return create_data_loader(self.val_dataset, batch_size=self.batch_size, shuffle=True, num_workers=8)
+        return create_data_loader(
+            self.val_dataset,
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=8)
 
     def test_dataloader(self):
         # use smaller batch size for test, which takes more memory.
-        return create_data_loader(self.test_dataset, batch_size=10000, shuffle=False, num_workers=8)
+        return create_data_loader(
+            self.test_dataset,
+            batch_size=10000,
+            shuffle=False,
+            num_workers=8)
 
 
 def train_model():
@@ -289,8 +373,8 @@ def train_model():
     bemb = LitBEMBFlex(
         hparams,
         # datasets
-        train_dataset = dataset_mover_splits[0],
-        val_dataset = dataset_mover_splits[1],
+        train_dataset=dataset_mover_splits[0],
+        val_dataset=dataset_mover_splits[1],
         test_dataset=dataset_mover_splits[2],
         # model args, will be passed to BEMB constructor.
         prior_variance=configs.prior_variance,
@@ -308,7 +392,7 @@ def train_model():
                          max_epochs=configs.num_epochs,
                          check_val_every_n_epoch=1,
                          log_every_n_steps=1)
-                        #  callbacks=[EarlyStopping(monitor='val_LL', patience=5, mode='max')])
+    #  callbacks=[EarlyStopping(monitor='val_LL', patience=5, mode='max')])
 
     start_time = time.time()
     trainer.fit(bemb)
@@ -346,8 +430,8 @@ def tune_model():
     def train_tune(hparams, epochs=10, gpus=1):
         model = LitBEMBFlex(hparams,
                             # datasets
-                            train_dataset = dataset_mover_splits[0],
-                            val_dataset = dataset_mover_splits[1],
+                            train_dataset=dataset_mover_splits[0],
+                            val_dataset=dataset_mover_splits[1],
                             test_dataset=dataset_mover_splits[2],
                             prior_variance=hparams['prior_variance'],
                             utility_formula=hparams['utility_formula'],
@@ -366,8 +450,16 @@ def tune_model():
             log_every_n_steps=1,
             gpus=gpus,
             progress_bar_refresh_rate=0,
-            logger=TensorBoardLogger(save_dir=tune.get_trial_dir(), name='', version='.'),
-            callbacks=[callback1, EarlyStopping(monitor='val_LL', patience=5, mode='max')])
+            logger=TensorBoardLogger(
+                save_dir=tune.get_trial_dir(),
+                name='',
+                version='.'),
+            callbacks=[
+                callback1,
+                EarlyStopping(
+                    monitor='val_LL',
+                    patience=5,
+                    mode='max')])
         trainer.fit(model)
         trainer.test(model)
 
@@ -387,7 +479,10 @@ def tune_model():
         ])
     }
 
-    scheduler = ASHAScheduler(max_t=num_epochs, grace_period=1, reduction_factor=2)
+    scheduler = ASHAScheduler(
+        max_t=num_epochs,
+        grace_period=1,
+        reduction_factor=2)
 
     reporter = CLIReporter(parameter_columns=list(config.keys()),
                            metric_columns=list(callback1._metrics.keys()))
@@ -402,7 +497,8 @@ def tune_model():
         progress_reporter=reporter)
 
     print("Best hyperparameters found were: ", analysis.best_config)
-    analysis.results_df.to_csv('./ray_tune_results_' + str(datetime.now()) + '.csv')
+    analysis.results_df.to_csv(
+        './ray_tune_results_' + str(datetime.now()) + '.csv')
 
 
 def markov_baseline():
