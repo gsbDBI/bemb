@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import torch
 from bemb.model import BEMBFlex
+from bemb.model.bemb import parse_utility
 import simulate_choice_dataset
 
 global numUs, num_items, data_size
@@ -19,6 +20,49 @@ num_items = 100
 data_size = 10000
 num_seeds = 32
 
+
+class TestUtilityParser(unittest.TestCase):
+    def test_parser_and_model_creation(self):
+        formula = 'intercept1_constant + intercept2_item + intercept3_user + alpha_item * beta_user + user_obs * gamma_user + item_obs * delta_item + comp_user * comp_item * user_obs'
+        additive_decomposition = parse_utility(formula)
+        self.assertTrue(additive_decomposition[0]['coefficient'] == ['intercept1_constant'])
+        self.assertTrue(additive_decomposition[1]['coefficient'] == ['intercept2_item'])
+        self.assertTrue(additive_decomposition[2]['coefficient'] == ['intercept3_user'])
+        self.assertTrue(all(additive_decomposition[i]['observable'] is None for i in range(3)))
+
+        self.assertTrue(additive_decomposition[3]['coefficient'] == ['alpha_item', 'beta_user'] and additive_decomposition[3]['observable'] is None)
+        self.assertTrue(additive_decomposition[4]['coefficient'] == ['gamma_user'] and additive_decomposition[4]['observable'] == 'user_obs')
+        self.assertTrue(additive_decomposition[5]['coefficient'] == ['delta_item'] and additive_decomposition[5]['observable'] == 'item_obs')
+        self.assertTrue(additive_decomposition[6]['coefficient'] == ['comp_user', 'comp_item'] and additive_decomposition[6]['observable'] == 'user_obs')
+
+    def test_parser_price_and_itemsession_obs_1(self):
+        formula_1 = 'alpha_item * price_obs'
+        formula_2 = 'alpha_item * itemsession_obs'
+        u1 = parse_utility(formula_1)
+        u2 = parse_utility(formula_2)
+        self.assertTrue(u1 == u2)
+
+    def test_parser_price_and_itemsession_obs_2(self):
+        formula_1 = 'alpha_item * price_obs + user_obs * gamma_user + item_obs * delta_item'
+        formula_2 = 'alpha_item * itemsession_obs + user_obs * gamma_user + item_obs * delta_item'
+        u1 = parse_utility(formula_1)
+        u2 = parse_utility(formula_2)
+        self.assertTrue(u1 == u2)
+
+    def test_parser_constant_and_null_coef(self):
+        formula_1 = 'user_obs * gamma_constant + alpha_item * beta_item'
+        formula_2 = 'user_obs * gamma + alpha_item * beta_item'
+        u1 = parse_utility(formula_1)
+        u2 = parse_utility(formula_2)
+        self.assertTrue(u1 == u2)
+
+    def test_parser(self):
+        formula_1 = 'price_obs * gamma_constant + alpha_item * beta_item'
+        formula_2 = 'itemsession_obs * gamma + alpha_item * beta_item'
+
+        u1 = parse_utility(formula_1)
+        u2 = parse_utility(formula_2)
+        self.assertTrue(u1 == u2)
 
 class TestBEMBFlex(unittest.TestCase):
     """

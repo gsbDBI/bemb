@@ -4,6 +4,7 @@ The core class of the Bayesian EMBedding (BEMB) model.
 Author: Tianyu Du
 Update: Apr. 28, 2022
 """
+import warnings
 from pprint import pprint
 import warnings
 from typing import Dict, List, Optional, Tuple, Union
@@ -56,9 +57,6 @@ def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]
     coefficient_suffix = ('_item', '_user', '_constant', '_category')
     observable_prefix = ('item_', 'user_', 'session_', 'price_', 'taste_')
 
-    # Programmers can now specify itemsession for price observables, this enables easier understanding.
-    utility_string = utility_string.replace('itemsession_', 'price_')
-
     def is_coefficient(name: str) -> bool:
         return any(name.endswith(suffix) for suffix in coefficient_suffix)
 
@@ -71,12 +69,23 @@ def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]
         atom = {'coefficient': [], 'observable': None}
         # split multiplicative terms.
         for x in term.split(' * '):
-            if is_coefficient(x):
-                atom['coefficient'].append(x)
+            # Programmers can specify itemsession for price observables, this brings better intuition.
+            if x.startswith('itemsession_'):
+                # case 1: special observable name.
+                atom['observable'] = 'price_' + x[len('itemsession_'):]
             elif is_observable(x):
+                # case 2: normal observable name.
                 atom['observable'] = x
+            elif is_coefficient(x):
+                # case 3: normal coefficient name.
+                atom['coefficient'].append(x)
             else:
-                raise ValueError(f'{x} term cannot be classified.')
+                # case 4: special coefficient name.
+                # the _constant coefficient suffix is not intuitive enough, we allow none coefficient suffix for
+                # coefficient with constant value. For example, `lambda` is the same as `lambda_constant`.
+                warnings.warn(f'{x} term has no appropriate coefficient suffix or observable prefix, it is assumed to be a coefficient constant across all items, users, and sessions. If this is the desired behavior, you can also specify `{x}_constant` in the utility formula to avoid this warning message. The utility parser has replaced {x} term with `{x}_constant`.')
+                atom['coefficient'].append(f'{x}_constant')
+
         additive_decomposition.append(atom)
     return additive_decomposition
 
