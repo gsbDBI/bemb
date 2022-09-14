@@ -70,13 +70,16 @@ def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]
         for x in term.split(' * '):
             # Programmers can specify itemsession for price observables, this brings better intuition.
             if x.startswith('itemsession_'):
+                # case 1: special observable name.
                 atom['observable'] = 'price_' + x[len('itemsession_'):]
-
-            if is_coefficient(x):
-                atom['coefficient'].append(x)
             elif is_observable(x):
+                # case 2: normal observable name.
                 atom['observable'] = x
+            elif is_coefficient(x):
+                # case 3: normal coefficient name.
+                atom['coefficient'].append(x)
             else:
+                # case 4: special coefficient name.
                 # the _constant coefficient suffix is not intuitive enough, we allow none coefficient suffix for
                 # coefficient with constant value. For example, `lambda` is the same as `lambda_constant`.
                 warnings.warn(f'{x} term has no appropriate coefficient suffix or observable prefix, it is assumed to be a coefficient constant across all items, users, and sessions. If this is the desired behavior, you can also specify `{x}_constant` in the utility formula to avoid this warning message. The utility parser has replaced {x} term with `{x}_constant`.')
