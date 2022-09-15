@@ -38,7 +38,7 @@ class LitBEMBFlex(pl.LightningModule):
     def __str__(self) -> str:
         return str(self.model)
 
-    def forward(self, args, kwargs):
+    def forward(self, *args, **kwargs):
         """Calls the forward method of the wrapped BEMB model, please refer to the documentaton of the BEMB class
             for detailed definitions of the arguments.
 
