@@ -1,5 +1,5 @@
 """
-You can use this script to verify that your installation of BEMB. This script generates a small dataset and runs a trail training on it. 
+You can use this script to verify that your installation of BEMB. This script generates a small dataset and runs a trail training on it.
 """
 import numpy as np
 import pandas as pd
@@ -35,7 +35,11 @@ user_obs[torch.arange(num_users), Is] = 1
 
 item_obs = torch.eye(num_items)
 
-dataset = ChoiceDataset(user_index=user_index, item_index=item_index, user_obs=user_obs, item_obs=item_obs)
+dataset = ChoiceDataset(
+    user_index=user_index,
+    item_index=item_index,
+    user_obs=user_obs,
+    item_obs=item_obs)
 
 idx = np.random.permutation(len(dataset))
 train_size = int(0.8 * len(dataset))
@@ -47,7 +51,8 @@ test_idx = idx[train_size + val_size:]
 dataset_list = [dataset[train_idx], dataset[val_idx], dataset[test_idx]]
 
 bemb = LitBEMBFlex(
-    learning_rate=0.03,  # set the learning rate, feel free to play with different levels.
+    # set the learning rate, feel free to play with different levels.
+    learning_rate=0.03,
     pred_item=True,  # let the model predict item_index, don't change this one.
     num_seeds=32,  # number of Monte Carlo samples for estimating the ELBO.
     utility_formula='theta_user * alpha_item',  # the utility formula.
@@ -63,10 +68,13 @@ bemb = LitBEMBFlex(
 )
 
 bemb = bemb.to('cuda')
-   
+
 # use the provided run helper to train the model.
 # we set batch size to be 5% of the data size, and train the model for 50 epochs.
 # there would be 20*50=1,000 gradient update steps in total.
-bemb = bemb.fit_model(dataset_list, batch_size=len(dataset) // 20, num_epochs=50)
+bemb = bemb.fit_model(
+    dataset_list,
+    batch_size=len(dataset) // 20,
+    num_epochs=50)
 
 print("Successful!")
