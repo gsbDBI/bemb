@@ -2,6 +2,7 @@
 Author: Tianyu Du
 
 Date: May. 7, 2022
+Update: Sept. 28, 2022
 
 This tutorial helps lab members to deploy the BEMB model on educational question-answering (QA) datasets. We will be using the 17Zuoye data, which is available on Sherlock, throughout this tutorial.
 
@@ -59,6 +60,7 @@ You can easily load the data using pandas.
 
 ```python
 data_path = '/oak/stanford/groups/athey/17Zuoye/bayesian_measurement_17zy/bayes'
+# data_path = '/media/tianyudu/Data/Athey/bayes'
 ```
 
 
@@ -435,7 +437,7 @@ num_item_obs = choice_dataset.item_obs.shape[-1]
 
 ### Splitting Data into Training, Validation, and Testing Sets
 To test the generalizability of the model, we split the data into training, validation, and testing sets.
-Specifically, we randomly take 80% of student-question pairs as the training set, 10% as the validation set, and the rest 10% as the testing set.
+Specifically, we randomly take 80% of student-question pairs as the training set, 10% as the validation set, and the rest 10% as the testing set. 
 
 
 ```python
@@ -517,24 +519,6 @@ bemb = run(bemb, dataset_list, batch_size=len(choice_dataset) // 20, num_epochs=
     BEMB: utility formula parsed:
     [{'coefficient': ['lambda_item'], 'observable': None},
      {'coefficient': ['theta_user', 'alpha_item'], 'observable': None}]
-
-
-    GPU available: True, used: True
-    TPU available: False, using: 0 TPU cores
-    IPU available: False, using: 0 IPUs
-    HPU available: False, using: 0 HPUs
-    LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-
-      | Name  | Type     | Params
-    -----------------------------------
-    0 | model | BEMBFlex | 5.3 M
-    -----------------------------------
-    5.3 M     Trainable params
-    0         Non-trainable params
-    5.3 M     Total params
-    21.258    Total estimated model params size (MB)
-
-
     ==================== model received ====================
     Bayesian EMBedding Model with U[user, item, session] = lambda_item + theta_user * alpha_item
     Total number of parameters: 5314408.
@@ -550,25 +534,100 @@ bemb = run(bemb, dataset_list, batch_size=len(choice_dataset) // 20, num_epochs=
     [Validation dataset] ChoiceDataset(label=[862172], item_index=[862172], user_index=[862172], session_index=[862172], item_availability=[], item_obs=[3604, 124], device=cpu)
     [Testing dataset] ChoiceDataset(label=[862172], item_index=[862172], user_index=[862172], session_index=[862172], item_availability=[], item_obs=[3604, 124], device=cpu)
     ==================== train the model ====================
+
+
+    /home/tianyudu/anaconda3/envs/development/lib/python3.10/site-packages/pytorch_lightning/trainer/connectors/accelerator_connector.py:447: LightningDeprecationWarning: Setting `Trainer(gpus=1)` is deprecated in v1.7 and will be removed in v2.0. Please use `Trainer(accelerator='gpu', devices=1)` instead.
+      rank_zero_deprecation(
+    GPU available: True (cuda), used: True
+    TPU available: False, using: 0 TPU cores
+    IPU available: False, using: 0 IPUs
+    HPU available: False, using: 0 HPUs
+    LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+    
+      | Name  | Type     | Params
+    -----------------------------------
+    0 | model | BEMBFlex | 5.3 M 
+    -----------------------------------
+    5.3 M     Trainable params
+    0         Non-trainable params
+    5.3 M     Total params
+    21.258    Total estimated model params size (MB)
+
+
+
     Sanity Checking: 0it [00:00, ?it/s]
 
-    LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
 
 
-    time taken: 89.43709015846252
+    Training: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+    `Trainer.fit` stopped: `max_epochs=10` reached.
+
+
+    time taken: 54.69776630401611
     ==================== test performance ====================
+
+
+    LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
 
 
 
     Testing: 0it [00:00, ?it/s]
 
 
-    ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
            Test metric             DataLoader 0
-    ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-            test_acc            0.8308121813280877
-             test_ll            -0.3618064307005444
-    ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+            test_acc            0.8299005302886199
+            test_auc             0.855947006804546
+             test_f1             0.897520421366994
+             test_ll           -0.36410953061998036
+            test_mse            0.1176305070796812
+           test_mse_se         0.0009547248708845476
+         test_precision         0.8541084351886367
+           test_recall          0.9455835324033649
+    ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 
 ### Leveraging More Complex Utility Representations
@@ -623,24 +682,6 @@ bemb = run(bemb, dataset_list, batch_size=len(choice_dataset) // 20, num_epochs=
     [{'coefficient': ['lambda_item'], 'observable': None},
      {'coefficient': ['theta_user', 'alpha_item'], 'observable': None},
      {'coefficient': ['eta_user'], 'observable': 'item_obs'}]
-
-
-    GPU available: True, used: True
-    TPU available: False, using: 0 TPU cores
-    IPU available: False, using: 0 IPUs
-    HPU available: False, using: 0 HPUs
-    LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-
-      | Name  | Type     | Params
-    -----------------------------------
-    0 | model | BEMBFlex | 70.2 M
-    -----------------------------------
-    70.2 M    Trainable params
-    0         Non-trainable params
-    70.2 M    Total params
-    280.920   Total estimated model params size (MB)
-
-
     ==================== model received ====================
     Bayesian EMBedding Model with U[user, item, session] = lambda_item + theta_user * alpha_item + eta_user * item_obs
     Total number of parameters: 70229896.
@@ -658,22 +699,99 @@ bemb = run(bemb, dataset_list, batch_size=len(choice_dataset) // 20, num_epochs=
     [Testing dataset] ChoiceDataset(label=[862172], item_index=[862172], user_index=[862172], session_index=[862172], item_availability=[], item_obs=[3604, 124], device=cpu)
     ==================== train the model ====================
 
-    LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
 
-    time taken: 185.29189801216125
+    /home/tianyudu/anaconda3/envs/development/lib/python3.10/site-packages/pytorch_lightning/trainer/connectors/accelerator_connector.py:447: LightningDeprecationWarning: Setting `Trainer(gpus=1)` is deprecated in v1.7 and will be removed in v2.0. Please use `Trainer(accelerator='gpu', devices=1)` instead.
+      rank_zero_deprecation(
+    GPU available: True (cuda), used: True
+    TPU available: False, using: 0 TPU cores
+    IPU available: False, using: 0 IPUs
+    HPU available: False, using: 0 HPUs
+    LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+    
+      | Name  | Type     | Params
+    -----------------------------------
+    0 | model | BEMBFlex | 70.2 M
+    -----------------------------------
+    70.2 M    Trainable params
+    0         Non-trainable params
+    70.2 M    Total params
+    280.920   Total estimated model params size (MB)
+
+
+
+    Sanity Checking: 0it [00:00, ?it/s]
+
+
+
+    Training: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+    `Trainer.fit` stopped: `max_epochs=10` reached.
+
+
+    time taken: 112.26553511619568
     ==================== test performance ====================
+
+
+    LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
 
 
 
     Testing: 0it [00:00, ?it/s]
 
 
-    ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
            Test metric             DataLoader 0
-    ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-            test_acc             0.852068960717815
-             test_ll            -0.3408827750695644
-    ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+            test_acc            0.8517094036920707
+            test_auc             0.885204845799722
+             test_f1            0.9099669643997097
+             test_ll            -0.3426648870818855
+            test_mse            0.10709758663938111
+           test_mse_se         0.0010785000066356716
+         test_precision          0.872055564772127
+           test_recall          0.9513266710617021
+    ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 
 ### Leveraging `obs2prior`
@@ -719,7 +837,7 @@ bemb = LitBEMBFlex(
 
 if torch.cuda.is_available():
     bemb = bemb.to('cuda')
-
+   
 bemb = run(bemb, dataset_list, batch_size=len(choice_dataset) // 20, num_epochs=50)
 ```
 
@@ -727,24 +845,6 @@ bemb = run(bemb, dataset_list, batch_size=len(choice_dataset) // 20, num_epochs=
     [{'coefficient': ['lambda_item'], 'observable': None},
      {'coefficient': ['theta_user', 'alpha_item'], 'observable': None},
      {'coefficient': ['eta_user'], 'observable': 'item_obs'}]
-
-
-    GPU available: True, used: True
-    TPU available: False, using: 0 TPU cores
-    IPU available: False, using: 0 IPUs
-    HPU available: False, using: 0 HPUs
-    LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-
-      | Name  | Type     | Params
-    -----------------------------------
-    0 | model | BEMBFlex | 70.2 M
-    -----------------------------------
-    70.2 M    Trainable params
-    0         Non-trainable params
-    70.2 M    Total params
-    280.930   Total estimated model params size (MB)
-
-
     ==================== model received ====================
     Bayesian EMBedding Model with U[user, item, session] = lambda_item + theta_user * alpha_item + eta_user * item_obs
     Total number of parameters: 70232624.
@@ -762,24 +862,259 @@ bemb = run(bemb, dataset_list, batch_size=len(choice_dataset) // 20, num_epochs=
     [Testing dataset] ChoiceDataset(label=[862172], item_index=[862172], user_index=[862172], session_index=[862172], item_availability=[], item_obs=[3604, 124], device=cpu)
     ==================== train the model ====================
 
-    Sanity Checking: 0it [00:00, ?it/s]
+
+    /home/tianyudu/anaconda3/envs/development/lib/python3.10/site-packages/pytorch_lightning/trainer/connectors/accelerator_connector.py:447: LightningDeprecationWarning: Setting `Trainer(gpus=1)` is deprecated in v1.7 and will be removed in v2.0. Please use `Trainer(accelerator='gpu', devices=1)` instead.
+      rank_zero_deprecation(
+    GPU available: True (cuda), used: True
+    TPU available: False, using: 0 TPU cores
+    IPU available: False, using: 0 IPUs
+    HPU available: False, using: 0 HPUs
     LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+    
+      | Name  | Type     | Params
+    -----------------------------------
+    0 | model | BEMBFlex | 70.2 M
+    -----------------------------------
+    70.2 M    Trainable params
+    0         Non-trainable params
+    70.2 M    Total params
+    280.930   Total estimated model params size (MB)
 
 
-    time taken: 941.1486117839813
+
+    Sanity Checking: 0it [00:00, ?it/s]
+
+
+
+    Training: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+
+    Validation: 0it [00:00, ?it/s]
+
+
+    `Trainer.fit` stopped: `max_epochs=50` reached.
+
+
+    time taken: 562.2096726894379
     ==================== test performance ====================
+
+
+    LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
 
 
 
     Testing: 0it [00:00, ?it/s]
 
 
-    ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
            Test metric             DataLoader 0
-    ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-            test_acc            0.8209313222883601
-             test_ll            -0.3934649652798017
-    ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+            test_acc            0.8202945583943807
+            test_auc            0.8306907476885476
+             test_f1            0.8939502167060785
+             test_ll           -0.39504207835551197
+            test_mse            0.12611882235908273
+           test_mse_se         0.0009444419977889863
+         test_precision         0.8352596597377366
+           test_recall          0.9615144020585291
+    ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 
 ### Tuning the Model
@@ -788,8 +1123,3 @@ There are tons of parameters in models above, for example, we choose `LATENT_DIM
 We recommend researchers to try out different combinations of hyper-parameters before sticking with a particular hyper-parameter configuration.
 
 We will be providing a script for effectively parameter tuning though the `learning-tool-competition` project.
-
-
-```python
-
-```
