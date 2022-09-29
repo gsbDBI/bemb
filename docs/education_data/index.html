@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://example.com/education_data/">
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.2">
+      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.3">
     
     
       
@@ -19,7 +19,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.69437709.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.7a952b86.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.cbb835fc.min.css">
@@ -30,6 +30,7 @@
         
       
       
+
     
     
     
@@ -48,6 +49,7 @@
     
       
 
+    
     
     
   </head>
@@ -140,7 +142,7 @@
       </label>
       <nav class="md-search__options" aria-label="Search">
         
-        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
         </button>
       </nav>
@@ -522,15 +524,17 @@
               </div>
             
           
-          <div class="md-content" data-md-component="content">
-            <article class="md-content__inner md-typeset">
-              
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
                 
+                  
 
 
 <h1 id="tutorial-for-bayesian-embedding-bemb-with-educational-data">Tutorial for Bayesian Embedding (BEMB) with Educational Data</h1>
 <p>Author: Tianyu Du</p>
-<p>Date: May. 7, 2022</p>
+<p>Date: May. 7, 2022
+Update: Sept. 28, 2022</p>
 <p>This tutorial helps lab members to deploy the BEMB model on educational question-answering (QA) datasets. We will be using the 17Zuoye data, which is available on Sherlock, throughout this tutorial.</p>
 <p>However, this tutorial generalizes to any QA datasets in which each row of the dataset corresponds to a triple (student, question, label). Equivalently, each row of these QA datasets is about a student answering a question correctly/incorrectly.</p>
 <p>You can find the executable Jupyter notebook for this tutorial <a href="https://github.com/gsbDBI/deepchoice/blob/main/tutorials/education_data/education_data.ipynb">here</a></p>
@@ -572,6 +576,7 @@ Please make sure the <code>data_path</code> is correct if you are running on you
 Feather is a portable file format for storing Arrow tables or data frames (from languages like Python or R) that utilizes the Arrow IPC format internally. Feather was created early in the Arrow project as a proof of concept for fast, language-agnostic data frame storage for Python (pandas) and R (see <a href="https://arrow.apache.org/docs/python/feather.html">here</a> for more information about Feather data format).
 You can easily load the data using pandas.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">data_path</span> <span class="o">=</span> <span class="s1">&#39;/oak/stanford/groups/athey/17Zuoye/bayesian_measurement_17zy/bayes&#39;</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># data_path = &#39;/media/tianyudu/Data/Athey/bayes&#39;</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">response_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="s1">&#39;exam_response_with_attrib.feather&#39;</span><span class="p">)</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">attribute_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="s1">&#39;exam_response_ques_attrib.feather&#39;</span><span class="p">)</span>
@@ -884,7 +889,7 @@ In this tutorial, we don't have any user observables (i.e., observables of stude
 </code></pre></div>
 <h3 id="splitting-data-into-training-validation-and-testing-sets">Splitting Data into Training, Validation, and Testing Sets</h3>
 <p>To test the generalizability of the model, we split the data into training, validation, and testing sets.
-Specifically, we randomly take 80% of student-question pairs as the training set, 10% as the validation set, and the rest 10% as the testing set.</p>
+Specifically, we randomly take 80% of student-question pairs as the training set, 10% as the validation set, and the rest 10% as the testing set. </p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1"># randomly permutate the index ranging from (0, 1, ..., len(choice_Dataset) - 1).</span>
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">choice_dataset</span><span class="p">))</span>
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="c1"># take the first 80% from the random permutation as indices for the training set.</span>
@@ -947,24 +952,6 @@ U_{ui} = \lambda_i + \theta_u^\top \alpha_i
 <div class="highlight"><pre><span></span><code>BEMB: utility formula parsed:
 [{&#39;coefficient&#39;: [&#39;lambda_item&#39;], &#39;observable&#39;: None},
  {&#39;coefficient&#39;: [&#39;theta_user&#39;, &#39;alpha_item&#39;], &#39;observable&#39;: None}]
-
-
-GPU available: True, used: True
-TPU available: False, using: 0 TPU cores
-IPU available: False, using: 0 IPUs
-HPU available: False, using: 0 HPUs
-LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-
-  | Name  | Type     | Params
------------------------------------
-0 | model | BEMBFlex | 5.3 M
------------------------------------
-5.3 M     Trainable params
-0         Non-trainable params
-5.3 M     Total params
-21.258    Total estimated model params size (MB)
-
-
 ==================== model received ====================
 Bayesian EMBedding Model with U[user, item, session] = lambda_item + theta_user * alpha_item
 Total number of parameters: 5314408.
@@ -980,25 +967,100 @@ ModuleDict(
 [Validation dataset] ChoiceDataset(label=[862172], item_index=[862172], user_index=[862172], session_index=[862172], item_availability=[], item_obs=[3604, 124], device=cpu)
 [Testing dataset] ChoiceDataset(label=[862172], item_index=[862172], user_index=[862172], session_index=[862172], item_availability=[], item_obs=[3604, 124], device=cpu)
 ==================== train the model ====================
-Sanity Checking: 0it [00:00, ?it/s]
 
+
+/home/tianyudu/anaconda3/envs/development/lib/python3.10/site-packages/pytorch_lightning/trainer/connectors/accelerator_connector.py:447: LightningDeprecationWarning: Setting `Trainer(gpus=1)` is deprecated in v1.7 and will be removed in v2.0. Please use `Trainer(accelerator=&#39;gpu&#39;, devices=1)` instead.
+  rank_zero_deprecation(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
 LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
 
+  | Name  | Type     | Params
+-----------------------------------
+0 | model | BEMBFlex | 5.3 M 
+-----------------------------------
+5.3 M     Trainable params
+0         Non-trainable params
+5.3 M     Total params
+21.258    Total estimated model params size (MB)
 
-time taken: 89.43709015846252
+
+
+Sanity Checking: 0it [00:00, ?it/s]
+
+
+
+Training: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+`Trainer.fit` stopped: `max_epochs=10` reached.
+
+
+time taken: 54.69776630401611
 ==================== test performance ====================
+
+
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
 
 
 
 Testing: 0it [00:00, ?it/s]
 
 
-───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
        Test metric             DataLoader 0
-───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-        test_acc            0.8308121813280877
-         test_ll            -0.3618064307005444
-───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+        test_acc            0.8299005302886199
+        test_auc             0.855947006804546
+         test_f1             0.897520421366994
+         test_ll           -0.36410953061998036
+        test_mse            0.1176305070796812
+       test_mse_se         0.0009547248708845476
+     test_precision         0.8541084351886367
+       test_recall          0.9455835324033649
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 </code></pre></div>
 <h3 id="leveraging-more-complex-utility-representations">Leveraging More Complex Utility Representations</h3>
 <p>Let's add the item-observable measuring capacities and knowledge required by answering each question to the utility representation.</p>
@@ -1043,24 +1105,6 @@ U_{ui} = \lambda_i + \theta_u^\top \alpha_i + \eta_u^\top X^{(item\_obs)}_i
 [{&#39;coefficient&#39;: [&#39;lambda_item&#39;], &#39;observable&#39;: None},
  {&#39;coefficient&#39;: [&#39;theta_user&#39;, &#39;alpha_item&#39;], &#39;observable&#39;: None},
  {&#39;coefficient&#39;: [&#39;eta_user&#39;], &#39;observable&#39;: &#39;item_obs&#39;}]
-
-
-GPU available: True, used: True
-TPU available: False, using: 0 TPU cores
-IPU available: False, using: 0 IPUs
-HPU available: False, using: 0 HPUs
-LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-
-  | Name  | Type     | Params
------------------------------------
-0 | model | BEMBFlex | 70.2 M
------------------------------------
-70.2 M    Trainable params
-0         Non-trainable params
-70.2 M    Total params
-280.920   Total estimated model params size (MB)
-
-
 ==================== model received ====================
 Bayesian EMBedding Model with U[user, item, session] = lambda_item + theta_user * alpha_item + eta_user * item_obs
 Total number of parameters: 70229896.
@@ -1078,22 +1122,99 @@ ModuleDict(
 [Testing dataset] ChoiceDataset(label=[862172], item_index=[862172], user_index=[862172], session_index=[862172], item_availability=[], item_obs=[3604, 124], device=cpu)
 ==================== train the model ====================
 
+
+/home/tianyudu/anaconda3/envs/development/lib/python3.10/site-packages/pytorch_lightning/trainer/connectors/accelerator_connector.py:447: LightningDeprecationWarning: Setting `Trainer(gpus=1)` is deprecated in v1.7 and will be removed in v2.0. Please use `Trainer(accelerator=&#39;gpu&#39;, devices=1)` instead.
+  rank_zero_deprecation(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
 LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
 
-time taken: 185.29189801216125
+  | Name  | Type     | Params
+-----------------------------------
+0 | model | BEMBFlex | 70.2 M
+-----------------------------------
+70.2 M    Trainable params
+0         Non-trainable params
+70.2 M    Total params
+280.920   Total estimated model params size (MB)
+
+
+
+Sanity Checking: 0it [00:00, ?it/s]
+
+
+
+Training: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+`Trainer.fit` stopped: `max_epochs=10` reached.
+
+
+time taken: 112.26553511619568
 ==================== test performance ====================
+
+
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
 
 
 
 Testing: 0it [00:00, ?it/s]
 
 
-───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
        Test metric             DataLoader 0
-───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-        test_acc             0.852068960717815
-         test_ll            -0.3408827750695644
-───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+        test_acc            0.8517094036920707
+        test_auc             0.885204845799722
+         test_f1            0.9099669643997097
+         test_ll            -0.3426648870818855
+        test_mse            0.10709758663938111
+       test_mse_se         0.0010785000066356716
+     test_precision          0.872055564772127
+       test_recall          0.9513266710617021
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 </code></pre></div>
 <h3 id="leveraging-obs2prior">Leveraging <code>obs2prior</code></h3>
 <p>In both examples above, the prior of all coefficients were standard Gaussian distributions.</p>
@@ -1136,24 +1257,6 @@ U_{ui} = \lambda_i + \theta_u^\top \alpha_i
 [{&#39;coefficient&#39;: [&#39;lambda_item&#39;], &#39;observable&#39;: None},
  {&#39;coefficient&#39;: [&#39;theta_user&#39;, &#39;alpha_item&#39;], &#39;observable&#39;: None},
  {&#39;coefficient&#39;: [&#39;eta_user&#39;], &#39;observable&#39;: &#39;item_obs&#39;}]
-
-
-GPU available: True, used: True
-TPU available: False, using: 0 TPU cores
-IPU available: False, using: 0 IPUs
-HPU available: False, using: 0 HPUs
-LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-
-  | Name  | Type     | Params
------------------------------------
-0 | model | BEMBFlex | 70.2 M
------------------------------------
-70.2 M    Trainable params
-0         Non-trainable params
-70.2 M    Total params
-280.930   Total estimated model params size (MB)
-
-
 ==================== model received ====================
 Bayesian EMBedding Model with U[user, item, session] = lambda_item + theta_user * alpha_item + eta_user * item_obs
 Total number of parameters: 70232624.
@@ -1171,39 +1274,274 @@ ModuleDict(
 [Testing dataset] ChoiceDataset(label=[862172], item_index=[862172], user_index=[862172], session_index=[862172], item_availability=[], item_obs=[3604, 124], device=cpu)
 ==================== train the model ====================
 
-Sanity Checking: 0it [00:00, ?it/s]
+
+/home/tianyudu/anaconda3/envs/development/lib/python3.10/site-packages/pytorch_lightning/trainer/connectors/accelerator_connector.py:447: LightningDeprecationWarning: Setting `Trainer(gpus=1)` is deprecated in v1.7 and will be removed in v2.0. Please use `Trainer(accelerator=&#39;gpu&#39;, devices=1)` instead.
+  rank_zero_deprecation(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
 LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
 
+  | Name  | Type     | Params
+-----------------------------------
+0 | model | BEMBFlex | 70.2 M
+-----------------------------------
+70.2 M    Trainable params
+0         Non-trainable params
+70.2 M    Total params
+280.930   Total estimated model params size (MB)
 
-time taken: 941.1486117839813
+
+
+Sanity Checking: 0it [00:00, ?it/s]
+
+
+
+Training: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+
+Validation: 0it [00:00, ?it/s]
+
+
+`Trainer.fit` stopped: `max_epochs=50` reached.
+
+
+time taken: 562.2096726894379
 ==================== test performance ====================
+
+
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
 
 
 
 Testing: 0it [00:00, ?it/s]
 
 
-───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
        Test metric             DataLoader 0
-───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-        test_acc            0.8209313222883601
-         test_ll            -0.3934649652798017
-───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+        test_acc            0.8202945583943807
+        test_auc            0.8306907476885476
+         test_f1            0.8939502167060785
+         test_ll           -0.39504207835551197
+        test_mse            0.12611882235908273
+       test_mse_se         0.0009444419977889863
+     test_precision         0.8352596597377366
+       test_recall          0.9615144020585291
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 </code></pre></div>
 <h3 id="tuning-the-model">Tuning the Model</h3>
 <p>There are tons of parameters in models above, for example, we choose <code>LATENT_DIM = 10</code> based on our own experience. However, these choices of hyper-parameters can be sub-optimal.</p>
 <p>We recommend researchers to try out different combinations of hyper-parameters before sticking with a particular hyper-parameter configuration.</p>
 <p>We will be providing a script for effectively parameter tuning though the <code>learning-tool-competition</code> project.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>
-</code></pre></div>
 
 
 
 
-              
-            </article>
-            
-          </div>
+
+                
+              </article>
+            </div>
+          
+          
         </div>
         
       </main>
@@ -1231,10 +1569,10 @@ Testing: 0it [00:00, ?it/s]
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.ecf98df9.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.9c69f0bc.min.js"></script>
+      <script src="../assets/javascripts/bundle.37e9125f.min.js"></script>
       
         <script src="../javascripts/mathjax.js"></script>
       
