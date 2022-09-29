@@ -67,15 +67,20 @@ class LitBEMBFlex(pl.LightningModule):
             performance = {'acc': metrics.accuracy_score(y_true=y_true, y_pred=y_pred),
                            'll': - metrics.log_loss(y_true=y_true, y_pred=np.exp(log_p), labels=np.arange(num_classes))}
         else:
-            # making binary station.
+            # making binary station, more performance metrics will be reported in this case.
             pred = self.model(batch, return_type='utility',
                               return_scope='item_index', deterministic=True)
             y_pred = torch.sigmoid(pred).cpu().numpy()
+            y_pred_binary = (y_pred > 0.5).astype(int)
             y_true = batch.label.cpu().numpy()
             performance = {'acc': metrics.accuracy_score(y_true=y_true, y_pred=(y_pred >= 0.5).astype(int)),
                            'll': - metrics.log_loss(y_true=y_true, y_pred=y_pred, eps=1E-5, labels=[0, 1]),
-                           #    'auc': metrics.roc_auc_score(y_true=y_true, y_score=y_pred),
-                           #    'f1': metrics.f1_score(y_true=y_true, y_pred=(y_pred >= 0.5).astype(int))
+                           'mse': metrics.mean_squared_error(y_true=y_true, y_pred=y_pred),
+                           'mse_se': ((y_pred - y_true)**2).std() / np.sqrt(len(y_true)),
+                           'precision': metrics.precision_score(y_true=y_true, y_pred=y_pred_binary),
+                           'recall': metrics.recall_score(y_true=y_true, y_pred=y_pred_binary),
+                           'f1': metrics.f1_score(y_true=y_true, y_pred=y_pred_binary),
+                           'auc': metrics.roc_auc_score(y_true=y_true, y_score=y_pred)
                            }
         return performance
 
