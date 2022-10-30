@@ -19,11 +19,12 @@ import torch.nn.functional as F
 if __name__ == '__main__':
     # 0. load configuration.
     with open(sys.argv[1], 'r') as file:
-        args = argparse.Namespace(**yaml.load(file, Loader=yaml.FullLoader))  # unwrap dictionary loaded.
+        # unwrap dictionary loaded.
+        args = argparse.Namespace(**yaml.load(file, Loader=yaml.FullLoader))
 
     # 1. load dataset.
     dataset = load_dataset(args)
- 
+
     # 2. split dataset.
     # Not Implemented Yet.
     datasets = [dataset, None, None]

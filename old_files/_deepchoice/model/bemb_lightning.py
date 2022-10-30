@@ -5,7 +5,11 @@ from _deepchoice.model import BEMB
 
 class LitBEMB(pl.LightningModule):
 
-    def __init__(self, learning_rate: float = 0.3, num_seeds: int=1, **kwargs):
+    def __init__(
+            self,
+            learning_rate: float = 0.3,
+            num_seeds: int = 1,
+            **kwargs):
         # use kwargs to pass parameter to BEMB Torch.
         super().__init__()
         self.model = BEMB(**kwargs)
@@ -27,8 +31,10 @@ class LitBEMB(pl.LightningModule):
         # get the log-likelihood.
         pred = self.model(batch)
         # non-differentiable metrics.
-        performance = self.model.get_within_category_accuracy(pred, batch.label)
-        performance[name + '_log_likelihood'] = pred[torch.arange(len(batch)), batch.label].mean().detach().cpu().item()
+        performance = self.model.get_within_category_accuracy(
+            pred, batch.label)
+        performance[name + '_log_likelihood'] = pred[torch.arange(
+            len(batch)), batch.label].mean().detach().cpu().item()
         for key, val in performance.items():
             self.log(name + '_' + key, val, prog_bar=(key == 'accuracy'))
 

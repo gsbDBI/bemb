@@ -87,11 +87,17 @@ item_mean = - torch.randn((NUM_ITEMS, K * NUM_P_DIM))
 # In[123]:
 
 
-theta_dist = MultivariateNormal(loc=item_mean, covariance_matrix=torch.eye(K * NUM_P_DIM))
+theta_dist = MultivariateNormal(
+    loc=item_mean,
+    covariance_matrix=torch.eye(
+        K * NUM_P_DIM))
 theta = theta_dist.sample()
 theta = theta.reshape(NUM_ITEMS, K, NUM_P_DIM)
 
-beta_dist = MultivariateNormal(loc=user_mean, covariance_matrix=torch.eye(K * NUM_P_DIM))
+beta_dist = MultivariateNormal(
+    loc=user_mean,
+    covariance_matrix=torch.eye(
+        K * NUM_P_DIM))
 beta = beta_dist.sample()
 beta = beta.reshape(NUM_USERS, K, NUM_P_DIM)
 
@@ -99,8 +105,16 @@ beta = beta.reshape(NUM_USERS, K, NUM_P_DIM)
 # In[124]:
 
 
-user_index = torch.LongTensor(np.random.choice(range(NUM_USERS), size=N, replace=True))
-session_index = torch.LongTensor(np.random.choice(range(NUM_SESSIONS), size=N, replace=True))
+user_index = torch.LongTensor(
+    np.random.choice(
+        range(NUM_USERS),
+        size=N,
+        replace=True))
+session_index = torch.LongTensor(
+    np.random.choice(
+        range(NUM_SESSIONS),
+        size=N,
+        replace=True))
 
 
 # In[125]:
@@ -146,9 +160,9 @@ label = torch.argmax(U, dim=1)
 # In[129]:
 
 
-train_mask = np.arange(0, int(0.7*N))
-val_mask = np.arange(int(0.7*N), int(0.85*N))
-test_mask = np.arange(int(0.85*N), N)
+train_mask = np.arange(0, int(0.7 * N))
+val_mask = np.arange(int(0.7 * N), int(0.85 * N))
+test_mask = np.arange(int(0.85 * N), N)
 
 dataset_list = list()
 for mask in (train_mask, val_mask, test_mask):
@@ -202,14 +216,26 @@ class LitBEMBFlex(pl.LightningModule):
         return optimizer
 
     def train_dataloader(self):
-        return create_data_loader(dataset_list[0], batch_size=self.batch_size, shuffle=True, num_workers=8)
+        return create_data_loader(
+            dataset_list[0],
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=8)
 
     def val_dataloader(self):
-        return create_data_loader(dataset_list[1], batch_size=self.batch_size, shuffle=True, num_workers=8)
+        return create_data_loader(
+            dataset_list[1],
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=8)
 
     def test_dataloader(self):
         # use smaller batch size for test, which takes more memory.
-        return create_data_loader(dataset_list[2], batch_size=10000, shuffle=False, num_workers=8)
+        return create_data_loader(
+            dataset_list[2],
+            batch_size=10000,
+            shuffle=False,
+            num_workers=8)
 
 
 # In[131]:
@@ -217,13 +243,20 @@ class LitBEMBFlex(pl.LightningModule):
 
 num_latents = 50
 
-model = LitBEMBFlex(utility_formula='theta_item * beta_user * price_obs',
-                    num_users=NUM_USERS,
-                    num_items=NUM_ITEMS,
-                    num_sessions=NUM_SESSIONS,
-                    obs2prior_dict={'theta_item': False, 'beta_user': False},
-                    coef_dim_dict={'theta_item': num_latents * NUM_P_DIM, 'beta_user': num_latents * NUM_P_DIM},
-                    num_price_obs=NUM_P_DIM)
+model = LitBEMBFlex(
+    utility_formula='theta_item * beta_user * price_obs',
+    num_users=NUM_USERS,
+    num_items=NUM_ITEMS,
+    num_sessions=NUM_SESSIONS,
+    obs2prior_dict={
+        'theta_item': False,
+        'beta_user': False},
+    coef_dim_dict={
+        'theta_item': num_latents *
+        NUM_P_DIM,
+        'beta_user': num_latents *
+        NUM_P_DIM},
+    num_price_obs=NUM_P_DIM)
 trainer = pl.Trainer(
     max_epochs=10,
     check_val_every_n_epoch=1,
@@ -243,16 +276,25 @@ quit()
 
 num_epochs = 50
 
-callback = TuneReportCallback({'val_log_likelihood': 'val_log_likelihood'}, on='validation_end')
+callback = TuneReportCallback(
+    {'val_log_likelihood': 'val_log_likelihood'}, on='validation_end')
+
 
 def train_tune(hparams, epochs=10, gpus=1):
-    model = LitBEMBFlex(utility_formula='theta_item * beta_user * price_obs',
-                    num_users=NUM_USERS,
-                    num_items=NUM_ITEMS,
-                    num_sessions=NUM_SESSIONS,
-                    obs2prior_dict={'theta_item': False, 'beta_user': False},
-                    coef_dim_dict={'theta_item': hparams['num_latents'] * NUM_P_DIM, 'beta_user': hparams['num_latents'] * NUM_P_DIM},
-                    num_price_obs=NUM_P_DIM)
+    model = LitBEMBFlex(
+        utility_formula='theta_item * beta_user * price_obs',
+        num_users=NUM_USERS,
+        num_items=NUM_ITEMS,
+        num_sessions=NUM_SESSIONS,
+        obs2prior_dict={
+            'theta_item': False,
+            'beta_user': False},
+        coef_dim_dict={
+            'theta_item': hparams['num_latents'] *
+            NUM_P_DIM,
+            'beta_user': hparams['num_latents'] *
+            NUM_P_DIM},
+        num_price_obs=NUM_P_DIM)
 
     trainer = pl.Trainer(
         max_epochs=epochs,
@@ -260,7 +302,10 @@ def train_tune(hparams, epochs=10, gpus=1):
         log_every_n_steps=1,
         gpus=gpus,
         progress_bar_refresh_rate=0,
-        logger=TensorBoardLogger(save_dir=tune.get_trial_dir(), name='', version='.'),
+        logger=TensorBoardLogger(
+            save_dir=tune.get_trial_dir(),
+            name='',
+            version='.'),
         callbacks=[callback])
     trainer.fit(model)
 
@@ -293,7 +338,3 @@ print("Best hyperparameters found were: ", analysis.best_config)
 
 
 # In[ ]:
-
-
-
-

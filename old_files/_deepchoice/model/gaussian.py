@@ -18,7 +18,8 @@ def batch_factorized_gaussian_log_prob(mu, logstd, value):
     B = - 0.5 * logstd.sum(dim=-1).view(1, -1)  # (1, num_classes)
     num_classes = value.shape[1]
     # (x - mu)
-    diff = value - mu.view(1, num_classes, dim)  # (batch_size, num_classes, dim)
+    # (batch_size, num_classes, dim)
+    diff = value - mu.view(1, num_classes, dim)
     std = torch.exp(logstd).view(1, num_classes, dim)  # (1, num_classes, dim)
     # Sum[std * (x - mu)^2] across dimensions.
     C = - 0.5 * (1 / std * diff ** 2).sum(dim=-1)  # (batch_size, num_classes)
@@ -38,7 +39,8 @@ if __name__ == "__main__":
     log_prob = torch.zeros(batch_size, num_classes)
 
     for i in range(num_classes):
-        G = MultivariateNormal(loc=mu[i, :], covariance_matrix=torch.diag(torch.exp(logstd[i, :])))
+        G = MultivariateNormal(
+            loc=mu[i, :], covariance_matrix=torch.diag(torch.exp(logstd[i, :])))
         for j in range(batch_size):
             log_prob[j, i] = G.log_prob(values[j, i, :])
 

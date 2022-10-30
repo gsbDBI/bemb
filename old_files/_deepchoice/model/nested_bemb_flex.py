@@ -21,15 +21,15 @@ class NestedBEMB(nn.Module):
                  category_to_item: Dict[str, List[int]],
                  latent_dim_item: int,
                  latent_dim_category: int,
-                 trace_log_q_item: Optional[bool]=False,
-                 trace_log_q_category: Optional[bool]=False,
-                 num_user_obs: Optional[int]=None,
-                 num_item_obs: Optional[int]=None,
-                 num_category_obs: Optional[int]=None,
-                 num_session_obs: Optional[int]=None,
-                 num_price_obs: Optional[int]=None,
-                 num_taste_obs: Optional[int]=None,
-                 shared_lambda: bool=False):
+                 trace_log_q_item: Optional[bool] = False,
+                 trace_log_q_category: Optional[bool] = False,
+                 num_user_obs: Optional[int] = None,
+                 num_item_obs: Optional[int] = None,
+                 num_category_obs: Optional[int] = None,
+                 num_session_obs: Optional[int] = None,
+                 num_price_obs: Optional[int] = None,
+                 num_taste_obs: Optional[int] = None,
+                 shared_lambda: bool = False):
         self.__dict__.update(locals())
         super(NestedBEMB, self).__init__()
         # read in args.
@@ -68,9 +68,11 @@ class NestedBEMB(nn.Module):
         # self.shared_lambda = shared_lambda
 
         if self.shared_lambda:
-            self.lambda_weight = nn.Parameter(torch.ones(1), requires_grad=True)
+            self.lambda_weight = nn.Parameter(
+                torch.ones(1), requires_grad=True)
         else:
-            self.lambda_weight = nn.Parameter(torch.ones(self.num_categories) / 2, requires_grad=True)
+            self.lambda_weight = nn.Parameter(torch.ones(
+                self.num_categories) / 2, requires_grad=True)
 
         self.BEMB_item = BEMBFlex(**item_level_args)
         self.BEMB_category = BEMBFlex(**category_level_args)
@@ -89,15 +91,20 @@ class NestedBEMB(nn.Module):
     def forward(self, batch_item, batch_category):
         sample_dict_item = dict()
         for coef_name, variational in self.BEMB_item.variational_dict.items():
-            sample_dict_item[coef_name] = variational.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+            sample_dict_item[coef_name] = variational.mean.unsqueeze(
+                dim=0)  # (1, num_*, dim)
 
         sample_dict_category = dict()
         for coef_name, variational in self.BEMB_category.variational_dict.items():
-            sample_dict_category[coef_name] = variational.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+            sample_dict_category[coef_name] = variational.mean.unsqueeze(
+                dim=0)  # (1, num_*, dim)
 
         # there is 1 random seed in this case.
-        out = self.log_likelihood(batch_item, batch_category,
-                                  sample_dict_item, sample_dict_category)  # (num_seeds=1, num_sessions, num_items)
+        out = self.log_likelihood(
+            batch_item,
+            batch_category,
+            sample_dict_item,
+            sample_dict_category)  # (num_seeds=1, num_sessions, num_items)
         return out.squeeze()  # (num_sessions, num_items)
 
     def log_likelihood(self, batch_item, batch_category,
@@ -122,12 +129,15 @@ class NestedBEMB(nn.Module):
         # NOTE: item_obs in batch_category is category observables indeed.
         # with return_logit=True, log_likelihood returns utility instead of likelihood.
         # (num_seeds, batch_size, self.num_category)
-        W = self.BEMB_category.log_likelihood(batch_category, sample_dict_category, return_logit=True)
+        W = self.BEMB_category.log_likelihood(
+            batch_category, sample_dict_category, return_logit=True)
 
         # item-specific utilities (Y).
         # (num_seeds, batch_size, self.num_items)
-        # unavailable items are already masked out with -Inf utility given batch_item.item_availability.
-        Y = self.BEMB_item.log_likelihood_all_items(batch_item, sample_dict_item, return_logit=True)
+        # unavailable items are already masked out with -Inf utility given
+        # batch_item.item_availability.
+        Y = self.BEMB_item.log_likelihood_all_items(
+            batch_item, sample_dict_item, return_logit=True)
 
         # ==========================================================================================
         # compute the inclusive value of each category.
@@ -140,7 +150,8 @@ class NestedBEMB(nn.Module):
             Y[:, :, Bk] /= self.lambdas[k]
             # compute inclusive value for category k.
             # (num_seeds, num_sessions,)
-            inclusive_value[k] = torch.logsumexp(Y[:, :, Bk], dim=-1, keepdim=False)
+            inclusive_value[k] = torch.logsumexp(
+                Y[:, :, Bk], dim=-1, keepdim=False)
 
         # boardcast inclusive value from (num_seeds, num_sessions, num_categories)
         # to (num_seeds, num_sessions, num_items).
@@ -164,11 +175,14 @@ class NestedBEMB(nn.Module):
         # the category item i belongs to.
         logit = torch.zeros(num_seeds, num_sessions, self.num_items).to(device)
         for k, Bk in self.category_to_item.items():
-            logit[:, :, Bk] = (W[:, :, k] + self.lambdas[k] * inclusive_value[k]).view(num_seeds, num_sessions, 1)
-        # only count each category once in the logsumexp within the category level model.
+            logit[:, :, Bk] = (W[:, :, k] + self.lambdas[k] * \
+                               inclusive_value[k]).view(num_seeds, num_sessions, 1)
+        # only count each category once in the logsumexp within the category
+        # level model.
         cols = [x[0] for x in self.category_to_item.values()]
         # (num_seeds, num_sessions, num_items)
-        logP_category = logit - torch.logsumexp(logit[:, cols], dim=1, keepdim=True)
+        logP_category = logit - \
+            torch.logsumexp(logit[:, cols], dim=1, keepdim=True)
 
         # ==========================================================================================
         # compute the joint log P_{ni} as in the textbook.
@@ -177,48 +191,58 @@ class NestedBEMB(nn.Module):
         logP = logP_item + logP_category
         return logP
 
-    def elbo(self, batch_item, batch_category, num_seeds: int=1) -> torch.Tensor:
+    def elbo(self, batch_item, batch_category,
+             num_seeds: int = 1) -> torch.Tensor:
         # output shape: scalar.
         # 1. sample latent variables from their variational distributions.
         # (num_seeds, num_classes, dim)
         sample_dict_item = dict()
         for coef_name, variational in self.BEMB_item.variational_dict.items():
-            sample_dict_item[coef_name] = variational.reparameterize_sample(num_seeds)
+            sample_dict_item[coef_name] = variational.reparameterize_sample(
+                num_seeds)
 
         sample_dict_category = dict()
         for coef_name, variational in self.BEMB_category.variational_dict.items():
-            sample_dict_category[coef_name] = variational.reparameterize_sample(num_seeds)
+            sample_dict_category[coef_name] = variational.reparameterize_sample(
+                num_seeds)
 
         # 2. compute log p(latent) prior.
         # (num_seeds,)
         # TODO: is this correct to assume independent priors?
-        log_prior = self.BEMB_item.log_prior(batch_item, sample_dict_item) \
-                  + self.BEMB_category.log_prior(batch_category, sample_dict_category)
+        log_prior = self.BEMB_item.log_prior(
+            batch_item, sample_dict_item) + self.BEMB_category.log_prior(
+            batch_category, sample_dict_category)
         # scalar.
-        elbo = log_prior.mean()  # average over Monte Carlo samples for expectation.
+        # average over Monte Carlo samples for expectation.
+        elbo = log_prior.mean()
 
         # 3. compute the log likelihood log p(obs|latent).
         # (num_seeds, num_sessions, num_items)
-        log_p_all_items = self.log_likelihood(batch_item=batch_item,
-                                              batch_category=batch_category,
-                                              sample_dict_item=sample_dict_item,
-                                              sample_dict_category=sample_dict_category)
+        log_p_all_items = self.log_likelihood(
+            batch_item=batch_item,
+            batch_category=batch_category,
+            sample_dict_item=sample_dict_item,
+            sample_dict_category=sample_dict_category)
         # (num_sessions, num_items), averaged over Monte Carlo samples for expectation at dim 0.
         log_p_all_items = log_p_all_items.mean(dim=0)
 
         # log_p_cond[*, session] = log prob of the item bought in this session.
         # (num_sessions,)
-        log_p_chosen_items = log_p_all_items[torch.arange(len(batch_item)), batch_item.label]
+        log_p_chosen_items = log_p_all_items[torch.arange(
+            len(batch_item)), batch_item.label]
         # scalar
         elbo += log_p_chosen_items.sum(dim=-1)  # sessions are independent.
 
-        # 4. optionally add log likelihood under variational distributions q(latent).
+        # 4. optionally add log likelihood under variational distributions
+        # q(latent).
         if self.trace_log_q_item:
-            log_q_item = self.BEMB_item.log_variational(sample_dict_item)  # (num_seeds,)
+            log_q_item = self.BEMB_item.log_variational(
+                sample_dict_item)  # (num_seeds,)
             elbo -= log_q_item.mean()  # scalar.
 
         if self.trace_log_q_category:
-            log_q_category = self.BEMB_category.log_variational(sample_dict_category)  # (num_seeds,)
+            log_q_category = self.BEMB_category.log_variational(
+                sample_dict_category)  # (num_seeds,)
             elbo -= log_q_category.mean()  # scalar.
 
         return elbo

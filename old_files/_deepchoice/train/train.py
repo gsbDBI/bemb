@@ -45,7 +45,8 @@ def train(data_loaders: List[dict],
     do_test = data_test is not None
 
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
-    scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=args.lr_decay)
+    scheduler = optim.lr_scheduler.ExponentialLR(
+        optimizer=optimizer, gamma=args.lr_decay)
     # scheduler = optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=5000, gamma=0.1)
 
     # model's state_dict from last epoch.
@@ -58,7 +59,9 @@ def train(data_loaders: List[dict],
 
     # run until convergence in terms of parameter.
     # TODO(Tianyu): optionally assess convergence using change in loss.
-    while (param_norm_change > args.param_norm_eps) and (epoch <= args.max_epochs):
+    while (
+            param_norm_change > args.param_norm_eps) and (
+            epoch <= args.max_epochs):
         epoch += 1
         # running average across mini-batches.
         epoch_loss, epoch_acc = list(), list()
@@ -83,7 +86,8 @@ def train(data_loaders: List[dict],
         if last_model is None:
             param_norm_change = 1E10
         else:
-            param_norm_change = utils.diff_in_norm(last_model, model.state_dict())
+            param_norm_change = utils.diff_in_norm(
+                last_model, model.state_dict())
         # record the current model.
         last_model = copy.deepcopy(model.state_dict())
 
@@ -111,7 +115,8 @@ def eval_step(model, data_loader, args) -> dict:
     """
     model.eval()
     log_likelihood = 0.0
-    # average across batches, but in most cases, validation and test data_loaders should only have 1 batch.
+    # average across batches, but in most cases, validation and test
+    # data_loaders should only have 1 batch.
     loss_list, acc_list = list(), list()
     for batch in data_loader:
         y_pred = model(batch)

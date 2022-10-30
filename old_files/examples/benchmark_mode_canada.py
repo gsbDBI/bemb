@@ -1,6 +1,10 @@
 """
 Benchmark using the ModeCanada dataset in R.
 """
+from train.train import train
+from model.conditional_logit_model import ConditionalLogitModel
+from data.dataset import CMDataset
+from data.data_formatter import stata_to_tensors
 import argparse
 import os
 import pdb
@@ -17,17 +21,14 @@ import yaml
 sys.path.append('./src')
 sys.path.append('../src')
 sys.path.append('./')
-from data.data_formatter import stata_to_tensors
-from data.dataset import CMDataset
-from model.conditional_logit_model import ConditionalLogitModel
-from train.train import train
 
 
-def main(modifier: Optional[dict]=None):
+def main(modifier: Optional[dict] = None):
     # arg_path = sys.argv[1]
     arg_path = './args_mode_canada.yaml'
     with open(arg_path) as file:
-        args = argparse.Namespace(**yaml.load(file, Loader=yaml.FullLoader))  # unwrap dictionary loaded.
+        # unwrap dictionary loaded.
+        args = argparse.Namespace(**yaml.load(file, Loader=yaml.FullLoader))
 
     if modifier is not None:
         for k, v in modifier.items():
@@ -42,7 +43,11 @@ def main(modifier: Optional[dict]=None):
         print(f'Running on CPU.')
 
     project_path = '~/Development/deepchoice'
-    mode_canada = pd.read_csv(os.path.join(project_path, 'data/ModeCanada.csv'), index_col=0)
+    mode_canada = pd.read_csv(
+        os.path.join(
+            project_path,
+            'data/ModeCanada.csv'),
+        index_col=0)
     mode_canada = mode_canada.query('noalt == 4').reset_index(drop=True)
 
     # u: user, i: item, t: time/session.
@@ -74,7 +79,13 @@ def main(modifier: Optional[dict]=None):
 
     model = model.to(args.device)
     print(f'Number of parameters: {model.num_params}')
-    dataset = CMDataset(X=X, user_onehot=user_onehot, A=A, Y=Y, C=C, device=args.device)
+    dataset = CMDataset(
+        X=X,
+        user_onehot=user_onehot,
+        A=A,
+        Y=Y,
+        C=C,
+        device=args.device)
     if args.batch_size == -1:
         # use full-batch.
         args.batch_size = len(dataset)
@@ -90,7 +101,7 @@ def main(modifier: Optional[dict]=None):
                                              num_workers=0,  # 0 if dataset.device == 'cuda' else os.cpu_count(),
                                              collate_fn=lambda x: x[0],
                                              pin_memory=(dataset.device == 'cpu'))
-    start = datetime.now() 
+    start = datetime.now()
     train([data_train, None, None], model, args)
 
     # print final estimation.
@@ -113,7 +124,8 @@ def main(modifier: Optional[dict]=None):
         if var_type == 'intercept':
             print(f'Variable Type: {var_type}')
         else:
-            print(f'Variable Type: {var_type}, variables: {var_cols_dict[var_type]}')
+            print(
+                f'Variable Type: {var_type}, variables: {var_cols_dict[var_type]}')
         for i, s in enumerate(std_dict[var_type]):
             c = model.coef_dict[var_type].coef.view(-1,)[i]
             print(f'{c.item():.4f}, {s.item():.4f}')

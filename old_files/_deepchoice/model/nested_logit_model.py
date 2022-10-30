@@ -18,8 +18,8 @@ class NestedLogitModel(nn.Module):
                  category_num_param_dict: Dict[str, int],
                  item_coef_variation_dict: Dict[str, str],
                  item_num_param_dict: Dict[str, int],
-                 num_users: Optional[int]=None,
-                 shared_lambda: bool=False
+                 num_users: Optional[int] = None,
+                 shared_lambda: bool = False
                  ) -> None:
         """Initialization method of the nested logit model.
 
@@ -64,20 +64,22 @@ class NestedLogitModel(nn.Module):
         self.num_items = sum(len(items) for items in category_to_item.values())
 
         # category coefficients.
-        self.category_coef_dict = self._build_coef_dict(self.category_coef_variation_dict,
-                                                        self.category_num_param_dict,
-                                                        self.num_categories)
+        self.category_coef_dict = self._build_coef_dict(
+            self.category_coef_variation_dict,
+            self.category_num_param_dict,
+            self.num_categories)
 
         # item coefficients.
-        self.item_coef_dict = self._build_coef_dict(self.item_coef_variation_dict,
-                                                    self.item_num_param_dict,
-                                                    self.num_items)
+        self.item_coef_dict = self._build_coef_dict(
+            self.item_coef_variation_dict, self.item_num_param_dict, self.num_items)
 
         self.shared_lambda = shared_lambda
         if self.shared_lambda:
-            self.lambda_weight = nn.Parameter(torch.ones(1), requires_grad=True)
+            self.lambda_weight = nn.Parameter(
+                torch.ones(1), requires_grad=True)
         else:
-            self.lambda_weight = nn.Parameter(torch.ones(self.num_categories) / 2, requires_grad=True)
+            self.lambda_weight = nn.Parameter(torch.ones(
+                self.num_categories) / 2, requires_grad=True)
         # breakpoint()
         # self.iv_weights = nn.Parameter(torch.ones(1), requires_grad=True)
         # used to warn users if forgot to call clamp.
@@ -92,7 +94,8 @@ class NestedLogitModel(nn.Module):
                          num_param_dict: Dict[str, int],
                          num_items: int):
         # build coefficient dictionary, mapping variable groups to the corresponding Coefficient
-        # Module. num_items could be the actual number of items or the number of categories.
+        # Module. num_items could be the actual number of items or the number
+        # of categories.
         coef_dict = dict()
         for var_type, variation in coef_variation_dict.items():
             num_params = num_param_dict[var_type]
@@ -102,14 +105,21 @@ class NestedLogitModel(nn.Module):
                                               num_params=num_params)
         return nn.ModuleDict(coef_dict)
 
-    def _check_input_shapes(self, category_x_dict, item_x_dict, user_index, item_availability) -> None:
+    def _check_input_shapes(
+            self,
+            category_x_dict,
+            item_x_dict,
+            user_index,
+            item_availability) -> None:
         T = list(category_x_dict.values())[0].shape[0]  # batch size.
         for var_type, x_category in category_x_dict.items():
             x_item = item_x_dict[var_type]
             assert len(x_item.shape) == len(x_item.shape) == 3
             assert x_category.shape[0] == x_item.shape[0]
-            assert x_category.shape == (T, self.num_categories, self.category_num_param_dict[var_type])
-            assert x_item.shape == (T, self.num_items, self.item_num_param_dict[var_type])
+            assert x_category.shape == (
+                T, self.num_categories, self.category_num_param_dict[var_type])
+            assert x_item.shape == (
+                T, self.num_items, self.item_num_param_dict[var_type])
 
         if (user_index is not None) and (self.num_users is not None):
             assert user_index.shape == (T,)
@@ -159,14 +169,16 @@ class NestedLogitModel(nn.Module):
         # if not self._clamp_called_flag:
         #     warnings.warn('Did you forget to call clamp_lambdas() after optimizer.step()?')
 
-        # The overall utility of item can be decomposed into V[item] = W[category] + Y[item] + eps.
+        # The overall utility of item can be decomposed into V[item] =
+        # W[category] + Y[item] + eps.
         T = list(item_x_dict.values())[0].shape[0]
         device = list(item_x_dict.values())[0].device
         # compute category-specific utility with shape (T, num_categories).
         W = torch.zeros(T, self.num_categories).to(device)
 
         if 'intercept' in self.category_coef_variation_dict.keys():
-            category_x_dict['intercept'] = torch.ones((T, self.num_categories, 1)).to(device)
+            category_x_dict['intercept'] = torch.ones(
+                (T, self.num_categories, 1)).to(device)
 
         for var_type, coef in self.category_coef_dict.items():
             W += coef(category_x_dict[var_type], user_index)
@@ -187,14 +199,17 @@ class NestedLogitModel(nn.Module):
             Y[:, Bk] /= self.lambdas[k]
             # compute inclusive value for category k.
             # mask out unavilable items.
-            inclusive_value[k] = torch.logsumexp(Y[:, Bk], dim=1, keepdim=False)  # (T,)
+            inclusive_value[k] = torch.logsumexp(
+                Y[:, Bk], dim=1, keepdim=False)  # (T,)
         # boardcast inclusive value from (T, num_categories) to (T, num_items).
-        # for trip t, I[t, i] is the inclusive value of the category item i belongs to.
+        # for trip t, I[t, i] is the inclusive value of the category item i
+        # belongs to.
         I = torch.zeros(T, self.num_items).to(device)
         for k, Bk in self.category_to_item.items():
             I[:, Bk] = inclusive_value[k].view(-1, 1)  # (T, |Bk|)
 
-        # logP_item[t, i] = log P(ni|Bk), where Bk is the category item i is in, n is the user in trip t.
+        # logP_item[t, i] = log P(ni|Bk), where Bk is the category item i is
+        # in, n is the user in trip t.
         logP_item = Y - I  # (T, num_items)
 
         # =============================================================================
@@ -204,10 +219,13 @@ class NestedLogitModel(nn.Module):
         # the category item i belongs to.
         logit = torch.zeros(T, self.num_items).to(device)
         for k, Bk in self.category_to_item.items():
-            logit[:, Bk] = (W[:, k] + self.lambdas[k] * inclusive_value[k]).view(-1, 1)  # (T, |Bk|)
-        # only count each category once in the logsumexp within the category level model.
+            logit[:, Bk] = (W[:, k] + self.lambdas[k] *
+                            inclusive_value[k]).view(-1, 1)  # (T, |Bk|)
+        # only count each category once in the logsumexp within the category
+        # level model.
         cols = [x[0] for x in self.category_to_item.values()]
-        logP_category = logit - torch.logsumexp(logit[:, cols], dim=1, keepdim=True)
+        logP_category = logit - \
+            torch.logsumexp(logit[:, cols], dim=1, keepdim=True)
 
         # =============================================================================
         # compute the joint log P_{ni} as in the textbook.
@@ -221,7 +239,7 @@ class NestedLogitModel(nn.Module):
     def negative_log_likelihood(self,
                                 batch,
                                 y: torch.LongTensor,
-                                is_train: bool=True) -> torch.Tensor:
+                                is_train: bool = True) -> torch.Tensor:
         # compute the negative log-likelihood loss directly.
         if is_train:
             self.train()
@@ -244,7 +262,7 @@ class NestedLogitModel(nn.Module):
         self._clam_called_flag = True
 
     @staticmethod
-    def add_constant(x: torch.Tensor, where: str='prepend') -> torch.Tensor:
+    def add_constant(x: torch.Tensor, where: str = 'prepend') -> torch.Tensor:
         """A helper function used to add constant to feature tensor,
         x has shape (batch_size, num_classes, num_parameters),
         returns a tensor of shape (*, num_parameters+1).

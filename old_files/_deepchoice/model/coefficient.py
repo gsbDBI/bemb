@@ -11,8 +11,8 @@ class Coefficient(nn.Module):
     def __init__(self,
                  variation: str,
                  num_params: int,
-                 num_items: Optional[int]=None,
-                 num_users: Optional[int]=None
+                 num_items: Optional[int] = None,
+                 num_users: Optional[int] = None
                  ) -> None:
         """A generic coefficient object storing trainable parameters.
 
@@ -34,27 +34,52 @@ class Coefficient(nn.Module):
         # construct the trainable.
         if self.variation == 'constant':
             # constant for all users and items.
-            self.coef = nn.Parameter(torch.randn(num_params), requires_grad=True)
+            self.coef = nn.Parameter(
+                torch.randn(num_params), requires_grad=True)
         elif self.variation == 'item':
             # coef depends on item j but not on user i.
             # force coefficeints for the first item class to be zero.
-            self.coef = nn.Parameter(torch.zeros(num_items - 1, num_params), requires_grad=True)
+            self.coef = nn.Parameter(
+                torch.zeros(
+                    num_items - 1,
+                    num_params),
+                requires_grad=True)
         elif self.variation == 'item-full':
             # coef depends on item j but not on user i.
             # model coefficient for every item.
-            self.coef = nn.Parameter(torch.zeros(num_items, num_params), requires_grad=True)
+            self.coef = nn.Parameter(
+                torch.zeros(
+                    num_items,
+                    num_params),
+                requires_grad=True)
         elif self.variation == 'user':
             # coef depends on the user.
             # we always model coefficeints for all users.
-            self.coef = nn.Parameter(torch.zeros(num_users, num_params), requires_grad=True)
+            self.coef = nn.Parameter(
+                torch.zeros(
+                    num_users,
+                    num_params),
+                requires_grad=True)
         elif self.variation == 'user-item':
-            # coefficients of the first item is forced to be zero, model coefficients for N - 1 items only.
-            self.coef = nn.Parameter(torch.zeros(num_users, num_items - 1, num_params), requires_grad=True)
+            # coefficients of the first item is forced to be zero, model
+            # coefficients for N - 1 items only.
+            self.coef = nn.Parameter(
+                torch.zeros(
+                    num_users,
+                    num_items - 1,
+                    num_params),
+                requires_grad=True)
         elif self.variation == 'user-item-full':
             # construct coefficients for every items.
-            self.coef = nn.Parameter(torch.zeros(num_users, num_items, num_params), requires_grad=True)
+            self.coef = nn.Parameter(
+                torch.zeros(
+                    num_users,
+                    num_items,
+                    num_params),
+                requires_grad=True)
         else:
-            raise ValueError(f'Unsupported type of variation: {self.variation}.')
+            raise ValueError(
+                f'Unsupported type of variation: {self.variation}.')
 
     def __repr__(self):
         return f'Coefficient(variation={self.variation}, num_items={self.num_items},' \
@@ -63,8 +88,8 @@ class Coefficient(nn.Module):
 
     def forward(self,
                 x: torch.Tensor,
-                user_index: Optional[torch.Tensor]=None,
-                manual_coef_value: Optional[torch.Tensor]=None
+                user_index: Optional[torch.Tensor] = None,
+                manual_coef_value: Optional[torch.Tensor] = None
                 ) -> torch.Tensor:
         """
         Args:
@@ -98,39 +123,50 @@ class Coefficient(nn.Module):
 
         # cast coefficient tensor to (num_trips, num_items, self.num_params).
         if self.variation == 'constant':
-            coef = coef.view(1, 1, self.num_params).expand(num_trips, num_items, -1)
+            coef = coef.view(
+                1, 1, self.num_params).expand(
+                num_trips, num_items, -1)
 
         elif self.variation == 'item':
             # coef has shape (num_items-1, num_params)
             # force coefficient for the first item to be zero.
             zeros = torch.zeros(1, self.num_params).to(coef.device)
             coef = torch.cat((zeros, coef), dim=0)  # (num_items, num_params)
-            coef = coef.view(1, self.num_items, self.num_params).expand(num_trips, -1, -1)
+            coef = coef.view(
+                1, self.num_items, self.num_params).expand(
+                num_trips, -1, -1)
 
         elif self.variation == 'item-full':
             # coef has shape (num_items, num_params)
-            coef = coef.view(1, self.num_items, self.num_params).expand(num_trips, -1, -1)
+            coef = coef.view(
+                1, self.num_items, self.num_params).expand(
+                num_trips, -1, -1)
 
         elif self.variation == 'user':
             # coef has shape (num_users, num_params)
-            coef = coef[user_index, :]  # (num_trips, num_params) user-specific coefficients.
-            coef = coef.view(num_trips, 1, self.num_params).expand(-1, num_items, -1)
+            # (num_trips, num_params) user-specific coefficients.
+            coef = coef[user_index, :]
+            coef = coef.view(
+                num_trips, 1, self.num_params).expand(-1, num_items, -1)
 
         elif self.variation == 'user-item':
             # (num_trips,) long tensor of user ID.
             # originally, coef has shape (num_users, num_items-1, num_params)
-            # transform to (num_trips, num_items - 1, num_params), user-specific.
+            # transform to (num_trips, num_items - 1, num_params),
+            # user-specific.
             coef = coef[user_index, :, :]
             # coefs for the first item for all users are enforced to 0.
             zeros = torch.zeros(num_trips, 1, self.num_params).to(coef.device)
-            coef = torch.cat((zeros, coef), dim=1)  # (num_trips, num_items, num_params)
+            # (num_trips, num_items, num_params)
+            coef = torch.cat((zeros, coef), dim=1)
 
         elif self.variation == 'user-item-full':
             # originally, coef has shape (num_users, num_items, num_params)
             coef = coef[user_index, :, :]  # (num_trips, num_items, num_params)
 
         else:
-            raise ValueError(f'Unsupported type of variation: {self.variation}.')
+            raise ValueError(
+                f'Unsupported type of variation: {self.variation}.')
 
         assert coef.shape == (num_trips, num_items, num_feats) == x.shape
 

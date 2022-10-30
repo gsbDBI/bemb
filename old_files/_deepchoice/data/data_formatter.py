@@ -13,18 +13,24 @@ import torch
 
 
 def tensors_to_stata() -> pd.DataFrame:
-    
+
     raise NotImplementedError
 
 
 def stata_to_tensors(df: pd.DataFrame,
-                     var_cols_dict: Dict[str, Union[List[str], None]],
-                     session_id: str='id',
-                     item_id: str='mode',
-                     choice: str='choice',
-                     category_id: Optional[str]=None,
-                     user_id: Optional[str]=None
-                     ) -> Tuple[Dict[str, torch.Tensor], torch.LongTensor, torch.BoolTensor, torch.LongTensor, torch.LongTensor]:
+                     var_cols_dict: Dict[str,
+                                         Union[List[str],
+                                               None]],
+                     session_id: str = 'id',
+                     item_id: str = 'mode',
+                     choice: str = 'choice',
+                     category_id: Optional[str] = None,
+                     user_id: Optional[str] = None) -> Tuple[Dict[str,
+                                                                  torch.Tensor],
+                                                             torch.LongTensor,
+                                                             torch.BoolTensor,
+                                                             torch.LongTensor,
+                                                             torch.LongTensor]:
     """Converts Stata format of data to a dictionary of feature tensors and aviliability.
 
     Args:
@@ -56,44 +62,53 @@ def stata_to_tensors(df: pd.DataFrame,
             in df[item_id] is chosen in that session.
         catetory (torch.LongTensor): a tensor with shape (num_trips) indicating the category of the current trip session.
     """
-    all_items = sorted(df[item_id].unique())  # NOTE: the order here is important.
+    all_items = sorted(df[item_id].unique()
+                       )  # NOTE: the order here is important.
     num_items = len(all_items)
-    # we don't assume the data type of raw item_id, we know convert to 
+    # we don't assume the data type of raw item_id, we know convert to
     item2int = dict(zip(all_items, range(num_items)))
     num_sessions = df[session_id].nunique()
 
-    # load covariate tensors, each has shape (batch_size, num_items, num_params), num_params varies by tensor. 
+    # load covariate tensors, each has shape (batch_size, num_items,
+    # num_params), num_params varies by tensor.
     x_dict = dict()
     for var_type in var_cols_dict.keys():
         x_sess_lst = list()
-        
+
         if var_cols_dict[var_type] is None:
-            # there is no column corresponding to this type of variations. 
+            # there is no column corresponding to this type of variations.
             x_dict[var_type] = None
             continue
-        
+
         num_params = len(var_cols_dict[var_type])
         for sess, sess_indices in df.groupby(session_id).indices.items():
-            df_sess = df.loc[sess_indices]  # rows in df corresponding to this session.
-            cols = var_cols_dict[var_type]  # columns for variables with this variation.
-            item_feat = list()  # item features in the current session, they are identical if the current x does not depend on item. 
+            # rows in df corresponding to this session.
+            df_sess = df.loc[sess_indices]
+            # columns for variables with this variation.
+            cols = var_cols_dict[var_type]
+            # item features in the current session, they are identical if the
+            # current x does not depend on item.
+            item_feat = list()
             for i, item in enumerate(all_items):
                 if item not in df_sess[item_id].values:
-                    # the item is unavilable, load placeholder for features, we won't use them anyways.
+                    # the item is unavilable, load placeholder for features, we
+                    # won't use them anyways.
                     item_feat.append(torch.zeros(num_params))
                 else:
-                    # retrieve relevant features in `cols` of this item in current session.
-                    v = df_sess[df_sess[item_id] == item][cols].values.reshape(-1,)
+                    # retrieve relevant features in `cols` of this item in
+                    # current session.
+                    v = df_sess[df_sess[item_id] ==
+                                item][cols].values.reshape(-1,)
                     item_feat.append(torch.Tensor(v))
             # item features for current session.
             item_feat = torch.stack(item_feat)
-        
+
             assert item_feat.shape == (num_items, num_params)
             x_sess_lst.append(item_feat)
-        
+
         x_reshaped = torch.stack(x_sess_lst, dim=0)
         assert x_reshaped.shape == (num_sessions, num_items, num_params)
-        
+
         x_dict[var_type] = x_reshaped
 
     # construct user-onehot.
@@ -109,15 +124,15 @@ def stata_to_tensors(df: pd.DataFrame,
 
     a_lst = list()  # aviliability info in each session.
     y_lst = list()  # choice info in each session.
-            
+
     for sess, sess_indices in df.groupby(session_id).indices.items():
         df_sess = df.loc[sess_indices]
-        
+
         item_availability = torch.zeros(num_items)
         for i, item in enumerate(all_items):
             item_availability[i] = 1 if item in df_sess[item_id].values else 0
         a_lst.append(item_availability)
-        
+
         c = df_sess[df_sess[choice] == 1][item_id]
         assert len(c) == 1  # only 1 item should be chosen.
         y_lst.append(item2int[c.iloc[0]])  # append the code of chosen item.
@@ -135,7 +150,7 @@ def stata_to_tensors(df: pd.DataFrame,
     #         print(f'X[{var_type}] with shape {x.shape}')
     #     except AttributeError:
     #         print(f'X[{var_type}] is None')
-    
+
     # construct user-onehot.
     if user_id is None:
         user_onehot = torch.ones(num_sessions, 1)  # all the same user.
@@ -153,7 +168,9 @@ def stata_to_tensors(df: pd.DataFrame,
         all_categories = sorted(df[category_id].unique())
         num_categories = len(all_categories)
         cate2int = dict(zip(all_categories, range(num_categories)))
-        category = torch.Tensor(df[category_id].apply(lambda x: cate2int[x]).values.squeeze())
+        category = torch.Tensor(
+            df[category_id].apply(
+                lambda x: cate2int[x]).values.squeeze())
 
     return x_dict, user_onehot.long(), a.bool(), y.long(), category.long()
 
@@ -183,7 +200,7 @@ if __name__ == '__main__':
         'it': ['termtime', 'invehiclecost', 'traveltime', 'travelcost'],
         'uit': None
     }
-    
+
     X, user_onehot, A, Y, C = stata_to_tensors(df=travel,
                                                var_cols_dict=var_cols_dict,
                                                session_id='id',

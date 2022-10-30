@@ -21,17 +21,18 @@ from tqdm import tqdm
 from sklearn.preprocessing import LabelEncoder
 
 STOP_CODES = {
-    1 : 'validation set llh increase per supplied config'
+    1: 'validation set llh increase per supplied config'
 }
+
 
 def load_configs(yaml_file: str):
     with open(yaml_file, 'r') as file:
         data_loaded = yaml.safe_load(file)
     # Add defaults
     defaults = {
-        'num_verify_val' : 10,
-        'early_stopping' : {'validation_llh_flat' : -1},
-        'write_best_model' : True
+        'num_verify_val': 10,
+        'early_stopping': {'validation_llh_flat': -1},
+        'write_best_model': True
     }
     defaults.update(data_loaded)
     configs = argparse.Namespace(**defaults)
@@ -40,7 +41,13 @@ def load_configs(yaml_file: str):
 
 def load_params_to_model(model, path) -> None:
     def load_cpp_tsv(file):
-        df = pd.read_csv(os.path.join(path, file), sep='\t', index_col=0, header=None)
+        df = pd.read_csv(
+            os.path.join(
+                path,
+                file),
+            sep='\t',
+            index_col=0,
+            header=None)
         return torch.Tensor(df.values[:, 1:])
 
     cpp_theta_mean = load_cpp_tsv('param_theta_mean.tsv')
@@ -50,15 +57,20 @@ def load_params_to_model(model, path) -> None:
     cpp_alpha_std = load_cpp_tsv('param_alpha_std.tsv')
 
     # theta user
-    model.variational_dict['theta_user'].mean.data = cpp_theta_mean.to(model.device)
-    model.variational_dict['theta_user'].logstd.data = torch.log(cpp_theta_std).to(model.device)
+    model.variational_dict['theta_user'].mean.data = cpp_theta_mean.to(
+        model.device)
+    model.variational_dict['theta_user'].logstd.data = torch.log(
+        cpp_theta_std).to(model.device)
     # alpha item
-    model.variational_dict['alpha_item'].mean.data = cpp_alpha_mean.to(model.device)
-    model.variational_dict['alpha_item'].logstd.data = torch.log(cpp_alpha_std).to(model.device)
+    model.variational_dict['alpha_item'].mean.data = cpp_alpha_mean.to(
+        model.device)
+    model.variational_dict['alpha_item'].logstd.data = torch.log(
+        cpp_alpha_std).to(model.device)
 
 
 def is_sorted(x):
     return all(x == np.sort(x))
+
 
 def load_tsv(file_name, data_dir):
     return pd.read_csv(os.path.join(data_dir, file_name),
@@ -130,14 +142,16 @@ if __name__ == '__main__':
     configs.num_dates = len(date_encoder.classes_)
     assert is_sorted(date_encoder.classes_)
     # this loop could be slow, depends on # sessions.
-    item_availability = torch.zeros(configs.num_dates, configs.num_items).bool()
+    item_availability = torch.zeros(
+        configs.num_dates, configs.num_items).bool()
 
     a_tsv['item_id'] = item_encoder.transform(a_tsv['item_id'].values)
     a_tsv['session_id'] = date_encoder.transform(a_tsv['session_id'].values)
 
     for date_id, df_group in a_tsv.groupby('session_id'):
         # get IDs of items available at this date.
-        a_item_ids = df_group['item_id'].unique()  # this unique is not necessary if the dataset is well-prepared.
+        # this unique is not necessary if the dataset is well-prepared.
+        a_item_ids = df_group['item_id'].unique()
         item_availability[date_id, a_item_ids] = True
 
     # ==============================================================================================
@@ -194,7 +208,8 @@ if __name__ == '__main__':
     # ==============================================================================================
 
     dataloaders = dict()
-    for dataset, partition in zip(dataset_list, ('train', 'validation', 'test')):
+    for dataset, partition in zip(
+            dataset_list, ('train', 'validation', 'test')):
         dataset = dataset.to(configs.device)
         dataloader = create_data_loader(dataset, configs)
         dataloaders[partition] = dataloader
@@ -213,13 +228,16 @@ if __name__ == '__main__':
                  num_item_obs=configs.num_item_obs
                  ).to(configs.device)
 
-    best_val_llh_model = BEMB(num_users=configs.num_users,
-                 num_items=configs.num_items,
-                 obs2prior_dict=configs.obs2prior_dict,
-                 latent_dim=configs.latent_dim, trace_log_q=configs.trace_log_q,
-                 category_to_item=category_to_item,
-                 num_user_obs=configs.num_user_obs,
-                 num_item_obs=configs.num_item_obs ).to(configs.device)
+    best_val_llh_model = BEMB(
+        num_users=configs.num_users,
+        num_items=configs.num_items,
+        obs2prior_dict=configs.obs2prior_dict,
+        latent_dim=configs.latent_dim,
+        trace_log_q=configs.trace_log_q,
+        category_to_item=category_to_item,
+        num_user_obs=configs.num_user_obs,
+        num_item_obs=configs.num_item_obs).to(
+        configs.device)
 
     # print(model.variational_dict['theta_user'].mean)
     # # breakpoint()
@@ -228,7 +246,8 @@ if __name__ == '__main__':
 
     start_time = time.time()
     optimizer = torch.optim.RMSprop(model.parameters(), lr=0.03)
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=1)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(
+        optimizer=optimizer, gamma=1)
 
     print(80 * '=')
     print(model)
@@ -243,7 +262,8 @@ if __name__ == '__main__':
     last_val_llh = np.NINF
     val_llh_decrease_count = 0
     # stop > 0 leads to a stopping criteria different from num epochs having run
-    # we use stop = 1 when we perform an early stop based on validation log likelihood
+    # we use stop = 1 when we perform an early stop based on validation log
+    # likelihood
     stop = 0
 
     for i in tqdm(range(configs.num_epochs)):
@@ -267,15 +287,23 @@ if __name__ == '__main__':
                                'duration_seconds': time.time() - start_time}
                 # compute performance for each data partition.
                 for partition in ('train', 'validation', 'test'):
-                    metrics = ['log_likelihood', 'accuracy', 'precision', 'recall', 'f1score']
+                    metrics = [
+                        'log_likelihood',
+                        'accuracy',
+                        'precision',
+                        'recall',
+                        'f1score']
                     for m in metrics:
                         performance[partition + '_' + m] = list()
                     # compute performance for each batch.
                     for batch in dataloaders[partition]:
-                        pred = model(batch)  # (num_sessions, num_items) log-likelihood.
-                        LL = pred[torch.arange(len(batch)), batch.label].mean().detach().cpu().item()
+                        # (num_sessions, num_items) log-likelihood.
+                        pred = model(batch)
+                        LL = pred[torch.arange(len(batch)), batch.label].mean(
+                        ).detach().cpu().item()
                         performance[partition + '_log_likelihood'].append(LL)
-                        accuracy_metrics = model.get_within_category_accuracy(pred, batch.label)
+                        accuracy_metrics = model.get_within_category_accuracy(
+                            pred, batch.label)
                         for key, val in accuracy_metrics.items():
                             performance[partition + '_' + key].append(val)
 
@@ -297,7 +325,8 @@ if __name__ == '__main__':
                 last_val_llh = val_llh
                 performance_by_epoch.append(performance)
                 pprint(performance)
-                print(f'Epoch [{i}] negative elbo (the lower the better)={total_loss}')
+                print(
+                    f'Epoch [{i}] negative elbo (the lower the better)={total_loss}')
         if stop > 0:
             print(f'EARLY STOPPING due to {STOP_CODES[stop]}')
             break
@@ -313,9 +342,18 @@ if __name__ == '__main__':
 
     # save best_val_llh_model weights
     if (configs.write_best_model):
-        torch.save(best_val_llh_model, os.path.join(configs.out_dir, 'best_val_llh_model.pt'))
-        torch.save(best_val_llh_model.state_dict(), os.path.join(configs.out_dir, 'best_val_llh_model_state_dict.pt'))
+        torch.save(
+            best_val_llh_model,
+            os.path.join(
+                configs.out_dir,
+                'best_val_llh_model.pt'))
+        torch.save(best_val_llh_model.state_dict(), os.path.join(
+            configs.out_dir, 'best_val_llh_model_state_dict.pt'))
 
     # save model weights
     torch.save(model, os.path.join(configs.out_dir, 'model.pt'))
-    torch.save(model.state_dict(), os.path.join(configs.out_dir, 'state_dict.pt'))
+    torch.save(
+        model.state_dict(),
+        os.path.join(
+            configs.out_dir,
+            'state_dict.pt'))

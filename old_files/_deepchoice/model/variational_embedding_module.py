@@ -13,6 +13,7 @@ from termcolor import cprint
 from torch_scatter import scatter_max
 from torch_scatter.composite import scatter_log_softmax
 
+
 class VariationalEmbeddingLayer(nn.Module):
     def __init__(self, num_classes: int, latent_dim: int):
         self.embedding_weight = BayesianCoefficient(variation='constant',

@@ -5,10 +5,12 @@ import torch
 import torch.nn as nn
 
 
-def parameter_std(model_trained: nn.Module, loss_fn: callable) -> Tuple[dict, Optional[torch.Tensor]]:
+def parameter_std(model_trained: nn.Module,
+                  loss_fn: callable) -> Tuple[dict,
+                                              Optional[torch.Tensor]]:
     """This method firstly computes the Hessian of loss_fn(model_trained) with respect to
     model_trained.parameters(), then computes the standard error from the Hessian.
-    
+
     NOTE: the current implementation involving deletion of attributes in model, this is an unsafe
     workaround for now. See https://github.com/pytorch/pytorch/issues/50138 for details.
 

@@ -145,7 +145,8 @@ class ConditionalLogit(nn.Module):
         # We use choice_feature_dim number of conditional logit parameters. Each one of them applies to a single
         # feature.
         # TODO(Tianyu): No price term here? already included in the x_choice?
-        self.conditional_coef = nn.Parameter(torch.randn(choice_feature_dim, 1).requires_grad_(True))
+        self.conditional_coef = nn.Parameter(torch.randn(
+            choice_feature_dim, 1).requires_grad_(True))
 
     def forward(self, x_user, x_choice, mask):
         mnl_utility = self.linear(x_user)
@@ -154,7 +155,10 @@ class ConditionalLogit(nn.Module):
         # All possible choices share the same conditional logit coefficient for that feature.
         # That is, coefficients vary by feature but not by choice.
         # We achieve this by broadcasting the element-wise multiplication.
-        conditional_utility = (self.conditional_coef * x_choice).sum(dim=1)  # dim=1 corresponds to choice_feature_dim
+        conditional_utility = (
+            self.conditional_coef *
+            x_choice).sum(
+            dim=1)  # dim=1 corresponds to choice_feature_dim
         utility = mnl_utility + conditional_utility
         # Set utility to large negative value if not in availability list
         utility[~mask] = -1.0e20
@@ -187,7 +191,13 @@ class InterceptConditionalLogit(nn.Module):
         mask -- tensor of size num_sessions x class_dim. This represents the session to persona_2 availability list.
     """
 
-    def __init__(self, user_intercept_dim, user_feature_dim, choice_feature_dim, class_dim, coef_mask):
+    def __init__(
+            self,
+            user_intercept_dim,
+            user_feature_dim,
+            choice_feature_dim,
+            class_dim,
+            coef_mask):
         super(InterceptConditionalLogit, self).__init__()
         self.user_intercept_dim = user_intercept_dim
         self.user_feature_dim = user_feature_dim
@@ -200,7 +210,8 @@ class InterceptConditionalLogit(nn.Module):
         self.linear2 = nn.Linear(user_feature_dim, class_dim)
         # We use choice_feature_dim number of conditional logit parameters. Each one of them applies to a single
         # feature.
-        self.conditional_coef = nn.Parameter(torch.randn(choice_feature_dim, 1).requires_grad_(True))
+        self.conditional_coef = nn.Parameter(torch.randn(
+            choice_feature_dim, 1).requires_grad_(True))
 
     def forward(self, x_intercept, x_user, x_choice, mask):
         mnl_utility = self.linear1(x_intercept) + self.linear2(x_user)
@@ -209,7 +220,10 @@ class InterceptConditionalLogit(nn.Module):
         # All possible choices share the same conditional logit coefficient for that feature.
         # That is, coefficients vary by feature but not by choice.
         # We achieve this by broadcasting the element-wise multiplication.
-        conditional_utility = (self.conditional_coef * x_choice).sum(dim=1)  # dim=1 corresponds to choice_feature_dim
+        conditional_utility = (
+            self.conditional_coef *
+            x_choice).sum(
+            dim=1)  # dim=1 corresponds to choice_feature_dim
         utility = mnl_utility + conditional_utility
         # Set utility to large negative value if not in availability list
         utility[~mask] = -1.0e20
@@ -231,7 +245,8 @@ class InertiaConditionalLogit(nn.Module):
         self.linear = nn.Linear(user_feature_dim, class_dim)
         # We use choice_feature_dim number of conditional logit parameters. Each one of them applies to a single
         # feature.
-        self.conditional_coef = nn.Parameter(torch.randn(choice_feature_dim, 1).requires_grad_(True))
+        self.conditional_coef = nn.Parameter(torch.randn(
+            choice_feature_dim, 1).requires_grad_(True))
 
     def forward(self, x_inertia, x_user, x_choice, mask):
         inertia_utility = self.inertia_coef * x_inertia
@@ -239,7 +254,10 @@ class InertiaConditionalLogit(nn.Module):
         # All possible choices share the same conditional logit coefficient for that feature.
         # That is, coefficients vary by feature but not by choice.
         # We achieve this by broadcasting the element-wise multiplication.
-        conditional_utility = (self.conditional_coef * x_choice).sum(dim=1)  # dim=1 corresponds to choice_feature_dim
+        conditional_utility = (
+            self.conditional_coef *
+            x_choice).sum(
+            dim=1)  # dim=1 corresponds to choice_feature_dim
         utility = inertia_utility + mnl_utility + conditional_utility
         # Set utility to large negative value if not in availability list
         utility[~mask] = -1.0e20
@@ -266,7 +284,12 @@ class LeanConditionalLogit(nn.Module):
         mask -- tensor of size num_sessions x class_dim. This represents the session to persona_2 availability list.
     """
 
-    def __init__(self, user_feature_dim, price_dim, choice_feature_dim, class_dim):
+    def __init__(
+            self,
+            user_feature_dim,
+            price_dim,
+            choice_feature_dim,
+            class_dim):
         super().__init__()
         self.user_feature_dim = user_feature_dim
         self.price_dim = price_dim
@@ -277,17 +300,26 @@ class LeanConditionalLogit(nn.Module):
         # We use choice_feature_dim number of conditional logit parameters. Each one of them applies to a single
         # feature.
         # TODO(Tianyu): Shape should be (1, price_dim, 1) for broadcasting.
-        self.price_coef = nn.Parameter(torch.randn(price_dim, 1).requires_grad_(True))
-        self.conditional_coef = nn.Parameter(torch.randn(choice_feature_dim, 1).requires_grad_(True))
+        self.price_coef = nn.Parameter(
+            torch.randn(price_dim, 1).requires_grad_(True))
+        self.conditional_coef = nn.Parameter(torch.randn(
+            choice_feature_dim, 1).requires_grad_(True))
 
     def forward(self, x_user, x_price, x_choice, mask):
         mnl_utility = self.linear(x_user)
         # All possible choices share the same conditional logit coefficient for that feature.
         # That is, coefficients vary by feature but not by choice.
         # We achieve this by broadcasting the element-wise multiplication.
-        price_utility = (self.price_coef * x_price).sum(dim=1)  # dim=1 corresponds to price_dim
+        price_utility = (
+            self.price_coef *
+            x_price).sum(
+            dim=1)  # dim=1 corresponds to price_dim
         # dim=0 corresponds to choice_feature_dim
-        conditional_utility = (self.conditional_coef * x_choice).sum(dim=0).unsqueeze(dim=0)
+        conditional_utility = (
+            self.conditional_coef *
+            x_choice).sum(
+            dim=0).unsqueeze(
+            dim=0)
 
         utility = mnl_utility + price_utility + conditional_utility
         # Set utility to large negative value if not in availability list

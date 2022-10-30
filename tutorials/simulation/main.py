@@ -29,7 +29,8 @@ def load_configs(yaml_file: str):
 def make_rand_vector(dims):
     vec = [gauss(0, 1) for i in range(dims)]
     mag = sum(x**2 for x in vec) ** .5
-    return np.array([x/mag for x in vec])
+    return np.array([x / mag for x in vec])
+
 
 # configurations.
 NUM_ITEMS = 50
@@ -45,36 +46,39 @@ def simulate_dataset():
     # simulation configurations
 
     # generate types
-    user_types =  np.random.randint(low=0, high=NUM_USER_TYPES, size=NUM_USERS)
-    item_types =  np.random.randint(low=0, high=NUM_ITEM_TYPES, size=NUM_ITEMS)
+    user_types = np.random.randint(low=0, high=NUM_USER_TYPES, size=NUM_USERS)
+    item_types = np.random.randint(low=0, high=NUM_ITEM_TYPES, size=NUM_ITEMS)
 
     def generate_latents(num_types, num_samples, dim):
         types = np.random.randint(low=0, high=num_types, size=num_samples)
         # mu_list = np.random.rand(num_types, dim) * 50  # scale to [-50, 50]
-        mu_list = np.stack([make_rand_vector(dim) for _ in range(num_types)], axis=0) * 10
+        mu_list = np.stack([make_rand_vector(dim)
+                            for _ in range(num_types)], axis=0) * 10
         # mu_list = np.random.rand(num_types, dim) * 50  # scale to [-50, 50]
         src = np.random.randn(num_samples, dim)  # N(0, I)
         latents = src + mu_list[types, :]
         return mu_list, types, latents
 
-    user_centers, user_types, user_latents = generate_latents(NUM_USER_TYPES, NUM_USERS, 2)
-    item_centers, item_types, item_latents = generate_latents(NUM_ITEM_TYPES, NUM_ITEMS, 2)
-
+    user_centers, user_types, user_latents = generate_latents(
+        NUM_USER_TYPES, NUM_USERS, 2)
+    item_centers, item_types, item_latents = generate_latents(
+        NUM_ITEM_TYPES, NUM_ITEMS, 2)
 
     plt.close()
     fig, ax = plt.subplots()
     type_list, latent_list, marker = (user_types, user_latents, '*')
     for t in np.unique(type_list):
-        ax.scatter(latent_list[type_list == t, 0], latent_list[type_list == t, 1], marker=marker)
+        ax.scatter(latent_list[type_list == t, 0],
+                   latent_list[type_list == t, 1], marker=marker)
     plt.savefig('./user.png')
 
     plt.close()
     fig, ax = plt.subplots()
     type_list, latent_list, marker = (item_types, item_latents, 'o')
     for t in np.unique(type_list):
-        ax.scatter(latent_list[type_list == t, 0], latent_list[type_list == t, 1], marker=marker)
+        ax.scatter(latent_list[type_list == t, 0],
+                   latent_list[type_list == t, 1], marker=marker)
     plt.savefig('./item.png')
-
 
     # get choices.
     potential = user_latents @ item_latents.T
@@ -82,7 +86,10 @@ def simulate_dataset():
     potential = torch.log_softmax(torch.Tensor(potential), dim=1)
     # potential = potential.numpy()
 
-    out = torch.multinomial(potential, num_samples=NUM_SESSIONS, replacement=True)
+    out = torch.multinomial(
+        potential,
+        num_samples=NUM_SESSIONS,
+        replacement=True)
 
     plt.close()
     sns.heatmap(potential)
@@ -149,7 +156,11 @@ if __name__ == '__main__':
     )
 
     bemb = bemb.to(configs.device)
-    bemb = run(bemb, dataset_list, batch_size=configs.batch_size, num_epochs=configs.num_epochs)
+    bemb = run(
+        bemb,
+        dataset_list,
+        batch_size=configs.batch_size,
+        num_epochs=configs.num_epochs)
 
     breakpoint()
     # ==============================================================================================
@@ -157,6 +168,12 @@ if __name__ == '__main__':
     # ==============================================================================================
     with torch.no_grad():
         # disable gradient tracking to save computational cost.
-        utility_chosen = bemb.model(dataset_list[2], return_logit=True, all_items=False)
+        utility_chosen = bemb.model(
+            dataset_list[2],
+            return_logit=True,
+            all_items=False)
         # uses much higher memory!
-        utility_all = bemb.model(dataset_list[2], return_logit=True, all_items=True)
+        utility_all = bemb.model(
+            dataset_list[2],
+            return_logit=True,
+            all_items=True)

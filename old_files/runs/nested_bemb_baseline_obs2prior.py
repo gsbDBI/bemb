@@ -30,7 +30,13 @@ def load_configs(yaml_file: str):
 
 def load_params_to_model(model, path) -> None:
     def load_cpp_tsv(file):
-        df = pd.read_csv(os.path.join(path, file), sep='\t', index_col=0, header=None)
+        df = pd.read_csv(
+            os.path.join(
+                path,
+                file),
+            sep='\t',
+            index_col=0,
+            header=None)
         return torch.Tensor(df.values[:, 1:])
 
     cpp_theta_mean = load_cpp_tsv('param_theta_mean.tsv')
@@ -40,11 +46,15 @@ def load_params_to_model(model, path) -> None:
     cpp_alpha_std = load_cpp_tsv('param_alpha_std.tsv')
 
     # theta user
-    model.variational_dict['theta_user'].mean.data = cpp_theta_mean.to(model.device)
-    model.variational_dict['theta_user'].logstd.data = torch.log(cpp_theta_std).to(model.device)
+    model.variational_dict['theta_user'].mean.data = cpp_theta_mean.to(
+        model.device)
+    model.variational_dict['theta_user'].logstd.data = torch.log(
+        cpp_theta_std).to(model.device)
     # alpha item
-    model.variational_dict['alpha_item'].mean.data = cpp_alpha_mean.to(model.device)
-    model.variational_dict['alpha_item'].logstd.data = torch.log(cpp_alpha_std).to(model.device)
+    model.variational_dict['alpha_item'].mean.data = cpp_alpha_mean.to(
+        model.device)
+    model.variational_dict['alpha_item'].logstd.data = torch.log(
+        cpp_alpha_std).to(model.device)
 
 
 def is_sorted(x):
@@ -121,14 +131,16 @@ if __name__ == '__main__':
     configs.num_dates = len(date_encoder.classes_)
     assert is_sorted(date_encoder.classes_)
     # this loop could be slow, depends on # sessions.
-    item_availability = torch.zeros(configs.num_dates, configs.num_items).bool()
+    item_availability = torch.zeros(
+        configs.num_dates, configs.num_items).bool()
 
     a_tsv['item_id'] = item_encoder.transform(a_tsv['item_id'].values)
     a_tsv['session_id'] = date_encoder.transform(a_tsv['session_id'].values)
 
     for date_id, df_group in a_tsv.groupby('session_id'):
         # get IDs of items available at this date.
-        a_item_ids = df_group['item_id'].unique()  # this unique is not necessary if the dataset is well-prepared.
+        # this unique is not necessary if the dataset is well-prepared.
+        a_item_ids = df_group['item_id'].unique()
         item_availability[date_id, a_item_ids] = True
 
     # ==============================================================================================
@@ -153,7 +165,9 @@ if __name__ == '__main__':
         choice_dataset_category = ChoiceDataset(label=label,  # does not really matter.
                                                 user_index=user_index)
 
-        choice_dataset = JointDataset(item=choice_dataset_item, category=choice_dataset_category)
+        choice_dataset = JointDataset(
+            item=choice_dataset_item,
+            category=choice_dataset_category)
 
         dataset_list.append(choice_dataset)
 
@@ -191,7 +205,8 @@ if __name__ == '__main__':
     # ==============================================================================================
 
     dataloaders = dict()
-    for dataset, partition in zip(dataset_list, ('train', 'validation', 'test')):
+    for dataset, partition in zip(
+            dataset_list, ('train', 'validation', 'test')):
         dataset = dataset.to(configs.device)
         dataloader = create_data_loader(dataset, configs)
         dataloaders[partition] = dataloader
@@ -218,7 +233,8 @@ if __name__ == '__main__':
 
     start_time = time.time()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.03)
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=1)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(
+        optimizer=optimizer, gamma=1)
 
     print(80 * '=')
     print(model)
@@ -252,15 +268,25 @@ if __name__ == '__main__':
                                'duration_seconds': time.time() - start_time}
                 # compute performance for each data partition.
                 for partition in ('train', 'validation', 'test'):
-                    metrics = ['log_likelihood', 'accuracy', 'precision', 'recall', 'f1score']
+                    metrics = [
+                        'log_likelihood',
+                        'accuracy',
+                        'precision',
+                        'recall',
+                        'f1score']
                     for m in metrics:
                         performance[partition + '_' + m] = list()
                     # compute performance for each batch.
                     for batch in dataloaders[partition]:
-                        pred = model(batch_item=batch['item'], batch_category=batch['category'])  # (num_sessions, num_items) log-likelihood.
-                        LL = pred[torch.arange(len(batch['item'])), batch['item'].label].mean().detach().cpu().item()
+                        # (num_sessions, num_items) log-likelihood.
+                        pred = model(
+                            batch_item=batch['item'],
+                            batch_category=batch['category'])
+                        LL = pred[torch.arange(len(batch['item'])), batch['item'].label].mean(
+                        ).detach().cpu().item()
                         performance[partition + '_log_likelihood'].append(LL)
-                        accuracy_metrics = model.get_within_category_accuracy(pred, batch['item'].label)
+                        accuracy_metrics = model.get_within_category_accuracy(
+                            pred, batch['item'].label)
                         for key, val in accuracy_metrics.items():
                             performance[partition + '_' + key].append(val)
 
@@ -269,7 +295,8 @@ if __name__ == '__main__':
 
                 performance_by_epoch.append(performance)
                 pprint(performance)
-                print(f'Epoch [{i}] negative elbo (the lower the better)={total_loss}')
+                print(
+                    f'Epoch [{i}] negative elbo (the lower the better)={total_loss}')
     print(f'Time taken: {time.time() - start_time: 0.1f} seconds.')
     log = pd.DataFrame(performance_by_epoch)
 
@@ -282,4 +309,8 @@ if __name__ == '__main__':
 
     # save model weights
     torch.save(model, os.path.join(configs.out_dir, 'model.pt'))
-    torch.save(model.state_dict(), os.path.join(configs.out_dir, 'state_dict.pt'))
+    torch.save(
+        model.state_dict(),
+        os.path.join(
+            configs.out_dir,
+            'state_dict.pt'))

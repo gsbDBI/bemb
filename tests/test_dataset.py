@@ -1,22 +1,25 @@
 """
 Test consistency of the dataloader module.
 """
+from torch.utils.data.sampler import (BatchSampler, RandomSampler,
+                                      SequentialSampler)
+from termcolor import colored
+from data.dataset import CMDataset
+from data.data_formatter import stata_to_tensors
+import torch
+import pandas as pd
 import os
 import sys
 sys.path.append('./')
 
-import pandas as pd
-import torch
-from data.data_formatter import stata_to_tensors
-from data.dataset import CMDataset
-from termcolor import colored
-from torch.utils.data.sampler import (BatchSampler, RandomSampler,
-                                      SequentialSampler)
-
 
 def main():
     project_path = '~/Development/deepchoice'
-    mode_canada = pd.read_csv(os.path.join(project_path, 'data/ModeCanada.csv'), index_col=0)
+    mode_canada = pd.read_csv(
+        os.path.join(
+            project_path,
+            'data/ModeCanada.csv'),
+        index_col=0)
     mode_canada = mode_canada.query('noalt == 4').reset_index(drop=True)
 
     print(mode_canada.shape)

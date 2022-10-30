@@ -17,8 +17,9 @@ from termcolor import cprint
 from tqdm import tqdm
 
 STOP_CODES = {
-    1 : 'validation set llh increase per supplied config'
+    1: 'validation set llh increase per supplied config'
 }
+
 
 def write_bemb_cpp_format(configs, model, user_encoder, item_encoder, it=""):
     users = user_encoder.classes_
@@ -31,85 +32,108 @@ def write_bemb_cpp_format(configs, model, user_encoder, item_encoder, it=""):
         lambdas = model.coef_dict['lambda_item'].variational_mean
         lambda_df = pd.DataFrame(lambdas.detach().cpu().numpy())
         lambda_df = pd.concat((items_df, lambda_df), axis=1)
-        lambda_df.to_csv('%s/param_lambda%s_mean.tsv' % (configs.out_dir, it), sep='\t', header=False)
+        lambda_df.to_csv(
+            '%s/param_lambda%s_mean.tsv' %
+            (configs.out_dir, it), sep='\t', header=False)
         lambdas = torch.exp(model.coef_dict['lambda_item'].variational_logstd)
         lambda_df = pd.DataFrame(lambdas.detach().cpu().numpy())
         lambda_df = pd.concat((items_df, lambda_df), axis=1)
-        lambda_df.to_csv('%s/param_lambda%s_std.tsv' % (configs.out_dir, it), sep='\t', header=False)
+        lambda_df.to_csv(
+            '%s/param_lambda%s_std.tsv' %
+            (configs.out_dir, it), sep='\t', header=False)
 
     if 'alpha_item' in model.coef_dict:
         # Write alpha and theta
         alphas = model.coef_dict['alpha_item'].variational_mean
         alpha_df = pd.DataFrame(alphas.detach().cpu().numpy())
         alpha_df = pd.concat((items_df, alpha_df), axis=1)
-        alpha_df.to_csv('%s/param_alpha%s_mean.tsv' % (configs.out_dir, it), sep='\t', header=False)
+        alpha_df.to_csv('%s/param_alpha%s_mean.tsv' %
+                        (configs.out_dir, it), sep='\t', header=False)
         alphas = torch.exp(model.coef_dict['alpha_item'].variational_logstd)
         alpha_df = pd.DataFrame(alphas.detach().cpu().numpy())
         alpha_df = pd.concat((items_df, alpha_df), axis=1)
-        alpha_df.to_csv('%s/param_alpha%s_std.tsv' % (configs.out_dir, it), sep='\t', header=False)
+        alpha_df.to_csv('%s/param_alpha%s_std.tsv' %
+                        (configs.out_dir, it), sep='\t', header=False)
 
         thetas = model.coef_dict['theta_user'].variational_mean
         theta_df = pd.DataFrame(thetas.detach().cpu().numpy())
         theta_df = pd.concat((users_df, theta_df), axis=1)
-        theta_df.to_csv('%s/param_theta%s_mean.tsv' % (configs.out_dir, it), sep='\t', header=False)
+        theta_df.to_csv('%s/param_theta%s_mean.tsv' %
+                        (configs.out_dir, it), sep='\t', header=False)
         thetas = torch.exp(model.coef_dict['theta_user'].variational_logstd)
         theta_df = pd.DataFrame(thetas.detach().cpu().numpy())
         theta_df = pd.concat((users_df, theta_df), axis=1)
-        theta_df.to_csv('%s/param_theta%s_std.tsv' % (configs.out_dir, it), sep='\t', header=False)
+        theta_df.to_csv('%s/param_theta%s_std.tsv' %
+                        (configs.out_dir, it), sep='\t', header=False)
 
     if 'beta_item' in model.coef_dict:
         # write beta and gamma
         betas = model.coef_dict['beta_item'].variational_mean
         beta_df = pd.DataFrame(betas.detach().cpu().numpy())
         beta_df = pd.concat((items_df, beta_df), axis=1)
-        beta_df.to_csv('%s/param_beta%s_mean.tsv' % (configs.out_dir, it), sep='\t', header=False)
+        beta_df.to_csv('%s/param_beta%s_mean.tsv' %
+                       (configs.out_dir, it), sep='\t', header=False)
         betas = torch.exp(model.coef_dict['beta_item'].variational_logstd)
         beta_df = pd.DataFrame(betas.detach().cpu().numpy())
         beta_df = pd.concat((items_df, beta_df), axis=1)
-        beta_df.to_csv('%s/param_beta%s_std.tsv' % (configs.out_dir, it), sep='\t', header=False)
+        beta_df.to_csv('%s/param_beta%s_std.tsv' %
+                       (configs.out_dir, it), sep='\t', header=False)
 
         gammas = model.coef_dict['gamma_user'].variational_mean
         gamma_df = pd.DataFrame(gammas.detach().cpu().numpy())
         gamma_df = pd.concat((users_df, gamma_df), axis=1)
-        gamma_df.to_csv('%s/param_gamma%s_mean.tsv' % (configs.out_dir, it), sep='\t', header=False)
+        gamma_df.to_csv('%s/param_gamma%s_mean.tsv' %
+                        (configs.out_dir, it), sep='\t', header=False)
         gammas = torch.exp(model.coef_dict['gamma_user'].variational_logstd)
         gamma_df = pd.DataFrame(gammas.detach().cpu().numpy())
         gamma_df = pd.concat((users_df, gamma_df), axis=1)
-        gamma_df.to_csv('%s/param_gamma%s_std.tsv' % (configs.out_dir, it), sep='\t', header=False)
+        gamma_df.to_csv('%s/param_gamma%s_std.tsv' %
+                        (configs.out_dir, it), sep='\t', header=False)
 
     if 'obsuser_item' in model.coef_dict:
         # write beta and gamma
         obsuser_item = model.coef_dict['obsuser_item'].variational_mean
         obsuser_item_df = pd.DataFrame(obsuser_item.detach().cpu().numpy())
-        obsuser_item_df= pd.concat((items_df, obsuser_item_df), axis=1)
-        obsuser_item_df.to_csv('%s/param_obsUsers%s_mean.tsv' % (configs.out_dir, it), sep='\t', header=False)
-        obsuser_item = torch.exp(model.coef_dict['obsuser_item'].variational_logstd)
+        obsuser_item_df = pd.concat((items_df, obsuser_item_df), axis=1)
+        obsuser_item_df.to_csv(
+            '%s/param_obsUsers%s_mean.tsv' %
+            (configs.out_dir, it), sep='\t', header=False)
+        obsuser_item = torch.exp(
+            model.coef_dict['obsuser_item'].variational_logstd)
         obsuser_item_df = pd.DataFrame(obsuser_item.detach().cpu().numpy())
         obsuser_item_df = pd.concat((items_df, obsuser_item_df), axis=1)
-        obsuser_item_df.to_csv('%s/param_obsUsers%s_std.tsv' % (configs.out_dir, it), sep='\t', header=False)
+        obsuser_item_df.to_csv(
+            '%s/param_obsUsers%s_std.tsv' %
+            (configs.out_dir, it), sep='\t', header=False)
 
     if 'obsitem_user' in model.coef_dict:
         # write beta and gamma
         obsitem_user = model.coef_dict['obsitem_user'].variational_mean
         obsitem_user_df = pd.DataFrame(obsitem_user.detach().cpu().numpy())
-        obsitem_user_df= pd.concat((users_df, obsitem_user_df), axis=1)
-        obsitem_user_df.to_csv('%s/param_obsItems%s_mean.tsv' % (configs.out_dir, it), sep='\t', header=False)
-        obsitem_user = torch.exp(model.coef_dict['obsitem_user'].variational_logstd)
+        obsitem_user_df = pd.concat((users_df, obsitem_user_df), axis=1)
+        obsitem_user_df.to_csv(
+            '%s/param_obsItems%s_mean.tsv' %
+            (configs.out_dir, it), sep='\t', header=False)
+        obsitem_user = torch.exp(
+            model.coef_dict['obsitem_user'].variational_logstd)
         obsitem_user_df = pd.DataFrame(obsitem_user.detach().cpu().numpy())
         obsitem_user_df = pd.concat((users_df, obsitem_user_df), axis=1)
-        obsitem_user_df.to_csv('%s/param_obsItems%s_std.tsv' % (configs.out_dir, it), sep='\t', header=False)
+        obsitem_user_df.to_csv(
+            '%s/param_obsItems%s_std.tsv' %
+            (configs.out_dir, it), sep='\t', header=False)
+
 
 def load_configs(yaml_file: str):
     with open(yaml_file, 'r') as file:
         data_loaded = yaml.safe_load(file)
     # Add defaults
     defaults = {
-        'num_verify_val' : 10,
-        'early_stopping' : {'validation_llh_flat' : -1},
-        'write_best_model' : True,
-        'val_llh_series_out' : '',
-        'alt_val_dir' : '',
-        'alt_val_llh_series_out' : ''
+        'num_verify_val': 10,
+        'early_stopping': {'validation_llh_flat': -1},
+        'write_best_model': True,
+        'val_llh_series_out': '',
+        'alt_val_dir': '',
+        'alt_val_llh_series_out': ''
     }
     defaults.update(data_loaded)
     configs = argparse.Namespace(**defaults)
@@ -118,7 +142,13 @@ def load_configs(yaml_file: str):
 
 def load_params_to_model(model, path) -> None:
     def load_cpp_tsv(file):
-        df = pd.read_csv(os.path.join(path, file), sep='\t', index_col=0, header=None)
+        df = pd.read_csv(
+            os.path.join(
+                path,
+                file),
+            sep='\t',
+            index_col=0,
+            header=None)
         return torch.Tensor(df.values[:, 1:])
 
     cpp_theta_mean = load_cpp_tsv('param_theta_mean.tsv')
@@ -129,10 +159,12 @@ def load_params_to_model(model, path) -> None:
 
     # theta user
     model.coef_dict['theta_user'].mean.data = cpp_theta_mean.to(model.device)
-    model.coef_dict['theta_user'].logstd.data = torch.log(cpp_theta_std).to(model.device)
+    model.coef_dict['theta_user'].logstd.data = torch.log(
+        cpp_theta_std).to(model.device)
     # alpha item
     model.coef_dict['alpha_item'].mean.data = cpp_alpha_mean.to(model.device)
-    model.coef_dict['alpha_item'].logstd.data = torch.log(cpp_alpha_std).to(model.device)
+    model.coef_dict['alpha_item'].logstd.data = torch.log(
+        cpp_alpha_std).to(model.device)
 
 
 def is_sorted(x):
@@ -214,33 +246,47 @@ if __name__ == '__main__':
     configs.num_sessions = len(session_encoder.classes_)
     assert is_sorted(session_encoder.classes_)
     # this loop could be slow, depends on # sessions.
-    item_availability = torch.zeros(configs.num_sessions, configs.num_items).bool()
+    item_availability = torch.zeros(
+        configs.num_sessions,
+        configs.num_items).bool()
 
     a_tsv['item_id'] = item_encoder.transform(a_tsv['item_id'].values)
     a_tsv['session_id'] = session_encoder.transform(a_tsv['session_id'].values)
 
     for session_id, df_group in a_tsv.groupby('session_id'):
         # get IDs of items available at this date.
-        a_item_ids = df_group['item_id'].unique()  # this unique is not necessary if the dataset is well-prepared.
+        # this unique is not necessary if the dataset is well-prepared.
+        a_item_ids = df_group['item_id'].unique()
         item_availability[session_id, a_item_ids] = True
 
     # ==============================================================================================
     # price observables
     # ==============================================================================================
-    df_price = pd.read_csv(os.path.join(configs.data_dir, 'item_sess_price.tsv'),
-                           sep='\t',
-                           names=['item_id', 'session_id', 'price'])
+    df_price = pd.read_csv(
+        os.path.join(
+            configs.data_dir,
+            'item_sess_price.tsv'),
+        sep='\t',
+        names=[
+            'item_id',
+            'session_id',
+            'price'])
 
     # only keep prices of relevant items.
     mask = df_price['item_id'].isin(item_encoder.classes_)
     df_price = df_price[mask]
 
     df_price['item_id'] = item_encoder.transform(df_price['item_id'].values)
-    df_price['session_id'] = session_encoder.transform(df_price['session_id'].values)
+    df_price['session_id'] = session_encoder.transform(
+        df_price['session_id'].values)
     df_price = df_price.pivot(index='session_id', columns='item_id')
     # NAN prices.
     df_price.fillna(0.0, inplace=True)
-    price_obs = torch.Tensor(df_price.values).view(configs.num_sessions, configs.num_items, 1)
+    price_obs = torch.Tensor(
+        df_price.values).view(
+        configs.num_sessions,
+        configs.num_items,
+        1)
     configs.num_price_obs = 1
 
     # ==============================================================================================
@@ -250,7 +296,9 @@ if __name__ == '__main__':
     for d in (train, validation, test):
         user_index = user_encoder.transform(d['user_id'].values)
         label = torch.LongTensor(item_encoder.transform(d['item_id'].values))
-        session_index = torch.LongTensor(session_encoder.transform(d['session_id'].values))
+        session_index = torch.LongTensor(
+            session_encoder.transform(
+                d['session_id'].values))
         # get the date (aka session_id in the raw dataset) of each row in the dataset, retrieve
         # the item availability information from that date.
 
@@ -298,7 +346,8 @@ if __name__ == '__main__':
     # ==============================================================================================
 
     dataloaders = dict()
-    for dataset, partition in zip(dataset_list, ('train', 'validation', 'test')):
+    for dataset, partition in zip(
+            dataset_list, ('train', 'validation', 'test')):
         # dataset = dataset.to(configs.device)
         dataloader = create_data_loader(dataset, configs, num_workers=8)
         dataloaders[partition] = dataloader
@@ -374,7 +423,8 @@ if __name__ == '__main__':
     last_val_llh = np.NINF
     val_llh_decrease_count = 0
     # stop > 0 leads to a stopping criteria different from num epochs having run
-    # we use stop = 1 when we perform an early stop based on validation log likelihood
+    # we use stop = 1 when we perform an early stop based on validation log
+    # likelihood
     stop = 0
 
     for i in tqdm(range(configs.num_epochs), desc='epoch'):
@@ -398,16 +448,24 @@ if __name__ == '__main__':
                                'duration_seconds': time.time() - start_time}
                 # compute performance for each data partition.
                 for partition in ('train', 'validation', 'test'):
-                    metrics = ['log_likelihood', 'accuracy', 'precision', 'recall', 'f1score']
+                    metrics = [
+                        'log_likelihood',
+                        'accuracy',
+                        'precision',
+                        'recall',
+                        'f1score']
                     for m in metrics:
                         performance[partition + '_' + m] = list()
                     # compute performance for each batch.
                     for batch in dataloaders[partition]:
-                        pred = model(batch.to(configs.device))  # (num_sessions, num_items) log-likelihood.
-                        LL_all = pred[torch.arange(len(batch)), batch.label].detach().cpu().numpy()
+                        # (num_sessions, num_items) log-likelihood.
+                        pred = model(batch.to(configs.device))
+                        LL_all = pred[torch.arange(
+                            len(batch)), batch.label].detach().cpu().numpy()
                         LL = LL_all.mean().item()
                         performance[partition + '_log_likelihood'].append(LL)
-                        accuracy_metrics = model.get_within_category_accuracy(pred, batch.label)
+                        accuracy_metrics = model.get_within_category_accuracy(
+                            pred, batch.label)
                         for key, val in accuracy_metrics.items():
                             performance[partition + '_' + key].append(val)
 
@@ -431,7 +489,8 @@ if __name__ == '__main__':
                 last_val_llh = val_llh
                 performance_by_epoch.append(performance)
                 pprint(performance)
-                print(f'Epoch [{i}] negative elbo (the lower the better)={total_loss}')
+                print(
+                    f'Epoch [{i}] negative elbo (the lower the better)={total_loss}')
         if stop > 0:
             print(f'EARLY STOPPING due to {STOP_CODES[stop]}')
             break
@@ -448,12 +507,18 @@ if __name__ == '__main__':
 
     # save best_val_llh_model weights
     if (configs.write_best_model):
-        write_val_partitions = [('validation', configs.val_llh_series_out, validation)]
+        write_val_partitions = [
+            ('validation', configs.val_llh_series_out, validation)]
         if configs.alt_val_dir != '':
             alt_validation = load_tsv("validation.tsv", configs.alt_val_dir)
-            user_index = user_encoder.transform(alt_validation['user_id'].values)
-            label = torch.LongTensor(item_encoder.transform(alt_validation['item_id'].values))
-            session_index = torch.LongTensor(session_encoder.transform(alt_validation['session_id'].values))
+            user_index = user_encoder.transform(
+                alt_validation['user_id'].values)
+            label = torch.LongTensor(
+                item_encoder.transform(
+                    alt_validation['item_id'].values))
+            session_index = torch.LongTensor(
+                session_encoder.transform(
+                    alt_validation['session_id'].values))
             # get the date (aka session_id in the raw dataset) of each row in the dataset, retrieve
             # the item availability information from that date.
             choice_dataset = ChoiceDataset(label=label,
@@ -463,16 +528,20 @@ if __name__ == '__main__':
                                            user_obs=user_obs,
                                            item_obs=item_obs,
                                            price_obs=price_obs)
-            dataloaders['alt_validation'] = create_data_loader(choice_dataset, configs)
-            write_val_partitions.append(('alt_validation', configs.alt_val_llh_series_out, alt_validation))
+            dataloaders['alt_validation'] = create_data_loader(
+                choice_dataset, configs)
+            write_val_partitions.append(
+                ('alt_validation', configs.alt_val_llh_series_out, alt_validation))
         with torch.no_grad():
             # compute performance for each data partition.
             for partition in write_val_partitions:
                 # compute performance for each batch.
                 LL_all = list()
                 for batch in dataloaders[partition[0]]:
-                    pred = best_val_llh_model(batch.to(configs.device))  # (num_sessions, num_items) log-likelihood.
-                    LL_all.append(pd.Series(pred[torch.arange(len(batch)), batch.label].detach().cpu().numpy()))
+                    # (num_sessions, num_items) log-likelihood.
+                    pred = best_val_llh_model(batch.to(configs.device))
+                    LL_all.append(pd.Series(
+                        pred[torch.arange(len(batch)), batch.label].detach().cpu().numpy()))
                     # accuracy_metrics = model.get_within_category_accuracy(pred, batch.label)
                     # for key, val in accuracy_metrics.items():
                     #     performance[partition + '_' + key].append(val)
@@ -480,11 +549,23 @@ if __name__ == '__main__':
                 partition[2]['log_likelihood_part'] = list(LL_df)
                 partition[2].to_csv(partition[1], index=False)
 
-
-        torch.save(best_val_llh_model, os.path.join(configs.out_dir, 'best_val_llh_model.pt'))
-        torch.save(best_val_llh_model.state_dict(), os.path.join(configs.out_dir, 'best_val_llh_model_state_dict.pt'))
-        write_bemb_cpp_format(configs, best_val_llh_model, user_encoder, item_encoder)
+        torch.save(
+            best_val_llh_model,
+            os.path.join(
+                configs.out_dir,
+                'best_val_llh_model.pt'))
+        torch.save(best_val_llh_model.state_dict(), os.path.join(
+            configs.out_dir, 'best_val_llh_model_state_dict.pt'))
+        write_bemb_cpp_format(
+            configs,
+            best_val_llh_model,
+            user_encoder,
+            item_encoder)
 
     # save model weights
     torch.save(model, os.path.join(configs.out_dir, 'model.pt'))
-    torch.save(model.state_dict(), os.path.join(configs.out_dir, 'state_dict.pt'))
+    torch.save(
+        model.state_dict(),
+        os.path.join(
+            configs.out_dir,
+            'state_dict.pt'))
