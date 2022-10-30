@@ -5,7 +5,6 @@ use this package without using LitBEMBFlex.
 Author: Tianyu Du
 Update: Apr. 29, 2022
 """
-<<<<<<< HEAD
 import time
 from typing import List
 
@@ -17,13 +16,11 @@ from torch_choice.data import ChoiceDataset
 from torch_choice.data.utils import create_data_loader
 
 from bemb.model import BEMBFlex
-=======
 import numpy as np
 import torch
 import pytorch_lightning as pl
 from bemb.model import BEMBFlex
 from sklearn import metrics
->>>>>>> supermarkets_old
 
 
 class LitBEMBFlex(pl.LightningModule):
