@@ -17,6 +17,7 @@ class VariationalFactorizedGaussian(nn.Module):
     standard covariance matrix) Gaussian distributions.
     This class is used as the variational family for real-valued latent variables.
     """
+
     def __init__(self, num_classes: int, dim: int) -> None:
         """
 
@@ -30,8 +31,16 @@ class VariationalFactorizedGaussian(nn.Module):
         super(VariationalFactorizedGaussian, self).__init__()
         self.num_classes = num_classes
         self.dim = dim
-        self.mean = nn.Parameter(torch.zeros(num_classes, dim), requires_grad=True)
-        self.logstd = nn.Parameter(torch.ones(num_classes, dim), requires_grad=True)
+        self.mean = nn.Parameter(
+            torch.zeros(
+                num_classes,
+                dim),
+            requires_grad=True)
+        self.logstd = nn.Parameter(
+            torch.ones(
+                num_classes,
+                dim),
+            requires_grad=True)
 
     def __repr__(self) -> str:
         return f'VariationalFactorizedGaussian(num_classes={self.num_classes}, dim_out={self.dim})'
@@ -51,9 +60,10 @@ class VariationalFactorizedGaussian(nn.Module):
         Returns:
             torch.Tensor: a tensor with shape (batch_size, num_classes).
         """
-        return batch_factorized_gaussian_log_prob(self.mean, self.logstd, value)
+        return batch_factorized_gaussian_log_prob(
+            self.mean, self.logstd, value)
 
-    def reparameterize_sample(self, num_seeds: int=1) -> torch.Tensor:
+    def reparameterize_sample(self, num_seeds: int = 1) -> torch.Tensor:
         """Samples from the multivariate Gaussian distribution using the reparameterization trick.
 
         Args:
@@ -64,8 +74,13 @@ class VariationalFactorizedGaussian(nn.Module):
                 the C-th Gaussian distribution.
         """
         # create random seeds from N(0, 1).
-        eps = torch.randn(num_seeds, self.num_classes, self.dim).to(self.device)
-        # parameters for each Gaussian distribution, boardcast across random seeds.
+        eps = torch.randn(
+            num_seeds,
+            self.num_classes,
+            self.dim).to(
+            self.device)
+        # parameters for each Gaussian distribution, boardcast across random
+        # seeds.
         mu = self.mean.view(1, self.num_classes, self.dim)
         std = torch.exp(self.logstd).view(1, self.num_classes, self.dim)
         out = mu + std * eps
@@ -74,7 +89,8 @@ class VariationalFactorizedGaussian(nn.Module):
 
 
 class LearnableGaussianPrior(nn.Module):
-    def __init__(self, dim_in: int, dim_out: int, std: Union[str, float, torch.Tensor]=1.0) -> None:
+    def __init__(self, dim_in: int, dim_out: int,
+                 std: Union[str, float, torch.Tensor] = 1.0) -> None:
         """Construct a Gaussian distribution for prior of user/item embeddigns, whose mean and
         standard deviation depends on user/item observables.
         NOTE: to avoid exploding number of parameters, learnable parameters in this class are shared
@@ -101,21 +117,33 @@ class LearnableGaussianPrior(nn.Module):
         self.H = nn.Linear(dim_in, dim_out, bias=False)
 
         if isinstance(std, float):
-            self.logstd = torch.log(torch.scalar_tensor(std)).expand(self.dim_out)
+            self.logstd = torch.log(
+                torch.scalar_tensor(std)).expand(
+                self.dim_out)
         elif isinstance(std, torch.Tensor):
             self.logstd = torch.log(std)
         elif std == 'learnable_scalar':
-            # TODO(Tianyu): check if this expand function works as we expected. Check the number of parameters.
-            self.logstd = nn.Parameter(torch.zeros(1), requires_grad=True).expand(self.dim_out)
+            # TODO(Tianyu): check if this expand function works as we expected.
+            # Check the number of parameters.
+            self.logstd = nn.Parameter(
+                torch.zeros(1),
+                requires_grad=True).expand(
+                self.dim_out)
         elif std == 'learnable_vector':
-            self.logstd = nn.Parameter(torch.zeros(self.dim_out), requires_grad=True)
+            self.logstd = nn.Parameter(
+                torch.zeros(
+                    self.dim_out),
+                requires_grad=True)
         else:
             raise ValueError(f'Unsupported standard deviation option {std}')
 
     def __repr__(self) -> str:
         return f'LearnableGaussianPrior(dim_in={self.dim_in}, dim_out={self.dim_out})'
 
-    def log_prob(self, x_obs: torch.Tensor, value: torch.Tensor) -> torch.Tensor:
+    def log_prob(
+            self,
+            x_obs: torch.Tensor,
+            value: torch.Tensor) -> torch.Tensor:
         """Compute the log likelihood of `value` given observables `x_obs`.
 
         Args:
@@ -130,7 +158,8 @@ class LearnableGaussianPrior(nn.Module):
         # compute mean vector for each class.
         mu = self.H(x_obs)  # (num_classes, self.dim_out)
         # expand standard deviations shared across all classes.
-        logstd = self.logstd.unsqueeze(dim=0).expand(x_obs.shape[0], -1).to(x_obs.device)  # (num_classes, self.dim_out)
+        logstd = self.logstd.unsqueeze(dim=0).expand(
+            x_obs.shape[0], -1).to(x_obs.device)  # (num_classes, self.dim_out)
         return batch_factorized_gaussian_log_prob(mu, logstd, value)
 
 
@@ -138,6 +167,7 @@ class StandardGaussianPrior(nn.Module):
     """A helper class for evaluating the log_prob of Monte Carlo samples for latent variables on
     a N(0, 1) prior.
     """
+
     def __init__(self, dim_in: int, dim_out: int) -> None:
         super(StandardGaussianPrior, self).__init__()
         self.dim_in = dim_in
@@ -160,7 +190,9 @@ class StandardGaussianPrior(nn.Module):
         batch_size, num_classes, dim_out = value.shape
         assert dim_out == self.dim_out
         mu = torch.zeros(num_classes, self.dim_out).to(value.device)
-        logstd = torch.zeros(num_classes, self.dim_out).to(value.device)  # (num_classes, self.dim_out)
+        logstd = torch.zeros(
+            num_classes, self.dim_out).to(
+            value.device)  # (num_classes, self.dim_out)
         out = batch_factorized_gaussian_log_prob(mu, logstd, value)
         assert out.shape == (batch_size, num_classes)
         return out
@@ -171,8 +203,8 @@ class BayesianCoefficient(nn.Module):
                  variation: str,
                  num_classes: int,
                  obs2prior: bool,
-                 num_obs: int=0,
-                 dim: int=1,
+                 num_obs: int = 0,
+                 dim: int = 1,
                  ):
         super(BayesianCoefficient, self).__init__()
         assert variation in ['item', 'user', 'constant']
@@ -187,14 +219,16 @@ class BayesianCoefficient(nn.Module):
 
         # create prior distribution.
         if self.obs2prior:
-            self.prior_distribution = LearnableGaussianPrior(dim_in=self.num_obs, dim_out=self.dim)
+            self.prior_distribution = LearnableGaussianPrior(
+                dim_in=self.num_obs, dim_out=self.dim)
         else:
             # The dim_in doesn't matter for standard Gaussian.
-            self.prior_distribution = StandardGaussianPrior(dim_in=self.num_obs, dim_out=self.dim)
+            self.prior_distribution = StandardGaussianPrior(
+                dim_in=self.num_obs, dim_out=self.dim)
 
         # create variational distribution.
-        self.variational_distribution = VariationalFactorizedGaussian(num_classes=self.num_classes,
-                                                                      dim=self.dim)
+        self.variational_distribution = VariationalFactorizedGaussian(
+            num_classes=self.num_classes, dim=self.dim)
 
         self._check_args()
 
@@ -216,7 +250,7 @@ class BayesianCoefficient(nn.Module):
         assert out.shape == (num_seeds, num_classes)
         return out
 
-    def reparameterize_sample(self, num_seeds: int=1):
+    def reparameterize_sample(self, num_seeds: int = 1):
         # shape (num_seeds, self.num_classes, self.dim).
         return self.variational_distribution.reparameterize_sample(num_seeds)
 

@@ -1,3 +1,4 @@
+from torch.utils.data.sampler import BatchSampler, SequentialSampler, RandomSampler
 import numpy as np
 import torch
 from termcolor import cprint
@@ -91,7 +92,6 @@ print(dataset.label[indices])
 print(id(subset.label))
 print(id(dataset.label[indices]))
 
-from torch.utils.data.sampler import BatchSampler, SequentialSampler, RandomSampler
 shuffle = False
 batch_size = 32
 

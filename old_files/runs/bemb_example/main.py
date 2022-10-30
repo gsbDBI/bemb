@@ -19,7 +19,7 @@ from tqdm import tqdm
 from sklearn.preprocessing import LabelEncoder
 
 STOP_CODES = {
-    1 : 'validation set llh increase per supplied config'
+    1: 'validation set llh increase per supplied config'
 }
 
 
@@ -39,7 +39,13 @@ def load_configs(yaml_file: str):
 
 def load_params_to_model(model, path) -> None:
     def load_cpp_tsv(file):
-        df = pd.read_csv(os.path.join(path, file), sep='\t', index_col=0, header=None)
+        df = pd.read_csv(
+            os.path.join(
+                path,
+                file),
+            sep='\t',
+            index_col=0,
+            header=None)
         return torch.Tensor(df.values[:, 1:])
 
     cpp_theta_mean = load_cpp_tsv('param_theta_mean.tsv')
@@ -49,11 +55,15 @@ def load_params_to_model(model, path) -> None:
     cpp_alpha_std = load_cpp_tsv('param_alpha_std.tsv')
 
     # theta user
-    model.variational_dict['theta_user'].mean.data = cpp_theta_mean.to(model.device)
-    model.variational_dict['theta_user'].logstd.data = torch.log(cpp_theta_std).to(model.device)
+    model.variational_dict['theta_user'].mean.data = cpp_theta_mean.to(
+        model.device)
+    model.variational_dict['theta_user'].logstd.data = torch.log(
+        cpp_theta_std).to(model.device)
     # alpha item
-    model.variational_dict['alpha_item'].mean.data = cpp_alpha_mean.to(model.device)
-    model.variational_dict['alpha_item'].logstd.data = torch.log(cpp_alpha_std).to(model.device)
+    model.variational_dict['alpha_item'].mean.data = cpp_alpha_mean.to(
+        model.device)
+    model.variational_dict['alpha_item'].logstd.data = torch.log(
+        cpp_alpha_std).to(model.device)
 
 
 def is_sorted(x):
@@ -134,33 +144,47 @@ if __name__ == '__main__':
     configs.num_sessions = len(session_encoder.classes_)
     assert is_sorted(session_encoder.classes_)
     # this loop could be slow, depends on # sessions.
-    item_availability = torch.zeros(configs.num_sessions, configs.num_items).bool()
+    item_availability = torch.zeros(
+        configs.num_sessions,
+        configs.num_items).bool()
 
     a_tsv['item_id'] = item_encoder.transform(a_tsv['item_id'].values)
     a_tsv['session_id'] = session_encoder.transform(a_tsv['session_id'].values)
 
     for session_id, df_group in a_tsv.groupby('session_id'):
         # get IDs of items available at this date.
-        a_item_ids = df_group['item_id'].unique()  # this unique is not necessary if the dataset is well-prepared.
+        # this unique is not necessary if the dataset is well-prepared.
+        a_item_ids = df_group['item_id'].unique()
         item_availability[session_id, a_item_ids] = True
 
     # ==============================================================================================
     # price observables
     # ==============================================================================================
-    df_price = pd.read_csv(os.path.join(configs.data_dir, 'item_sess_price.tsv'),
-                           sep='\t',
-                           names=['item_id', 'session_id', 'price'])
+    df_price = pd.read_csv(
+        os.path.join(
+            configs.data_dir,
+            'item_sess_price.tsv'),
+        sep='\t',
+        names=[
+            'item_id',
+            'session_id',
+            'price'])
 
     # only keep prices of relevant items.
     mask = df_price['item_id'].isin(item_encoder.classes_)
     df_price = df_price[mask]
 
     df_price['item_id'] = item_encoder.transform(df_price['item_id'].values)
-    df_price['session_id'] = session_encoder.transform(df_price['session_id'].values)
+    df_price['session_id'] = session_encoder.transform(
+        df_price['session_id'].values)
     df_price = df_price.pivot(index='session_id', columns='item_id')
     # NAN prices.
     df_price.fillna(0.0, inplace=True)
-    price_obs = torch.Tensor(df_price.values).view(configs.num_sessions, configs.num_items, 1)
+    price_obs = torch.Tensor(
+        df_price.values).view(
+        configs.num_sessions,
+        configs.num_items,
+        1)
     configs.num_price_obs = 1
 
     # ==============================================================================================
@@ -170,7 +194,9 @@ if __name__ == '__main__':
     for d in (train, validation, test):
         user_index = user_encoder.transform(d['user_id'].values)
         label = torch.LongTensor(item_encoder.transform(d['item_id'].values))
-        session_index = torch.LongTensor(session_encoder.transform(d['session_id'].values))
+        session_index = torch.LongTensor(
+            session_encoder.transform(
+                d['session_id'].values))
         # get the date (aka session_id in the raw dataset) of each row in the dataset, retrieve
         # the item availability information from that date.
 
@@ -218,7 +244,8 @@ if __name__ == '__main__':
     # ==============================================================================================
 
     dataloaders = dict()
-    for dataset, partition in zip(dataset_list, ('train', 'validation', 'test')):
+    for dataset, partition in zip(
+            dataset_list, ('train', 'validation', 'test')):
         # dataset = dataset.to(configs.device)
         dataloader = create_data_loader(dataset, configs)
         dataloaders[partition] = dataloader
@@ -240,17 +267,19 @@ if __name__ == '__main__':
                  num_price_obs=configs.num_price_obs,
                  ).to(configs.device)
 
-    best_val_llh_model = BEMB(utility_formula=configs.utility,
-                              num_users=configs.num_users,
-                              num_items=configs.num_items,
-                              num_sessions=configs.num_sessions,
-                              obs2prior_dict=configs.obs2prior_dict,
-                              coef_dim_dict=configs.coef_dim_dict,
-                              trace_log_q=configs.trace_log_q,
-                              category_to_item=category_to_item,
-                              num_user_obs=configs.num_user_obs,
-                              num_price_obs=configs.num_price_obs,
-                              num_item_obs=configs.num_item_obs).to(configs.device)
+    best_val_llh_model = BEMB(
+        utility_formula=configs.utility,
+        num_users=configs.num_users,
+        num_items=configs.num_items,
+        num_sessions=configs.num_sessions,
+        obs2prior_dict=configs.obs2prior_dict,
+        coef_dim_dict=configs.coef_dim_dict,
+        trace_log_q=configs.trace_log_q,
+        category_to_item=category_to_item,
+        num_user_obs=configs.num_user_obs,
+        num_price_obs=configs.num_price_obs,
+        num_item_obs=configs.num_item_obs).to(
+        configs.device)
 
     # print(model.variational_dict['theta_user'].mean)
     # # breakpoint()
@@ -259,7 +288,8 @@ if __name__ == '__main__':
 
     start_time = time.time()
     optimizer = torch.optim.RMSprop(model.parameters(), lr=0.03)
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=1)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(
+        optimizer=optimizer, gamma=1)
 
     print(80 * '=')
     print(model)
@@ -274,7 +304,8 @@ if __name__ == '__main__':
     last_val_llh = np.NINF
     val_llh_decrease_count = 0
     # stop > 0 leads to a stopping criteria different from num epochs having run
-    # we use stop = 1 when we perform an early stop based on validation log likelihood
+    # we use stop = 1 when we perform an early stop based on validation log
+    # likelihood
     stop = 0
 
     for i in tqdm(range(configs.num_epochs), desc='epoch'):
@@ -292,23 +323,31 @@ if __name__ == '__main__':
 
         scheduler.step()
         if i % (configs.num_epochs // configs.num_verify_val) == 0:
-        # if False:
-        # if (i + 1) == configs.num_epochs:
+            # if False:
+            # if (i + 1) == configs.num_epochs:
             # report training progress, report 10 times in total.
             with torch.no_grad():
                 performance = {'iteration': i,
                                'duration_seconds': time.time() - start_time}
                 # compute performance for each data partition.
                 for partition in ('train', 'validation', 'test'):
-                    metrics = ['log_likelihood', 'accuracy', 'precision', 'recall', 'f1score']
+                    metrics = [
+                        'log_likelihood',
+                        'accuracy',
+                        'precision',
+                        'recall',
+                        'f1score']
                     for m in metrics:
                         performance[partition + '_' + m] = list()
                     # compute performance for each batch.
                     for batch in dataloaders[partition]:
-                        pred = model(batch.to(configs.device))  # (num_sessions, num_items) log-likelihood.
-                        LL = pred[torch.arange(len(batch)), batch.label].mean().detach().cpu().item()
+                        # (num_sessions, num_items) log-likelihood.
+                        pred = model(batch.to(configs.device))
+                        LL = pred[torch.arange(len(batch)), batch.label].mean(
+                        ).detach().cpu().item()
                         performance[partition + '_log_likelihood'].append(LL)
-                        accuracy_metrics = model.get_within_category_accuracy(pred, batch.label)
+                        accuracy_metrics = model.get_within_category_accuracy(
+                            pred, batch.label)
                         for key, val in accuracy_metrics.items():
                             performance[partition + '_' + key].append(val)
 
@@ -330,7 +369,8 @@ if __name__ == '__main__':
                 last_val_llh = val_llh
                 performance_by_epoch.append(performance)
                 pprint(performance)
-                print(f'Epoch [{i}] negative elbo (the lower the better)={total_loss}')
+                print(
+                    f'Epoch [{i}] negative elbo (the lower the better)={total_loss}')
         if stop > 0:
             print(f'EARLY STOPPING due to {STOP_CODES[stop]}')
             break
@@ -346,9 +386,18 @@ if __name__ == '__main__':
 
     # save best_val_llh_model weights
     if (configs.write_best_model):
-        torch.save(best_val_llh_model, os.path.join(configs.out_dir, 'best_val_llh_model.pt'))
-        torch.save(best_val_llh_model.state_dict(), os.path.join(configs.out_dir, 'best_val_llh_model_state_dict.pt'))
+        torch.save(
+            best_val_llh_model,
+            os.path.join(
+                configs.out_dir,
+                'best_val_llh_model.pt'))
+        torch.save(best_val_llh_model.state_dict(), os.path.join(
+            configs.out_dir, 'best_val_llh_model_state_dict.pt'))
 
     # save model weights
     torch.save(model, os.path.join(configs.out_dir, 'model.pt'))
-    torch.save(model.state_dict(), os.path.join(configs.out_dir, 'state_dict.pt'))
+    torch.save(
+        model.state_dict(),
+        os.path.join(
+            configs.out_dir,
+            'state_dict.pt'))

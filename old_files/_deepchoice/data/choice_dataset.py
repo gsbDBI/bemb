@@ -53,7 +53,8 @@ class ChoiceDataset(torch.utils.data.Dataset):
         self.session_index = session_index
 
         if self.session_index is None:
-            if any([x.startswith('session_') or x.startswith('price_') for x in kwargs.keys()]):
+            if any([x.startswith('session_') or x.startswith('price_')
+                    for x in kwargs.keys()]):
                 # if any session sensitive observable is provided, but session index is not,
                 # infer each row in the dataset to be a session.
                 self.session_index = torch.arange(len(self.label)).long()
@@ -63,7 +64,8 @@ class ChoiceDataset(torch.utils.data.Dataset):
         self.observable_prefix = [
             'user_', 'item_', 'session_', 'taste_', 'price_']
         for key, item in kwargs.items():
-            if any(key.startswith(prefix) for prefix in self.observable_prefix):
+            if any(key.startswith(prefix)
+                   for prefix in self.observable_prefix):
                 setattr(self, key, item)
 
         self._is_valid()
@@ -102,7 +104,8 @@ class ChoiceDataset(torch.utils.data.Dataset):
         # copy other keys.
         for key, val in self.__dict__.items():
             if key in new_dict.keys():
-                # ignore 'label', 'user_index', 'session_index' and 'item_availability' keys, already added.
+                # ignore 'label', 'user_index', 'session_index' and
+                # 'item_availability' keys, already added.
                 continue
             if torch.is_tensor(val):
                 new_dict[key] = val.clone()
@@ -124,7 +127,8 @@ class ChoiceDataset(torch.utils.data.Dataset):
     def num_users(self) -> int:
         for key, val in self.__dict__.items():
             if torch.is_tensor(val):
-                if self._is_user_attribute(key) or self._is_taste_attribute(key):
+                if self._is_user_attribute(
+                        key) or self._is_taste_attribute(key):
                     return val.shape[0]
         return 1
 
@@ -145,14 +149,16 @@ class ChoiceDataset(torch.utils.data.Dataset):
 
         for key, val in self.__dict__.items():
             if torch.is_tensor(val):
-                if self._is_session_attribute(key) or self._is_price_attribute(key):
+                if self._is_session_attribute(
+                        key) or self._is_price_attribute(key):
                     return val.shape[0]
         return 1
 
     @property
     def x_dict(self) -> Dict[object, torch.Tensor]:
         """Get the x_dict object for used in model's forward function."""
-        # reshape raw tensors into (num_sessions, num_items/num_category, num_params).
+        # reshape raw tensors into (num_sessions, num_items/num_category,
+        # num_params).
         out = dict()
         for key, val in self.__dict__.items():
             if self._is_attribute(key):
@@ -196,8 +202,9 @@ class ChoiceDataset(torch.utils.data.Dataset):
             if torch.is_tensor(val):
                 devices.append(val.device)
         if len(set(devices)) > 1:
-            raise Exception(f'Found tensors on different devices: {set(devices)}.',
-                            'Use dataset.to() method to align devices.')
+            raise Exception(
+                f'Found tensors on different devices: {set(devices)}.',
+                'Use dataset.to() method to align devices.')
 
     def _size_repr(self, value) -> List[int]:
         if torch.is_tensor(value):
@@ -211,7 +218,8 @@ class ChoiceDataset(torch.utils.data.Dataset):
 
     def __repr__(self):
         info = [
-            f'{key}={self._size_repr(item)}' for key, item in self.__dict__.items()]
+            f'{key}={self._size_repr(item)}' for key,
+            item in self.__dict__.items()]
         return f"{self.__class__.__name__}({', '.join(info)}, device={self.device})"
 
     @staticmethod
@@ -255,17 +263,20 @@ class ChoiceDataset(torch.utils.data.Dataset):
             num_sessions = self.item_availability.shape[0]
 
         for key, value in self.__dict__.items():
-            if self._is_session_attribute(key) or self._is_price_attribute(key):
+            if self._is_session_attribute(
+                    key) or self._is_price_attribute(key):
                 num_sessions = value.shape[0]
 
         if any(self._is_user_attribute(x) for x in self.__dict__.keys()):
             assert self.user_index is not None
 
-        if any(self._is_session_attribute(x) or self._is_price_attribute(x) for x in self.__dict__.keys()):
+        if any(self._is_session_attribute(x) or self._is_price_attribute(x)
+               for x in self.__dict__.keys()):
             assert self.session_index is not None
 
     def _expand_tensor(self, key: str, val: torch.Tensor) -> torch.Tensor:
-        # convert raw tensors into (len(self), num_items/num_category, num_params).
+        # convert raw tensors into (len(self), num_items/num_category,
+        # num_params).
         if not self._is_attribute(key):
             # don't expand non-attribute tensors, if any.
             return val

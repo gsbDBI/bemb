@@ -172,11 +172,12 @@ class BEMBFlex(nn.Module):
         for additive_term in self.formula:
             for coef_name in additive_term['coefficient']:
                 variation = coef_name.split('_')[-1]
-                coef_dict[coef_name] = BayesianCoefficient(variation=variation,
-                                                           num_classes=variation_to_num_classes[variation],
-                                                           obs2prior=self.obs2prior_dict[coef_name],
-                                                           num_obs=self.num_obs_dict[variation],
-                                                           dim=self.coef_dim_dict[coef_name])
+                coef_dict[coef_name] = BayesianCoefficient(
+                    variation=variation,
+                    num_classes=variation_to_num_classes[variation],
+                    obs2prior=self.obs2prior_dict[coef_name],
+                    num_obs=self.num_obs_dict[variation],
+                    dim=self.coef_dim_dict[coef_name])
         self.coef_dict = nn.ModuleDict(coef_dict)
 
     def __str__(self):
@@ -222,7 +223,8 @@ class BEMBFlex(nn.Module):
     @torch.no_grad()
     def get_within_category_accuracy(self,
                                      log_p_all_items: torch.Tensor,
-                                     label: torch.LongTensor) -> Dict[str, float]:
+                                     label: torch.LongTensor) -> Dict[str,
+                                                                      float]:
         """A helper function for computing prediction accuracy (i.e., all non-differential metrics)
         within category.
         In particular, thie method calculates the accuracy, precision, recall and F1 score.
@@ -276,7 +278,9 @@ class BEMBFlex(nn.Module):
         recall = list()
         for i in range(self.num_items):
             correct_i = torch.sum(
-                (torch.logical_and(pred_from_category == i, label == i)).float())
+                (torch.logical_and(
+                    pred_from_category == i,
+                    label == i)).float())
             precision_i = correct_i / \
                 torch.sum((pred_from_category == i).float())
             recall_i = correct_i / torch.sum((label == i).float())
@@ -335,9 +339,11 @@ class BEMBFlex(nn.Module):
             num_seeds = v.shape[0]
             break
 
-        user_session_index = torch.stack([batch.user_index, batch.session_index])
+        user_session_index = torch.stack(
+            [batch.user_index, batch.session_index])
         assert user_session_index.shape == (2, len(batch))
-        unique_user_sess, inverse_indices = torch.unique(user_session_index, dim=1, return_inverse=True)
+        unique_user_sess, inverse_indices = torch.unique(
+            user_session_index, dim=1, return_inverse=True)
 
         user_index = unique_user_sess[0, :]
         session_index = unique_user_sess[1, :]
@@ -361,6 +367,7 @@ class BEMBFlex(nn.Module):
         # ==========================================================================================
         # Helper Functions for Reshaping.
         # ==========================================================================================
+
         def reshape_user_coef_sample(C):
             # input shape (R, U, *)
             C = C.view(R, U, 1, -1).expand(-1, -1, I, -1)  # (R, U, I, *)
@@ -430,7 +437,8 @@ class BEMBFlex(nn.Module):
 
         # user and item interactions.
         def is_time_invariant_observable(name):
-            return name is None or name.endswith('_item') or name.endswith('_user')
+            return name is None or name.endswith(
+                '_item') or name.endswith('_user')
 
         def is_time_invariant_term(term):
             return is_time_invariant_observable(term['observable'])
@@ -446,22 +454,29 @@ class BEMBFlex(nn.Module):
 
         for term in self.formula:
             if is_time_invariant_term(term):
-                if len(term['coefficient']) == 1 and term['observable'] is None:
-                    out = _reshape(sample_dict[term['coefficient'][0]], term['coefficient'][0])
+                if len(term['coefficient']
+                       ) == 1 and term['observable'] is None:
+                    out = _reshape(
+                        sample_dict[term['coefficient'][0]], term['coefficient'][0])
                     utility += out.view(R, U, I)
 
                 elif len(term['coefficient']) == 2 and term['observable'] is None:
-                    A = _reshape(sample_dict[term['coefficient'][0]], term['coefficient'][0])
-                    B = _reshape(sample_dict[term['coefficient'][1]], term['coefficient'][1])
+                    A = _reshape(
+                        sample_dict[term['coefficient'][0]], term['coefficient'][0])
+                    B = _reshape(
+                        sample_dict[term['coefficient'][1]], term['coefficient'][1])
                     utility += (A * B).sum(dim=-1).view(R, U, I)
 
                 elif len(term['coefficient']) == 1 and term['observable'] is not None:
-                    coef = _reshape(sample_dict[term['coefficient'][0]], term['coefficient'[0]])
+                    coef = _reshape(
+                        sample_dict[term['coefficient'][0]], term['coefficient'[0]])
                     obs_name = term['observable']
                     if obs_name.startswith('item_'):
-                        obs = getattr(batch, obs_name).view(1, 1, I, -1).expand(R, U, -1, -1)
+                        obs = getattr(batch, obs_name).view(
+                            1, 1, I, -1).expand(R, U, -1, -1)
                     elif obs_name.startswith('user_'):
-                        obs = getattr(batch, obs_name).view(1, U, 1, -1).expand(R, -1, I, -1)
+                        obs = getattr(batch, obs_name).view(
+                            1, U, 1, -1).expand(R, -1, I, -1)
                     utility += (coef * obs).sum(dim=-1).view(R, U, I)
 
         # ==========================================================================================
@@ -480,7 +495,8 @@ class BEMBFlex(nn.Module):
             if len(term['coefficient']) == 1 and term['observable'] is None:
                 # E.g., lambda_item or lambda_user
                 coef_name = term['coefficient'][0]
-                coef_sample = reshape_coef_sample(sample_dict[coef_name], coef_name)
+                coef_sample = reshape_coef_sample(
+                    sample_dict[coef_name], coef_name)
                 assert coef_sample.shape == (R, P, I, 1)
                 additive_term = coef_sample.view(R, P, I)
 
@@ -489,17 +505,22 @@ class BEMBFlex(nn.Module):
                 coef_name_0 = term['coefficient'][0]
                 coef_name_1 = term['coefficient'][1]
 
-                coef_sample_0 = reshape_coef_sample(sample_dict[coef_name_0], coef_name_0)
-                coef_sample_1 = reshape_coef_sample(sample_dict[coef_name_1], coef_name_1)
+                coef_sample_0 = reshape_coef_sample(
+                    sample_dict[coef_name_0], coef_name_0)
+                coef_sample_1 = reshape_coef_sample(
+                    sample_dict[coef_name_1], coef_name_1)
 
-                assert coef_sample_0.shape == coef_sample_1.shape == (R, P, I, positive_integer)
+                assert coef_sample_0.shape == coef_sample_1.shape == (
+                    R, P, I, positive_integer)
 
                 additive_term = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
-            # Type III: single coefficient multiplied by observable, e.g., theta_user * x_obs_item.
+            # Type III: single coefficient multiplied by observable, e.g.,
+            # theta_user * x_obs_item.
             elif len(term['coefficient']) == 1 and term['observable'] is not None:
                 coef_name = term['coefficient'][0]
-                coef_sample = reshape_coef_sample(sample_dict[coef_name], coef_name)
+                coef_sample = reshape_coef_sample(
+                    sample_dict[coef_name], coef_name)
                 assert coef_sample.shape == (R, P, I, positive_integer)
 
                 obs_name = term['observable']
@@ -513,9 +534,12 @@ class BEMBFlex(nn.Module):
             elif len(term['coefficient']) == 2 and term['observable'] is not None:
                 coef_name_0, coef_name_1 = term['coefficient'][0], term['coefficient'][1]
 
-                coef_sample_0 = reshape_coef_sample(sample_dict[coef_name_0], coef_name_0)
-                coef_sample_1 = reshape_coef_sample(sample_dict[coef_name_1], coef_name_1)
-                assert coef_sample_0.shape == coef_sample_1.shape == (R, P, I, positive_integer)
+                coef_sample_0 = reshape_coef_sample(
+                    sample_dict[coef_name_0], coef_name_0)
+                coef_sample_1 = reshape_coef_sample(
+                    sample_dict[coef_name_1], coef_name_1)
+                assert coef_sample_0.shape == coef_sample_1.shape == (
+                    R, P, I, positive_integer)
                 num_obs_times_latent_dim = coef_sample_0.shape[-1]
 
                 obs_name = term['observable']
@@ -526,8 +550,10 @@ class BEMBFlex(nn.Module):
                 assert (num_obs_times_latent_dim % num_obs) == 0
                 latent_dim = num_obs_times_latent_dim // num_obs
 
-                coef_sample_0 = coef_sample_0.view(R, P, I, num_obs, latent_dim)
-                coef_sample_1 = coef_sample_1.view(R, P, I, num_obs, latent_dim)
+                coef_sample_0 = coef_sample_0.view(
+                    R, P, I, num_obs, latent_dim)
+                coef_sample_1 = coef_sample_1.view(
+                    R, P, I, num_obs, latent_dim)
                 # compute the factorized coefficient with shape (R, P, I, O).
                 coef = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
@@ -546,7 +572,8 @@ class BEMBFlex(nn.Module):
         if batch.item_availability is not None:
             # expand to the Monte Carlo sample dimension.
             # (S, I) -> (P, I) -> (1, P, I) -> (R, P, I)
-            A = batch.item_availability[session_index, :].unsqueeze(dim=0).expand(R, -1, -1)
+            A = batch.item_availability[session_index, :].unsqueeze(
+                dim=0).expand(R, -1, -1)
             utility[~A] = -1.0e20
 
         utility = utility[:, inverse_indices, :]
@@ -566,7 +593,10 @@ class BEMBFlex(nn.Module):
         # output shape: (num_seeds, num_purchases, num_items)
         return log_p
 
-    def log_prior(self, batch, sample_dict: Dict[str, torch.Tensor]) -> torch.scalar_tensor:
+    def log_prior(self,
+                  batch,
+                  sample_dict: Dict[str,
+                                    torch.Tensor]) -> torch.scalar_tensor:
         """Calculates the log-likelihood of Monte Carlo samples of Bayesian coefficients under their
         prior distribution. This method assume coefficients are statistically independnet.
 
@@ -596,15 +626,22 @@ class BEMBFlex(nn.Module):
                 elif coef_name.endswith('_user'):
                     x_obs = batch.user_obs
                 else:
-                    raise ValueError(f'No observable found to support obs2prior for {coef_name}.')
+                    raise ValueError(
+                        f'No observable found to support obs2prior for {coef_name}.')
             else:
                 x_obs = None
 
-            # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
-            total += coef.log_prior(sample=sample_dict[coef_name], x_obs=x_obs).sum(dim=-1)
+            # log_prob outputs (num_seeds, num_{items, users}), sum to
+            # (num_seeds).
+            total += coef.log_prior(
+                sample=sample_dict[coef_name],
+                x_obs=x_obs).sum(
+                dim=-1)
         return total
 
-    def log_variational(self, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def log_variational(self,
+                        sample_dict: Dict[str,
+                                          torch.Tensor]) -> torch.Tensor:
         """Calculate the log-likelihood of smaples in sample_dict under the current variational
         distribution.
 
@@ -618,7 +655,8 @@ class BEMBFlex(nn.Module):
         total = torch.zeros(1, device=self.device)
 
         for coef_name, coef in self.coef_dict.items():
-            # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
+            # log_prob outputs (num_seeds, num_{items, users}), sum to
+            # (num_seeds).
             total += coef.log_variational(sample_dict[coef_name]).sum(dim=-1)
 
         return total
@@ -651,11 +689,13 @@ class BEMBFlex(nn.Module):
         # (num_purchases, num_items), averaged over Monte Carlo samples for expectation at dim 0.
         log_p_all_items = log_p_all_items.mean(dim=0)
         # (num_sessions,)
-        log_p_chosen_items = log_p_all_items[torch.arange(len(batch)), batch.label]
+        log_p_chosen_items = log_p_all_items[torch.arange(
+            len(batch)), batch.label]
         # scalar
         elbo += log_p_chosen_items.sum(dim=0)  # sessions are independent.
 
-        # 4. optionally add log likelihood under variational distributions q(latent).
+        # 4. optionally add log likelihood under variational distributions
+        # q(latent).
         if self.trace_log_q:
             elbo -= self.log_variational(sample_dict).mean()
 

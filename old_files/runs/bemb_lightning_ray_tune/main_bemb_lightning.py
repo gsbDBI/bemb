@@ -240,21 +240,34 @@ class LitBEMBFlex(pl.LightningModule):
         return optimizer
 
     def train_dataloader(self):
-        return create_data_loader(dataset_list[0], batch_size=self.batch_size, shuffle=True, num_workers=8)
+        return create_data_loader(
+            dataset_list[0],
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=8)
 
     def val_dataloader(self):
-        return create_data_loader(dataset_list[1], batch_size=self.batch_size, shuffle=True, num_workers=8)
+        return create_data_loader(
+            dataset_list[1],
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=8)
 
     def test_dataloader(self):
         # use smaller batch size for test, which takes more memory.
-        return create_data_loader(dataset_list[2], batch_size=10000, shuffle=False, num_workers=8)
+        return create_data_loader(
+            dataset_list[2],
+            batch_size=10000,
+            shuffle=False,
+            num_workers=8)
 
 
 if __name__ == '__main__':
     num_samples = 10
     num_epochs = 10
 
-    callback = TuneReportCallback({'val_log_likelihood': 'val_log_likelihood'}, on='validation_end')
+    callback = TuneReportCallback(
+        {'val_log_likelihood': 'val_log_likelihood'}, on='validation_end')
 
     def train_tune(hparams, epochs=10, gpus=1):
         model = LitBEMBFlex(hparams,
@@ -275,7 +288,10 @@ if __name__ == '__main__':
             log_every_n_steps=1,
             gpus=gpus,
             progress_bar_refresh_rate=0,
-            logger=TensorBoardLogger(save_dir=tune.get_trial_dir(), name='', version='.'),
+            logger=TensorBoardLogger(
+                save_dir=tune.get_trial_dir(),
+                name='',
+                version='.'),
             callbacks=[callback])
         trainer.fit(model)
 
@@ -291,7 +307,10 @@ if __name__ == '__main__':
         ])
     }
 
-    scheduler = ASHAScheduler(max_t=num_epochs, grace_period=1, reduction_factor=2)
+    scheduler = ASHAScheduler(
+        max_t=num_epochs,
+        grace_period=1,
+        reduction_factor=2)
 
     reporter = CLIReporter(parameter_columns=list(config.keys()),
                            metric_columns=list(callback._metrics.keys()))

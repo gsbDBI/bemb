@@ -18,9 +18,8 @@ class AdditiveComponent(nn.Module):
     def __init__(self, formula: str,
                  num_classes: int,
                  dim: int):
-        self.encoder = BayesianLinear(in_features=num_classes, out_features=dim)
-
-
+        self.encoder = BayesianLinear(
+            in_features=num_classes, out_features=dim)
 
     def forward(self, batch):
 
@@ -38,7 +37,8 @@ class BEMB(nn.Module):
                  num_sessions: Optional[int] = None,
                  trace_log_q: bool = False,
                  category_to_item: Dict[int, List[int]] = None,
-                 preprocessing_modules: List[object] = None,  # TODO: add datatype.
+                 # TODO: add datatype.
+                 preprocessing_modules: List[object] = None,
                  # number of observables.
                  num_user_obs: Optional[int] = None,
                  num_item_obs: Optional[int] = None,
@@ -123,20 +123,28 @@ class BEMB(nn.Module):
         self.num_categories = len(self.category_to_item)
 
         max_category_size = max(len(x) for x in self.category_to_item.values())
-        category_to_item_tensor = torch.full((self.num_categories, max_category_size), -1)
+        category_to_item_tensor = torch.full(
+            (self.num_categories, max_category_size), -1)
         category_to_size_tensor = torch.empty(self.num_categories)
 
         for c, item_in_c in self.category_to_item.items():
-            category_to_item_tensor[c, :len(item_in_c)] = torch.LongTensor(item_in_c)
+            category_to_item_tensor[c, :len(
+                item_in_c)] = torch.LongTensor(item_in_c)
             category_to_size_tensor[c] = torch.scalar_tensor(len(item_in_c))
 
-        self.register_buffer('category_to_item_tensor', category_to_item_tensor.long())
-        self.register_buffer('category_to_size_tensor', category_to_size_tensor.long())
+        self.register_buffer(
+            'category_to_item_tensor',
+            category_to_item_tensor.long())
+        self.register_buffer(
+            'category_to_size_tensor',
+            category_to_size_tensor.long())
 
         item_to_category_tensor = torch.zeros(self.num_items)
         for c, items_in_c in self.category_to_item.items():
             item_to_category_tensor[items_in_c] = c
-        self.register_buffer('item_to_category_tensor', item_to_category_tensor.long())
+        self.register_buffer(
+            'item_to_category_tensor',
+            item_to_category_tensor.long())
 
         # ==========================================================================================
         # Create Bayesian Coefficient Objects
@@ -159,7 +167,8 @@ class BEMB(nn.Module):
         }
 
         # how many classes for the variational distribution.
-        # for example, beta_item would be `num_items` 10-dimensional gaussian if latent dim = 10.
+        # for example, beta_item would be `num_items` 10-dimensional gaussian
+        # if latent dim = 10.
         variation_to_num_classes = {
             'user': self.num_users,
             'item': self.num_items,
@@ -170,13 +179,15 @@ class BEMB(nn.Module):
         for additive_term in self.formula:
             for coef_name in additive_term['coefficient']:
                 variation = coef_name.split('_')[-1]
-                s2 = self.prior_variance[coef_name] if isinstance(self.prior_variance, dict) else self.prior_variance
-                coef_dict[coef_name] = BayesianCoefficient(variation=variation,
-                                                           num_classes=variation_to_num_classes[variation],
-                                                           obs2prior=self.obs2prior_dict[coef_name],
-                                                           num_obs=self.num_obs_dict[variation],
-                                                           dim=self.coef_dim_dict[coef_name],
-                                                           prior_variance=s2)
+                s2 = self.prior_variance[coef_name] if isinstance(
+                    self.prior_variance, dict) else self.prior_variance
+                coef_dict[coef_name] = BayesianCoefficient(
+                    variation=variation,
+                    num_classes=variation_to_num_classes[variation],
+                    obs2prior=self.obs2prior_dict[coef_name],
+                    num_obs=self.num_obs_dict[variation],
+                    dim=self.coef_dim_dict[coef_name],
+                    prior_variance=s2)
         self.coef_dict = nn.ModuleDict(coef_dict)
 
         # register additional modules.
@@ -189,7 +200,8 @@ class BEMB(nn.Module):
                + 'With the following coefficients:\n' \
                + str(self.coef_dict)
 
-    def forward(self, batch, return_logit: bool = False, all_items: bool = True) -> torch.Tensor:
+    def forward(self, batch, return_logit: bool = False,
+                all_items: bool = True) -> torch.Tensor:
         """The combined method of computing utilities and log probability.
 
         Args:
@@ -210,7 +222,8 @@ class BEMB(nn.Module):
         # Use the means of variatioanl distributions as the sole MC sample.
         sample_dict = dict()
         for coef_name, coef in self.coef_dict.items():
-            sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+            sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(
+                dim=0)  # (1, num_*, dim)
 
         for module in self.preprocessing_modules:
             batch = module(batch)
@@ -218,7 +231,8 @@ class BEMB(nn.Module):
         # there is 1 random seed in this case.
         if all_items:
             # (num_seeds=1, len(batch), num_items)
-            out = self.log_likelihood_all_items(batch, sample_dict, return_logit)
+            out = self.log_likelihood_all_items(
+                batch, sample_dict, return_logit)
         else:
             # (num_seeds=1, len(batch))
             out = self.log_likelihood(batch, sample_dict, return_logit)
@@ -240,7 +254,8 @@ class BEMB(nn.Module):
     @torch.no_grad()
     def get_within_category_accuracy(self,
                                      log_p_all_items: torch.Tensor,
-                                     label: torch.LongTensor) -> Dict[str, float]:
+                                     label: torch.LongTensor) -> Dict[str,
+                                                                      float]:
         """A helper function for computing prediction accuracy (i.e., all non-differential metrics)
         within category.
         In particular, this method calculates the accuracy, precision, recall and F1 score.
@@ -271,7 +286,8 @@ class BEMB(nn.Module):
             [Dict[str, float]]: A dictionary containing performance metrics.
         """
         # argmax: (num_sessions, num_categories), within category argmax.
-        # item IDs are consecutive, thus argmax is the same as IDs of the item with highest P.
+        # item IDs are consecutive, thus argmax is the same as IDs of the item
+        # with highest P.
         _, argmax_by_category = scatter_max(
             log_p_all_items, self.item_to_category_tensor, dim=-1)
 
@@ -293,7 +309,9 @@ class BEMB(nn.Module):
         recall = list()
         for i in range(self.num_items):
             correct_i = torch.sum(
-                (torch.logical_and(pred_from_category == i, label == i)).float())
+                (torch.logical_and(
+                    pred_from_category == i,
+                    label == i)).float())
             precision_i = correct_i / \
                 torch.sum((pred_from_category == i).float())
             recall_i = correct_i / torch.sum((label == i).float())
@@ -357,10 +375,13 @@ class BEMB(nn.Module):
             num_seeds = v.shape[0]
             break
 
-        # avoid repeated work when user purchased several items in the same session.
-        user_session_index = torch.stack([batch.user_index, batch.session_index])
+        # avoid repeated work when user purchased several items in the same
+        # session.
+        user_session_index = torch.stack(
+            [batch.user_index, batch.session_index])
         assert user_session_index.shape == (2, len(batch))
-        unique_user_sess, inverse_indices = torch.unique(user_session_index, dim=1, return_inverse=True)
+        unique_user_sess, inverse_indices = torch.unique(
+            user_session_index, dim=1, return_inverse=True)
 
         user_index = unique_user_sess[0, :]
         session_index = unique_user_sess[1, :]
@@ -452,7 +473,8 @@ class BEMB(nn.Module):
             if len(term['coefficient']) == 1 and term['observable'] is None:
                 # E.g., lambda_item or lambda_user
                 coef_name = term['coefficient'][0]
-                coef_sample = reshape_coef_sample(sample_dict[coef_name], coef_name)
+                coef_sample = reshape_coef_sample(
+                    sample_dict[coef_name], coef_name)
                 assert coef_sample.shape == (R, P, I, 1)
                 additive_term = coef_sample.view(R, P, I)
 
@@ -461,17 +483,22 @@ class BEMB(nn.Module):
                 coef_name_0 = term['coefficient'][0]
                 coef_name_1 = term['coefficient'][1]
 
-                coef_sample_0 = reshape_coef_sample(sample_dict[coef_name_0], coef_name_0)
-                coef_sample_1 = reshape_coef_sample(sample_dict[coef_name_1], coef_name_1)
+                coef_sample_0 = reshape_coef_sample(
+                    sample_dict[coef_name_0], coef_name_0)
+                coef_sample_1 = reshape_coef_sample(
+                    sample_dict[coef_name_1], coef_name_1)
 
-                assert coef_sample_0.shape == coef_sample_1.shape == (R, P, I, positive_integer)
+                assert coef_sample_0.shape == coef_sample_1.shape == (
+                    R, P, I, positive_integer)
 
                 additive_term = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
-            # Type III: single coefficient multiplied by observable, e.g., theta_user * x_obs_item.
+            # Type III: single coefficient multiplied by observable, e.g.,
+            # theta_user * x_obs_item.
             elif len(term['coefficient']) == 1 and term['observable'] is not None:
                 coef_name = term['coefficient'][0]
-                coef_sample = reshape_coef_sample(sample_dict[coef_name], coef_name)
+                coef_sample = reshape_coef_sample(
+                    sample_dict[coef_name], coef_name)
                 assert coef_sample.shape == (R, P, I, positive_integer)
 
                 obs_name = term['observable']
@@ -485,9 +512,12 @@ class BEMB(nn.Module):
             elif len(term['coefficient']) == 2 and term['observable'] is not None:
                 coef_name_0, coef_name_1 = term['coefficient'][0], term['coefficient'][1]
 
-                coef_sample_0 = reshape_coef_sample(sample_dict[coef_name_0], coef_name_0)
-                coef_sample_1 = reshape_coef_sample(sample_dict[coef_name_1], coef_name_1)
-                assert coef_sample_0.shape == coef_sample_1.shape == (R, P, I, positive_integer)
+                coef_sample_0 = reshape_coef_sample(
+                    sample_dict[coef_name_0], coef_name_0)
+                coef_sample_1 = reshape_coef_sample(
+                    sample_dict[coef_name_1], coef_name_1)
+                assert coef_sample_0.shape == coef_sample_1.shape == (
+                    R, P, I, positive_integer)
                 num_obs_times_latent_dim = coef_sample_0.shape[-1]
 
                 obs_name = term['observable']
@@ -498,8 +528,10 @@ class BEMB(nn.Module):
                 assert (num_obs_times_latent_dim % num_obs) == 0
                 latent_dim = num_obs_times_latent_dim // num_obs
 
-                coef_sample_0 = coef_sample_0.view(R, P, I, num_obs, latent_dim)
-                coef_sample_1 = coef_sample_1.view(R, P, I, num_obs, latent_dim)
+                coef_sample_0 = coef_sample_0.view(
+                    R, P, I, num_obs, latent_dim)
+                coef_sample_1 = coef_sample_1.view(
+                    R, P, I, num_obs, latent_dim)
                 # compute the factorized coefficient with shape (R, P, I, O).
                 coef = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
@@ -518,7 +550,8 @@ class BEMB(nn.Module):
         if batch.item_availability is not None:
             # expand to the Monte Carlo sample dimension.
             # (S, I) -> (P, I) -> (1, P, I) -> (R, P, I)
-            A = batch.item_availability[session_index, :].unsqueeze(dim=0).expand(R, -1, -1)
+            A = batch.item_availability[session_index, :].unsqueeze(
+                dim=0).expand(R, -1, -1)
             utility[~A] = -1.0e20
 
         utility = utility[:, inverse_indices, :]
@@ -530,7 +563,8 @@ class BEMB(nn.Module):
 
         # compute log likelihood log p(choosing item i | user, item latents)
         # compute log softmax separately within each category.
-        log_p = scatter_log_softmax(utility, self.item_to_category_tensor, dim=-1)
+        log_p = scatter_log_softmax(
+            utility, self.item_to_category_tensor, dim=-1)
         # output shape: (num_seeds, len(batch), num_items)
         return log_p
 
@@ -578,10 +612,13 @@ class BEMB(nn.Module):
         # index were padded with -1's, drop those dummy entries.
         relevant_item_index = relevant_item_index[relevant_item_index != -1]
 
-        # the first repeats[0] entries in relevant_item_index are for the category of label[0]
+        # the first repeats[0] entries in relevant_item_index are for the
+        # category of label[0]
         repeats = self.category_to_size_tensor[cate_index]
-        # argwhere(reverse_indices == k) are positions in relevant_item_indexs for the category of label[k].
-        reverse_indices = torch.repeat_interleave(torch.arange(len(batch), device=self.device), repeats)
+        # argwhere(reverse_indices == k) are positions in relevant_item_indexs
+        # for the category of label[k].
+        reverse_indices = torch.repeat_interleave(
+            torch.arange(len(batch), device=self.device), repeats)
         # expand the user_index and session_index.
         user_index = torch.repeat_interleave(batch.user_index, repeats)
         session_index = torch.repeat_interleave(batch.session_index, repeats)
@@ -589,7 +626,8 @@ class BEMB(nn.Module):
 
         # short-hands for easier shape check.
         R = num_seeds
-        total_computation = len(session_index)  # total number of relevant items.
+        # total number of relevant items.
+        total_computation = len(session_index)
         S = self.num_sessions
         U = self.num_users
         I = self.num_items
@@ -647,7 +685,8 @@ class BEMB(nn.Module):
             if len(term['coefficient']) == 1 and term['observable'] is None:
                 # E.g., lambda_item or lambda_user
                 coef_name = term['coefficient'][0]
-                coef_sample = reshape_coef_sample(sample_dict[coef_name], coef_name)
+                coef_sample = reshape_coef_sample(
+                    sample_dict[coef_name], coef_name)
                 assert coef_sample.shape == (R, total_computation, 1)
                 additive_term = coef_sample.view(R, total_computation)
 
@@ -656,18 +695,24 @@ class BEMB(nn.Module):
                 coef_name_0 = term['coefficient'][0]
                 coef_name_1 = term['coefficient'][1]
 
-                coef_sample_0 = reshape_coef_sample(sample_dict[coef_name_0], coef_name_0)
-                coef_sample_1 = reshape_coef_sample(sample_dict[coef_name_1], coef_name_1)
+                coef_sample_0 = reshape_coef_sample(
+                    sample_dict[coef_name_0], coef_name_0)
+                coef_sample_1 = reshape_coef_sample(
+                    sample_dict[coef_name_1], coef_name_1)
 
-                assert coef_sample_0.shape == coef_sample_1.shape == (R, total_computation, positive_integer)
+                assert coef_sample_0.shape == coef_sample_1.shape == (
+                    R, total_computation, positive_integer)
 
                 additive_term = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
-            # Type III: single coefficient multiplied by observable, e.g., theta_user * x_obs_item.
+            # Type III: single coefficient multiplied by observable, e.g.,
+            # theta_user * x_obs_item.
             elif len(term['coefficient']) == 1 and term['observable'] is not None:
                 coef_name = term['coefficient'][0]
-                coef_sample = reshape_coef_sample(sample_dict[coef_name], coef_name)
-                assert coef_sample.shape == (R, total_computation, positive_integer)
+                coef_sample = reshape_coef_sample(
+                    sample_dict[coef_name], coef_name)
+                assert coef_sample.shape == (
+                    R, total_computation, positive_integer)
 
                 obs_name = term['observable']
                 obs = reshape_observable(getattr(batch, obs_name), obs_name)
@@ -679,9 +724,12 @@ class BEMB(nn.Module):
             # e.g., gamma_user * beta_item * price_obs.
             elif len(term['coefficient']) == 2 and term['observable'] is not None:
                 coef_name_0, coef_name_1 = term['coefficient'][0], term['coefficient'][1]
-                coef_sample_0 = reshape_coef_sample(sample_dict[coef_name_0], coef_name_0)
-                coef_sample_1 = reshape_coef_sample(sample_dict[coef_name_1], coef_name_1)
-                assert coef_sample_0.shape == coef_sample_1.shape == (R, total_computation, positive_integer)
+                coef_sample_0 = reshape_coef_sample(
+                    sample_dict[coef_name_0], coef_name_0)
+                coef_sample_1 = reshape_coef_sample(
+                    sample_dict[coef_name_1], coef_name_1)
+                assert coef_sample_0.shape == coef_sample_1.shape == (
+                    R, total_computation, positive_integer)
                 num_obs_times_latent_dim = coef_sample_0.shape[-1]
 
                 obs_name = term['observable']
@@ -692,8 +740,10 @@ class BEMB(nn.Module):
                 assert (num_obs_times_latent_dim % num_obs) == 0
                 latent_dim = num_obs_times_latent_dim // num_obs
 
-                coef_sample_0 = coef_sample_0.view(R, total_computation, num_obs, latent_dim)
-                coef_sample_1 = coef_sample_1.view(R, total_computation, num_obs, latent_dim)
+                coef_sample_0 = coef_sample_0.view(
+                    R, total_computation, num_obs, latent_dim)
+                coef_sample_1 = coef_sample_1.view(
+                    R, total_computation, num_obs, latent_dim)
                 # compute the factorized coefficient with shape (R, P, I, O).
                 coef = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
@@ -711,7 +761,8 @@ class BEMB(nn.Module):
 
         if batch.item_availability is not None:
             # expand to the Monte Carlo sample dimension.
-            A = batch.item_availability[session_index, relevant_item_index].unsqueeze(dim=0).expand(R, -1)
+            A = batch.item_availability[session_index, relevant_item_index].unsqueeze(
+                dim=0).expand(R, -1)
             utility[~A] = - (torch.finfo(utility.dtype).max / 2)
 
         # compute log likelihood log p(choosing item i | user, item latents)
@@ -831,7 +882,8 @@ class BEMB(nn.Module):
             if len(term['coefficient']) == 1 and term['observable'] is None:
                 # E.g., lambda_item or lambda_user
                 coef_name = term['coefficient'][0]
-                coef_sample = reshape_coef_sample(sample_dict[coef_name], coef_name)
+                coef_sample = reshape_coef_sample(
+                    sample_dict[coef_name], coef_name)
                 assert coef_sample.shape == (R, P, I, 1)
                 additive_term = coef_sample.view(R, P, I)
 
@@ -840,17 +892,22 @@ class BEMB(nn.Module):
                 coef_name_0 = term['coefficient'][0]
                 coef_name_1 = term['coefficient'][1]
 
-                coef_sample_0 = reshape_coef_sample(sample_dict[coef_name_0], coef_name_0)
-                coef_sample_1 = reshape_coef_sample(sample_dict[coef_name_1], coef_name_1)
+                coef_sample_0 = reshape_coef_sample(
+                    sample_dict[coef_name_0], coef_name_0)
+                coef_sample_1 = reshape_coef_sample(
+                    sample_dict[coef_name_1], coef_name_1)
 
-                assert coef_sample_0.shape == coef_sample_1.shape == (R, P, I, positive_integer)
+                assert coef_sample_0.shape == coef_sample_1.shape == (
+                    R, P, I, positive_integer)
 
                 additive_term = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
-            # Type III: single coefficient multiplied by observable, e.g., theta_user * x_obs_item.
+            # Type III: single coefficient multiplied by observable, e.g.,
+            # theta_user * x_obs_item.
             elif len(term['coefficient']) == 1 and term['observable'] is not None:
                 coef_name = term['coefficient'][0]
-                coef_sample = reshape_coef_sample(sample_dict[coef_name], coef_name)
+                coef_sample = reshape_coef_sample(
+                    sample_dict[coef_name], coef_name)
                 assert coef_sample.shape == (R, P, I, positive_integer)
 
                 obs_name = term['observable']
@@ -864,9 +921,12 @@ class BEMB(nn.Module):
             elif len(term['coefficient']) == 2 and term['observable'] is not None:
                 coef_name_0, coef_name_1 = term['coefficient'][0], term['coefficient'][1]
 
-                coef_sample_0 = reshape_coef_sample(sample_dict[coef_name_0], coef_name_0)
-                coef_sample_1 = reshape_coef_sample(sample_dict[coef_name_1], coef_name_1)
-                assert coef_sample_0.shape == coef_sample_1.shape == (R, P, I, positive_integer)
+                coef_sample_0 = reshape_coef_sample(
+                    sample_dict[coef_name_0], coef_name_0)
+                coef_sample_1 = reshape_coef_sample(
+                    sample_dict[coef_name_1], coef_name_1)
+                assert coef_sample_0.shape == coef_sample_1.shape == (
+                    R, P, I, positive_integer)
                 num_obs_times_latent_dim = coef_sample_0.shape[-1]
 
                 obs_name = term['observable']
@@ -877,8 +937,10 @@ class BEMB(nn.Module):
                 assert (num_obs_times_latent_dim % num_obs) == 0
                 latent_dim = num_obs_times_latent_dim // num_obs
 
-                coef_sample_0 = coef_sample_0.view(R, P, I, num_obs, latent_dim)
-                coef_sample_1 = coef_sample_1.view(R, P, I, num_obs, latent_dim)
+                coef_sample_0 = coef_sample_0.view(
+                    R, P, I, num_obs, latent_dim)
+                coef_sample_1 = coef_sample_1.view(
+                    R, P, I, num_obs, latent_dim)
                 # compute the factorized coefficient with shape (R, P, I, O).
                 coef = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
@@ -896,18 +958,23 @@ class BEMB(nn.Module):
         if batch.item_availability is not None:
             # expand to the Monte Carlo sample dimension.
             # (S, I) -> (P, I) -> (1, P, I) -> (R, P, I)
-            A = batch.item_availability[batch.session_index, :].unsqueeze(dim=0).expand(R, -1, -1)
+            A = batch.item_availability[batch.session_index, :].unsqueeze(
+                dim=0).expand(R, -1, -1)
             utility[~A] = -1.0e20
 
         if return_logit:
             # output shape: (num_seeds, num_purchases, num_items)
             return utility
 
-        log_p = scatter_log_softmax(utility, self.item_to_category_tensor, dim=-1)
+        log_p = scatter_log_softmax(
+            utility, self.item_to_category_tensor, dim=-1)
         # output shape: (num_seeds, num_purchases, num_items)
         return log_p
 
-    def log_prior(self, batch, sample_dict: Dict[str, torch.Tensor]) -> torch.scalar_tensor:
+    def log_prior(self,
+                  batch,
+                  sample_dict: Dict[str,
+                                    torch.Tensor]) -> torch.scalar_tensor:
         """Calculates the log-likelihood of Monte Carlo samples of Bayesian coefficients under their
         prior distribution. This method assume coefficients are statistically independnet.
 
@@ -937,15 +1004,22 @@ class BEMB(nn.Module):
                 elif coef_name.endswith('_user'):
                     x_obs = batch.user_obs
                 else:
-                    raise ValueError(f'No observable found to support obs2prior for {coef_name}.')
+                    raise ValueError(
+                        f'No observable found to support obs2prior for {coef_name}.')
             else:
                 x_obs = None
 
-            # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
-            total += coef.log_prior(sample=sample_dict[coef_name], x_obs=x_obs).sum(dim=-1)
+            # log_prob outputs (num_seeds, num_{items, users}), sum to
+            # (num_seeds).
+            total += coef.log_prior(
+                sample=sample_dict[coef_name],
+                x_obs=x_obs).sum(
+                dim=-1)
         return total
 
-    def log_variational(self, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def log_variational(self,
+                        sample_dict: Dict[str,
+                                          torch.Tensor]) -> torch.Tensor:
         """Calculate the log-likelihood of smaples in sample_dict under the current variational
         distribution.
 
@@ -959,7 +1033,8 @@ class BEMB(nn.Module):
         total = torch.zeros(1, device=self.device)
 
         for coef_name, coef in self.coef_dict.items():
-            # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
+            # log_prob outputs (num_seeds, num_{items, users}), sum to
+            # (num_seeds).
             total += coef.log_variational(sample_dict[coef_name]).sum(dim=-1)
 
         return total
@@ -983,7 +1058,8 @@ class BEMB(nn.Module):
             sample_dict[coef_name] = coef.reparameterize_sample(num_seeds)
 
         # 2. compute log p(latent) prior.
-        elbo = self.log_prior(batch, sample_dict).mean(dim=0)  # (num_seeds,) -> scalar.
+        # (num_seeds,) -> scalar.
+        elbo = self.log_prior(batch, sample_dict).mean(dim=0)
 
         # self.__check_log_likelihood(batch, sample_dict)
 
@@ -992,7 +1068,8 @@ class BEMB(nn.Module):
         # (num_sessions, num_relevant_items) -> scalar.
         elbo += self.log_likelihood(batch, sample_dict).sum(dim=1).mean(dim=0)
 
-        # 4. optionally add log likelihood under variational distributions q(latent).
+        # 4. optionally add log likelihood under variational distributions
+        # q(latent).
         if self.trace_log_q:
             elbo -= self.log_variational(sample_dict).mean(dim=0)
 
@@ -1002,14 +1079,21 @@ class BEMB(nn.Module):
     def __check_log_likelihood(self, batch, sample_dict):
         cprint('You are calling a debugging method', 'red')
         for return_logit in (True, False):
-            A = self.log_likelihood(batch, sample_dict, return_logit=return_logit)
+            A = self.log_likelihood(
+                batch, sample_dict, return_logit=return_logit)
 
-            B = self.log_likelihood_all_items(batch, sample_dict, return_logit=return_logit)
+            B = self.log_likelihood_all_items(
+                batch, sample_dict, return_logit=return_logit)
             B = B[:, torch.arange(len(batch)), batch.label]
 
-            C = self.__log_likelihood_all_items_old(batch, sample_dict, return_logit=return_logit)
+            C = self.__log_likelihood_all_items_old(
+                batch, sample_dict, return_logit=return_logit)
             C = C[:, torch.arange(len(batch)), batch.label]
 
-            assert torch.max(torch.abs(A - B)) < 1E-5, f'{torch.max(torch.abs(A - B))}'
-            assert torch.max(torch.abs(B - C)) < 1E-5, f'{torch.max(torch.abs(B - C))}'
+            assert torch.max(
+                torch.abs(
+                    A - B)) < 1E-5, f'{torch.max(torch.abs(A - B))}'
+            assert torch.max(
+                torch.abs(
+                    B - C)) < 1E-5, f'{torch.max(torch.abs(B - C))}'
         cprint('Test passed.', 'green')

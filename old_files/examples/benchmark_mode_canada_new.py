@@ -28,7 +28,7 @@ def __null__():
 
     model = model.to(args.device)
     print(f'Number of parameters: {model.num_params}')
-    
+
     if args.batch_size == -1:
         # use full-batch.
         args.batch_size = len(dataset)

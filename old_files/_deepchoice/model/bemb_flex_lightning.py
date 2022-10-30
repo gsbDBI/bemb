@@ -16,7 +16,11 @@ from _deepchoice.model import BEMBFlex
 
 class LitBEMBFlex(pl.LightningModule):
 
-    def __init__(self, learning_rate: float = 0.3, num_seeds: int=1, **kwargs):
+    def __init__(
+            self,
+            learning_rate: float = 0.3,
+            num_seeds: int = 1,
+            **kwargs):
         # use kwargs to pass parameter to BEMB Torch.
         super().__init__()
         self.model = BEMBFlex(**kwargs)
@@ -33,15 +37,22 @@ class LitBEMBFlex(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        LL = self.model.forward(batch, return_logit=False, all_items=False).mean()
+        LL = self.model.forward(
+            batch,
+            return_logit=False,
+            all_items=False).mean()
         self.log('val_log_likelihood', LL, prog_bar=True)
 
     def test_step(self, batch, batch_idx):
-        LL = self.model.forward(batch, return_logit=False, all_items=False).mean()
+        LL = self.model.forward(
+            batch,
+            return_logit=False,
+            all_items=False).mean()
         self.log('test_log_likelihood', LL)
 
         pred = self.model(batch)
-        performance = self.model.get_within_category_accuracy(pred, batch.label)
+        performance = self.model.get_within_category_accuracy(
+            pred, batch.label)
         for key, val in performance.items():
             self.log('test_' + key, val, prog_bar=True)
 

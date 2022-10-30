@@ -7,7 +7,8 @@ import torch
 from torch.utils.data.sampler import BatchSampler, SequentialSampler, RandomSampler
 
 
-def pivot3d(df: pd.DataFrame, dim0: str, dim1: str, values: Union[str, List[str]]) -> torch.Tensor:
+def pivot3d(df: pd.DataFrame, dim0: str, dim1: str,
+            values: Union[str, List[str]]) -> torch.Tensor:
     """
     Creates a tensor of shape (df[dim0].nunique(), df[dim1].nunique(), len(values)) from the
     provided data frame.
@@ -28,11 +29,18 @@ def pivot3d(df: pd.DataFrame, dim0: str, dim1: str, values: Union[str, List[str]
         tensor_slice.append(torch.Tensor(layer[dim1_list].values))
 
     tensor = torch.stack(tensor_slice, dim=-1)
-    assert tensor.shape == (df[dim0].nunique(), df[dim1].nunique(), len(values))
+    assert tensor.shape == (
+        df[dim0].nunique(),
+        df[dim1].nunique(),
+        len(values))
     return tensor
 
 
-def create_data_loader(dataset, batch_size: int = -1, shuffle: bool = False, num_workers: int = 0):
+def create_data_loader(
+        dataset,
+        batch_size: int = -1,
+        shuffle: bool = False,
+        num_workers: int = 0):
     if batch_size == -1:
         # use full-batch.
         batch_size = len(dataset)
@@ -43,9 +51,11 @@ def create_data_loader(dataset, batch_size: int = -1, shuffle: bool = False, num
         drop_last=False)
     # feed a batch_sampler as sampler so that dataset.__getitem__ is called with a list of indices.
     # cannot use multiple workers if the entire dataset is already on GPU.
-    dataloader = torch.utils.data.DataLoader(dataset,
-                                             sampler=sampler,
-                                             num_workers=num_workers,
-                                             collate_fn=lambda x: x[0],
-                                             pin_memory=(dataset.device == 'cpu'))
+    dataloader = torch.utils.data.DataLoader(
+        dataset,
+        sampler=sampler,
+        num_workers=num_workers,
+        collate_fn=lambda x: x[0],
+        pin_memory=(
+            dataset.device == 'cpu'))
     return dataloader

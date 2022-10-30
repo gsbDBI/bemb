@@ -65,7 +65,8 @@ if __name__ == '__main__':
     # add some artificial pattern.
     # user WHO loves item LIKES especially.
     for WHO, LIKES in PREFERENCE:
-        label[torch.logical_and(user_idx == WHO, torch.rand(num_sessions) <= 0.9)] = LIKES
+        label[torch.logical_and(user_idx == WHO,
+                                torch.rand(num_sessions) <= 0.9)] = LIKES
 
     dataset = ChoiceDataset(label=label, user_onehot=user_onehot,
                             item_availability=None).to(DEVICE)
@@ -85,11 +86,14 @@ if __name__ == '__main__':
             optimizer.step()
             total_loss += loss.detach().item()
         if i % (NUM_EPOCHS // 10) == 0:
-            print(f'Epoch [{i}] negative elbo (the lower the better) = {total_loss}')
+            print(
+                f'Epoch [{i}] negative elbo (the lower the better) = {total_loss}')
     print(f'Time taken: {time.time() - start_time: 0.1f} seconds.')
 
-    user_latent = model.user_latent_q.mean(torch.eye(num_users).to(DEVICE))  # (num_users, dim)
-    item_latent = model.item_latent_q.mean(torch.eye(num_items).to(DEVICE))  # (num_items, dim)
+    user_latent = model.user_latent_q.mean(
+        torch.eye(num_users).to(DEVICE))  # (num_users, dim)
+    item_latent = model.item_latent_q.mean(
+        torch.eye(num_items).to(DEVICE))  # (num_items, dim)
     affinity = user_latent @ item_latent.T  # (num_users, num_items)
     affinity = affinity.detach().cpu().numpy()
 

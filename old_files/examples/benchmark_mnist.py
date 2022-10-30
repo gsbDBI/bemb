@@ -2,6 +2,8 @@
 Benchmark of comparing our model's performance with logistic regression implemented in pytorch on
 MNIST dataset.
 """
+from train.train import train
+from model.conditional_logit_model import ConditionalLogitModel
 import argparse
 import os
 import sys
@@ -17,8 +19,6 @@ from torch.utils.data import DataLoader, random_split
 from torchvision.datasets import MNIST
 
 sys.path.append('../src')
-from model.conditional_logit_model import ConditionalLogitModel
-from train.train import train
 
 DEVICE = 'cuda'
 
@@ -122,7 +122,8 @@ def benchmark_our_model(args):
     X_all = dataset.train_data
     X_all = X_all.reshape(-1, 784)
     # (num_obs, num_items, num_feats), all classes share the same feature.
-    X_all = X_all.reshape(60000, 1, 784).expand(-1, 10, -1).float().clone().to(args.device)
+    X_all = X_all.reshape(60000, 1, 784).expand(-1, 10, - \
+                          1).float().clone().to(args.device)
     # (num_obs,)
     y_all = dataset.train_labels.clone().to(args.device)
 

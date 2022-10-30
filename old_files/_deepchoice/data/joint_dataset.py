@@ -10,6 +10,7 @@ class JointDataset(torch.utils.data.Dataset):
     and pytorch data loader allows for sampling the same batch index from several
     datasets.
     """
+
     def __init__(self, **datasets):
         super(JointDataset, self).__init__()
         self.datasets = datasets

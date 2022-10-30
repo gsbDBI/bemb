@@ -46,19 +46,19 @@
 #     return pd.read_csv(os.path.join(data_dir, file_name),
 #                        sep='\t',
 #                        index_col=None,
-#                        names=['user_id', 'item_id', 'session_id', 'quantity'])
+# names=['user_id', 'item_id', 'session_id', 'quantity'])
 
-# # ==============================================================================================
+# # ======================================================================
 # # Load standard BEMB inputs.
-# # ==============================================================================================
+# # ======================================================================
 # train = load_tsv('train.tsv', configs.data_dir)
 # # read standard BEMB input files.
 # validation = load_tsv('validation.tsv', configs.data_dir)
 # test = load_tsv('test.tsv', configs.data_dir)
 
-# # ==============================================================================================
+# # ======================================================================
 # # Encode users and items to {0, 1, ..., num-1}.
-# # ==============================================================================================
+# # ======================================================================
 # # combine data for encoding.
 # data_all = pd.concat([train, validation, test], axis=0)
 # # encode user.
@@ -70,9 +70,9 @@
 # configs.num_items = len(item_encoder.classes_)
 # assert is_sorted(item_encoder.classes_)
 
-# # ==============================================================================================
+# # ======================================================================
 # # user observables
-# # ==============================================================================================
+# # ======================================================================
 # user_obs = pd.read_csv(os.path.join(configs.data_dir, 'obsUser.tsv'),
 #                         sep='\t',
 #                         index_col=0,
@@ -84,9 +84,9 @@
 # configs.num_user_obs = user_obs.shape[1]
 # configs.coef_dim_dict['obsuser_item'] = configs.num_user_obs
 
-# # ==============================================================================================
+# # ======================================================================
 # # item observables
-# # ==============================================================================================
+# # ======================================================================
 # item_obs = pd.read_csv(os.path.join(configs.data_dir, 'obsItem.tsv'),
 #                         sep='\t',
 #                         index_col=0,
@@ -96,9 +96,9 @@
 # configs.num_item_obs = item_obs.shape[1]
 # configs.coef_dim_dict['obsitem_user'] = configs.num_item_obs
 
-# # ==============================================================================================
+# # ======================================================================
 # # item availability
-# # ==============================================================================================
+# # ======================================================================
 # # parse item availability.
 # # Try and catch? Optionally specify full availability?
 # a_tsv = pd.read_csv(os.path.join(configs.data_dir, 'availabilityList.tsv'),
@@ -122,9 +122,9 @@
 #     a_item_ids = df_group['item_id'].unique()  # this unique is not necessary if the dataset is well-prepared.
 #     item_availability[session_id, a_item_ids] = True
 
-# # ==============================================================================================
+# # ======================================================================
 # # price observables
-# # ==============================================================================================
+# # ======================================================================
 # df_price = pd.read_csv(os.path.join(configs.data_dir, 'item_sess_price.tsv'),
 #                         sep='\t',
 #                         names=['item_id', 'session_id', 'price'])
@@ -141,9 +141,9 @@
 # price_obs = torch.Tensor(df_price.values).view(configs.num_sessions, configs.num_items, 1)
 # configs.num_price_obs = 1
 
-# # ==============================================================================================
+# # ======================================================================
 # # create datasets
-# # ==============================================================================================
+# # ======================================================================
 # dataset_list = list()
 # for d in (train, validation, test):
 #     user_index = torch.LongTensor(user_encoder.transform(d['user_id'].values))
@@ -162,9 +162,9 @@
 
 #     dataset_list.append(choice_dataset)
 
-# # ==============================================================================================
+# # ======================================================================
 # # category information
-# # ==============================================================================================
+# # ======================================================================
 # item_groups = pd.read_csv(os.path.join(configs.data_dir, 'itemGroup.tsv'),
 #                             sep='\t',
 #                             index_col=None,
@@ -190,9 +190,9 @@
 # print(item_groups.groupby('category_id').size().describe())
 # item_groups = item_groups.groupby('category_id')['item_id'].apply(list)
 # category_to_item = dict(zip(item_groups.index, item_groups.values))
-# # ==============================================================================================
+# # ======================================================================
 # # pytorch-lighning training
-# # ==============================================================================================
+# # ======================================================================
 # # bemb = LitBEMBFlex(
 # #     # trainings args.
 # #     learning_rate=configs.learning_rate,
@@ -235,8 +235,6 @@
 #                             batch_size=10000,  # use smaller batch size for test, which takes more mem.
 #                             shuffle=False,
 #                             num_workers=8)
-
-
 
 
 # class LitBEMBFlex(pl.LightningModule):

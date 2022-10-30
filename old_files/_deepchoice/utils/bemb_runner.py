@@ -25,18 +25,47 @@ def make_arg_parser():
     parser = argparse.ArgumentParser()
     # args from C++ implementation.
     parser.add_argument('--dir', type=str, help='path to the data folder')
-    parser.add_argument('--outdir', type=str, help='path to the output folder', default='./')
-    parser.add_argument('--K', type=int, help='number of latent factors', default=10)
-    parser.add_argument('--max_iterations ', type=int, helper='maximum number of iterations', default=100)
-    parser.add_argument('--rfreq', type=int, help='the test log-lik will be computed every `rfreq` iterations',
-                        default=5)
-    parser.add_argument('--eta', type=float, help='stepsize parameter', default=0.03)
-    parser.add_argument('--batchsize', type=int, help='number of datapoints per batch', default=-1)
+    parser.add_argument(
+        '--outdir',
+        type=str,
+        help='path to the output folder',
+        default='./')
+    parser.add_argument(
+        '--K',
+        type=int,
+        help='number of latent factors',
+        default=10)
+    parser.add_argument(
+        '--max_iterations ',
+        type=int,
+        helper='maximum number of iterations',
+        default=100)
+    parser.add_argument(
+        '--rfreq',
+        type=int,
+        help='the test log-lik will be computed every `rfreq` iterations',
+        default=5)
+    parser.add_argument(
+        '--eta',
+        type=float,
+        help='stepsize parameter',
+        default=0.03)
+    parser.add_argument(
+        '--batchsize',
+        type=int,
+        help='number of datapoints per batch',
+        default=-1)
 
-    parser.add_argument('--UC', type=int, help='incorporate user observables? (0=no, integer=number of observables)',
-                        default=0)
-    parser.add_argument('--IC', type=int, help='incorporate item observables? (0=no, integer=number of observables)',
-                        default=0)
+    parser.add_argument(
+        '--UC',
+        type=int,
+        help='incorporate user observables? (0=no, integer=number of observables)',
+        default=0)
+    parser.add_argument(
+        '--IC',
+        type=int,
+        help='incorporate item observables? (0=no, integer=number of observables)',
+        default=0)
 
     parser.add_argument('--obs2prior_user', type=bool, default=False)
     parser.add_argument('--obs2prior_item', type=bool, default=False)
@@ -67,10 +96,17 @@ if __name__ == '__main__':
         return all(x == np.sort(x))
 
     def load_tsv(file_name):
-        return pd.read_csv(os.path.join(data_dir, file_name),
-                           sep='\t',
-                           index_col=None,
-                           names=['user_id', 'item_id', 'session_id', 'quantity'])
+        return pd.read_csv(
+            os.path.join(
+                data_dir,
+                file_name),
+            sep='\t',
+            index_col=None,
+            names=[
+                'user_id',
+                'item_id',
+                'session_id',
+                'quantity'])
 
     train = load_tsv('train.tsv')
     validation = load_tsv('validation.tsv')
@@ -92,12 +128,24 @@ if __name__ == '__main__':
     assert is_sorted(item_encoder.classes_)
 
     # load observables.
-    user_obs = pd.read_csv(os.path.join(data_dir, 'obsUser.tsv'), sep='\t', index_col=0, header=None)
+    user_obs = pd.read_csv(
+        os.path.join(
+            data_dir,
+            'obsUser.tsv'),
+        sep='\t',
+        index_col=0,
+        header=None)
     user_obs = user_obs.groupby(user_obs.index).first().sort_index()
     num_user_features = user_obs.shape[1]
     user_obs = torch.Tensor(user_obs.values)
 
-    item_obs = pd.read_csv(os.path.join(data_dir, 'obsItem.tsv'), sep='\t', index_col=0, header=None)
+    item_obs = pd.read_csv(
+        os.path.join(
+            data_dir,
+            'obsItem.tsv'),
+        sep='\t',
+        index_col=0,
+        header=None)
     item_obs = item_obs.groupby(item_obs.index).first().sort_index()
     num_item_features = item_obs.shape[1]
     item_obs = torch.Tensor(item_obs.values)
@@ -163,7 +211,8 @@ if __name__ == '__main__':
 
     start_time = time.time()
     optimizer = torch.optim.RMSprop(model.parameters(), lr=0.03)
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=1)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(
+        optimizer=optimizer, gamma=1)
 
     # breakpoint()
     # print(model.user_latent_q.mean.weight.T)

@@ -10,21 +10,23 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+import sys
+import os
 import commonmark
 
+
 def docstring(app, what, name, obj, options, lines):
-    md  = '\n'.join(lines)
+    md = '\n'.join(lines)
     ast = commonmark.Parser().parse(md)
     rst = commonmark.ReStructuredTextRenderer().render(ast)
     lines.clear()
     lines += rst.splitlines()
 
+
 def setup(app):
     app.connect('autodoc-process-docstring', docstring)
 
 
-import os
-import sys
 sys.path.insert(0, os.path.abspath('../..'))
 # sys.path.insert(0, os.path.abspath('.'))
 

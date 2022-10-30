@@ -112,33 +112,47 @@ if __name__ == '__main__':
     configs.num_sessions = len(session_encoder.classes_)
     assert is_sorted(session_encoder.classes_)
     # this loop could be slow, depends on # sessions.
-    item_availability = torch.zeros(configs.num_sessions, configs.num_items).bool()
+    item_availability = torch.zeros(
+        configs.num_sessions,
+        configs.num_items).bool()
 
     a_tsv['item_id'] = item_encoder.transform(a_tsv['item_id'].values)
     a_tsv['session_id'] = session_encoder.transform(a_tsv['session_id'].values)
 
     for session_id, df_group in a_tsv.groupby('session_id'):
         # get IDs of items available at this date.
-        a_item_ids = df_group['item_id'].unique()  # this unique is not necessary if the dataset is well-prepared.
+        # this unique is not necessary if the dataset is well-prepared.
+        a_item_ids = df_group['item_id'].unique()
         item_availability[session_id, a_item_ids] = True
 
     # ==============================================================================================
     # price observables
     # ==============================================================================================
-    df_price = pd.read_csv(os.path.join(configs.data_dir, 'item_sess_price.tsv'),
-                           sep='\t',
-                           names=['item_id', 'session_id', 'price'])
+    df_price = pd.read_csv(
+        os.path.join(
+            configs.data_dir,
+            'item_sess_price.tsv'),
+        sep='\t',
+        names=[
+            'item_id',
+            'session_id',
+            'price'])
 
     # only keep prices of relevant items.
     mask = df_price['item_id'].isin(item_encoder.classes_)
     df_price = df_price[mask]
 
     df_price['item_id'] = item_encoder.transform(df_price['item_id'].values)
-    df_price['session_id'] = session_encoder.transform(df_price['session_id'].values)
+    df_price['session_id'] = session_encoder.transform(
+        df_price['session_id'].values)
     df_price = df_price.pivot(index='session_id', columns='item_id')
     # NAN prices.
     df_price.fillna(0.0, inplace=True)
-    price_obs = torch.Tensor(df_price.values).view(configs.num_sessions, configs.num_items, 1)
+    price_obs = torch.Tensor(
+        df_price.values).view(
+        configs.num_sessions,
+        configs.num_items,
+        1)
     configs.num_price_obs = 1
 
     # ==============================================================================================
@@ -146,14 +160,19 @@ if __name__ == '__main__':
     # ==============================================================================================
     dataset_list = list()
     for d in (train, validation, test):
-        user_index = torch.LongTensor(user_encoder.transform(d['user_id'].values))
+        user_index = torch.LongTensor(
+            user_encoder.transform(
+                d['user_id'].values))
         label = torch.LongTensor(item_encoder.transform(d['item_id'].values))
-        session_index = torch.LongTensor(session_encoder.transform(d['session_id'].values))
+        session_index = torch.LongTensor(
+            session_encoder.transform(
+                d['session_id'].values))
         # get the date (aka session_id in the raw dataset) of each row in the dataset, retrieve
         # the item availability information from that date.
 
         # example day of week, random example.
-        session_day_of_week = torch.LongTensor(np.random.randint(0, 7, configs.num_sessions))
+        session_day_of_week = torch.LongTensor(
+            np.random.randint(0, 7, configs.num_sessions))
 
         choice_dataset = ChoiceDataset(label=label,
                                        user_index=user_index,
@@ -222,10 +241,10 @@ if __name__ == '__main__':
                          max_epochs=configs.num_epochs,
                          check_val_every_n_epoch=1,
                          log_every_n_steps=1)
-                         # auto_scale_batch_size='power',
-                         # auto_lr_find=True,
-                         # callbacks=[EarlyStopping],
-                         # profiler=profiler)
+    # auto_scale_batch_size='power',
+    # auto_lr_find=True,
+    # callbacks=[EarlyStopping],
+    # profiler=profiler)
 
     train = create_data_loader(dataset_list[0],
                                batch_size=configs.batch_size,
@@ -237,7 +256,9 @@ if __name__ == '__main__':
                                     num_workers=8)
 
     test = create_data_loader(dataset_list[2],
-                              batch_size=10000,  # use smaller batch size for test, which takes more mem.
+                              batch_size=10000,
+                              # use smaller batch size for test, which takes
+                              # more mem.
                               shuffle=False,
                               num_workers=8)
 

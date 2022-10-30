@@ -42,8 +42,8 @@ class ConditionalLogitModel(nn.Module):
     def __init__(self,
                  coef_variation_dict: Dict[str, str],
                  num_param_dict: Dict[str, int],
-                 num_items: Optional[int]=None,
-                 num_users: Optional[int]=None
+                 num_items: Optional[int] = None,
+                 num_users: Optional[int] = None
                  ) -> None:
         """
         Args:
@@ -71,26 +71,32 @@ class ConditionalLogitModel(nn.Module):
         for var_type, num_params in self.num_param_dict.items():
             assert num_params > 0, f'num_params needs to be positive, got: {num_params}.'
 
-        # infer the number of parameters for intercept if the researcher forgets.
-        if 'intercept' in self.coef_variation_dict.keys() and 'intercept' not in self.num_param_dict.keys():
-            warnings.warn("'intercept' key found in coef_variation_dict but not in num_param_dict, num_param_dict['intercept'] has been set to 1.")
+        # infer the number of parameters for intercept if the researcher
+        # forgets.
+        if 'intercept' in self.coef_variation_dict.keys(
+        ) and 'intercept' not in self.num_param_dict.keys():
+            warnings.warn(
+                "'intercept' key found in coef_variation_dict but not in num_param_dict, num_param_dict['intercept'] has been set to 1.")
             self.num_param_dict['intercept'] = 1
 
         # construct trainable parameters.
         coef_dict = dict()
         for var_type, variation in self.coef_variation_dict.items():
-            coef_dict[var_type] = Coefficient(variation=variation,
-                                              num_items=self.num_items,
-                                              num_users=self.num_users,
-                                              num_params=self.num_param_dict[var_type])
+            coef_dict[var_type] = Coefficient(
+                variation=variation,
+                num_items=self.num_items,
+                num_users=self.num_users,
+                num_params=self.num_param_dict[var_type])
         # A ModuleDict is required to properly register all trainiabel parameters.
         # self.parameter() will fail if a python dictionary is used instead.
         self.coef_dict = nn.ModuleDict(coef_dict)
 
     def __repr__(self) -> str:
-        out_str_lst = ['Conditional logistic discrete choice model, expects input features:\n']
+        out_str_lst = [
+            'Conditional logistic discrete choice model, expects input features:\n']
         for var_type, num_params in self.num_param_dict.items():
-            out_str_lst.append(f'X[{var_type}] with {num_params} parameters, with {self.coef_variation_dict[var_type]} level variation.')
+            out_str_lst.append(
+                f'X[{var_type}] with {num_params} parameters, with {self.coef_variation_dict[var_type]} level variation.')
         return super().__repr__() + '\n' + '\n'.join(out_str_lst)
 
     @property
@@ -129,11 +135,14 @@ class ConditionalLogitModel(nn.Module):
 
         if 'intercept' in self.coef_variation_dict.keys():
             # intercept term has no input tensor, which has only 1 feature.
-            x_dict['intercept'] = torch.ones((len(batch), self.num_items, 1), device=batch.device)
+            x_dict['intercept'] = torch.ones(
+                (len(batch), self.num_items, 1), device=batch.device)
 
         # compute the utility from each item in each choice session.
-        total_utility = torch.zeros((len(batch), self.num_items), device=batch.device)
-        # for each type of variables, apply the corresponding coefficient to input x.
+        total_utility = torch.zeros(
+            (len(batch), self.num_items), device=batch.device)
+        # for each type of variables, apply the corresponding coefficient to
+        # input x.
 
         for var_type, coef in self.coef_dict.items():
             total_utility += coef(
@@ -148,7 +157,10 @@ class ConditionalLogitModel(nn.Module):
         return total_utility
 
     @staticmethod
-    def flatten_coef_dict(coef_dict: Dict[str, Union[torch.Tensor, torch.nn.Parameter]]) -> Tuple[torch.Tensor, dict]:
+    def flatten_coef_dict(coef_dict: Dict[str,
+                                          Union[torch.Tensor,
+                                                torch.nn.Parameter]]) -> Tuple[torch.Tensor,
+                                                                               dict]:
         """Flattens the coef_dict into a 1-dimension tensor, used for hessian computation."""
         type2idx = dict()
         param_list = list()
@@ -156,7 +168,8 @@ class ConditionalLogitModel(nn.Module):
 
         for var_type in coef_dict.keys():
             num_params = coef_dict[var_type].coef.numel()
-            # track which portion of all_param tensor belongs to this variable type.
+            # track which portion of all_param tensor belongs to this variable
+            # type.
             type2idx[var_type] = (start, start + num_params)
             start += num_params
             # use reshape instead of view to make a copy.
@@ -166,7 +179,11 @@ class ConditionalLogitModel(nn.Module):
         return all_param, type2idx
 
     @staticmethod
-    def unwrap_coef_dict(param: torch.Tensor, type2idx: Dict[str, Tuple[int, int]]) -> Dict[str, torch.Tensor]:
+    def unwrap_coef_dict(param: torch.Tensor,
+                         type2idx: Dict[str,
+                                        Tuple[int,
+                                              int]]) -> Dict[str,
+                                                             torch.Tensor]:
         """Rebuild coef_dict from output of self.flatten_coef_dict method."""
         coef_dict = dict()
         for var_type in type2idx.keys():
@@ -175,7 +192,12 @@ class ConditionalLogitModel(nn.Module):
             coef_dict[var_type] = param[start:end]
         return coef_dict
 
-    def compute_hessian(self, x_dict, availability, user_index, y) -> torch.Tensor:
+    def compute_hessian(
+            self,
+            x_dict,
+            availability,
+            user_index,
+            y) -> torch.Tensor:
         """Computes the hessian of negaitve log-likelihood (total cross-entropy loss) with respect
         to all parameters in this model.
 
@@ -202,7 +224,8 @@ class ConditionalLogitModel(nn.Module):
         assert H.shape == (self.num_params, self.num_params)
         return H
 
-    def compute_std(self, x_dict, availability, user_index, y) -> Dict[str, torch.Tensor]:
+    def compute_std(self, x_dict, availability, user_index,
+                    y) -> Dict[str, torch.Tensor]:
         """Computes
 
         Args:f

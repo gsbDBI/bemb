@@ -19,7 +19,7 @@ import torch
 #             x_cat[key] = None
 #         else:
 #             x_cat[key] = torch.cat([sample[0][0][key] for sample in sample_list], dim=0)
-    
+
 #     user_onehot_cat = torch.cat([sample[0][1] for sample in sample_list], dim=0)
 #     A_cat = torch.cat([sample[0][2] for sample in sample_list], dim=0)
 #     # list of 0 dimensional tensors.
@@ -30,6 +30,7 @@ import torch
 
 class CMDataset(torch.utils.data.Dataset):
     """Choice modelling dataset"""
+
     def __init__(self,
                  path: Optional[str] = None,
                  X: Optional[Dict[str, torch.Tensor]] = None,
@@ -75,7 +76,7 @@ class CMDataset(torch.utils.data.Dataset):
                 takes values from {0, 1, ..., num_categories-1} indicating which category the item
                 bought in that session belongs to.
                 Defaults to None.
-            
+
             device (str): location to store the entire dataset. Defaults to 'cpu'.
         """
         self.device = device
@@ -86,7 +87,7 @@ class CMDataset(torch.utils.data.Dataset):
             for k, v in self.X.items():
                 if v is not None:
                     self.X[k] = v.to(self.device)
-            
+
             self.user_onehot = user_onehot.to(self.device)
             self.A = A.to(self.device)
             self.Y = Y.to(self.device)
@@ -106,7 +107,9 @@ class CMDataset(torch.utils.data.Dataset):
             if val is None:
                 x_row[key] = None
             else:
-                x_row[key] = val[idx, :, :].view(batch_size, self.num_items, -1)  # (batch_size, num_items, num_params)
+                # (batch_size, num_items, num_params)
+                x_row[key] = val[idx, :, :].view(
+                    batch_size, self.num_items, -1)
         # user onehot, raw show (num_sessions, num_users)
         U = self.user_onehot[idx, :].view(batch_size, self.num_users)
         # item aviliability, raw shape (num_sessions, num_items)
@@ -115,7 +118,7 @@ class CMDataset(torch.utils.data.Dataset):
         C = self.C[idx]
         # purchase choice, raw shape (num_sessions,)
         Y = self.Y[idx]
-        
+
         return (x_row, U, A, C), Y
 
     def __len__(self) -> int:

@@ -1,6 +1,7 @@
 from torch import nn
 from deepchoice.model.bayesian_linear import BayesianLinear
 
+
 class ExampleCustomizedModule(nn.Module):
     def __init__(self) -> None:
         super().__init__()

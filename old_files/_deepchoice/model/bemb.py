@@ -16,6 +16,7 @@ class VariationalFactorizedGaussian(nn.Module):
     standard covariance matrix) Gaussian distributions.
     This class is used as the variational family for real-valued latent variables.
     """
+
     def __init__(self, num_classes: int, dim: int) -> None:
         """
 
@@ -29,8 +30,16 @@ class VariationalFactorizedGaussian(nn.Module):
         super(VariationalFactorizedGaussian, self).__init__()
         self.num_classes = num_classes
         self.dim = dim
-        self.mean = nn.Parameter(torch.zeros(num_classes, dim), requires_grad=True)
-        self.logstd = nn.Parameter(torch.ones(num_classes, dim), requires_grad=True)
+        self.mean = nn.Parameter(
+            torch.zeros(
+                num_classes,
+                dim),
+            requires_grad=True)
+        self.logstd = nn.Parameter(
+            torch.ones(
+                num_classes,
+                dim),
+            requires_grad=True)
 
     def __repr__(self) -> str:
         return f'VariationalFactorizedGaussian(num_classes={self.num_classes}, dim_out={self.dim})'
@@ -50,9 +59,10 @@ class VariationalFactorizedGaussian(nn.Module):
         Returns:
             torch.Tensor: a tensor with shape (batch_size, num_classes).
         """
-        return batch_factorized_gaussian_log_prob(self.mean, self.logstd, value)
+        return batch_factorized_gaussian_log_prob(
+            self.mean, self.logstd, value)
 
-    def reparameterize_sample(self, num_seeds: int=1) -> torch.Tensor:
+    def reparameterize_sample(self, num_seeds: int = 1) -> torch.Tensor:
         """Samples from the multivariate Gaussian distribution using the reparameterization trick.
 
         Args:
@@ -63,8 +73,13 @@ class VariationalFactorizedGaussian(nn.Module):
                 the C-th Gaussian distribution.
         """
         # create random seeds from N(0, 1).
-        eps = torch.randn(num_seeds, self.num_classes, self.dim, device=self.device)
-        # parameters for each Gaussian distribution, boardcast across random seeds.
+        eps = torch.randn(
+            num_seeds,
+            self.num_classes,
+            self.dim,
+            device=self.device)
+        # parameters for each Gaussian distribution, boardcast across random
+        # seeds.
         mu = self.mean.view(1, self.num_classes, self.dim)
         std = torch.exp(self.logstd).view(1, self.num_classes, self.dim)
         out = mu + std * eps
@@ -73,7 +88,8 @@ class VariationalFactorizedGaussian(nn.Module):
 
 
 class LearnableGaussianPrior(nn.Module):
-    def __init__(self, dim_in: int, dim_out: int, std: Union[str, float, torch.Tensor]=1.0) -> None:
+    def __init__(self, dim_in: int, dim_out: int,
+                 std: Union[str, float, torch.Tensor] = 1.0) -> None:
         """Construct a Gaussian distribution for prior of user/item embeddigns, whose mean and
         standard deviation depends on user/item observables.
         NOTE: to avoid exploding number of parameters, learnable parameters in this class are shared
@@ -100,21 +116,33 @@ class LearnableGaussianPrior(nn.Module):
         self.H = nn.Linear(dim_in, dim_out, bias=False)
 
         if isinstance(std, float):
-            self.logstd = torch.log(torch.scalar_tensor(std)).expand(self.dim_out)
+            self.logstd = torch.log(
+                torch.scalar_tensor(std)).expand(
+                self.dim_out)
         elif isinstance(std, torch.Tensor):
             self.logstd = torch.log(std)
         elif std == 'learnable_scalar':
-            # TODO(Tianyu): check if this expand function works as we expected. Check the number of parameters.
-            self.logstd = nn.Parameter(torch.zeros(1), requires_grad=True).expand(self.dim_out)
+            # TODO(Tianyu): check if this expand function works as we expected.
+            # Check the number of parameters.
+            self.logstd = nn.Parameter(
+                torch.zeros(1),
+                requires_grad=True).expand(
+                self.dim_out)
         elif std == 'learnable_vector':
-            self.logstd = nn.Parameter(torch.zeros(self.dim_out), requires_grad=True)
+            self.logstd = nn.Parameter(
+                torch.zeros(
+                    self.dim_out),
+                requires_grad=True)
         else:
             raise ValueError(f'Unsupported standard deviation option {std}')
 
     def __repr__(self) -> str:
         return f'LearnableGaussianPrior(dim_in={self.dim_in}, dim_out={self.dim_out})'
 
-    def log_prob(self, x_obs: torch.Tensor, value: torch.Tensor) -> torch.Tensor:
+    def log_prob(
+            self,
+            x_obs: torch.Tensor,
+            value: torch.Tensor) -> torch.Tensor:
         """Compute the log likelihood of `value` given observables `x_obs`.
 
         Args:
@@ -129,7 +157,8 @@ class LearnableGaussianPrior(nn.Module):
         # compute mean vector for each class.
         mu = self.H(x_obs)  # (num_classes, self.dim_out)
         # expand standard deviations shared across all classes.
-        logstd = self.logstd.unsqueeze(dim=0).expand(x_obs.shape[0], -1).to(x_obs.device)  # (num_classes, self.dim_out)
+        logstd = self.logstd.unsqueeze(dim=0).expand(
+            x_obs.shape[0], -1).to(x_obs.device)  # (num_classes, self.dim_out)
         return batch_factorized_gaussian_log_prob(mu, logstd, value)
 
 
@@ -137,6 +166,7 @@ class StandardGaussianPrior(nn.Module):
     """A helper class for evaluating the log_prob of Monte Carlo samples for latent variables on
     a N(0, 1) prior.
     """
+
     def __init__(self, dim_in: int, dim_out: int) -> None:
         super(StandardGaussianPrior, self).__init__()
         self.dim_in = dim_in
@@ -159,7 +189,10 @@ class StandardGaussianPrior(nn.Module):
         batch_size, num_classes, dim_out = value.shape
         assert dim_out == self.dim_out
         mu = torch.zeros(num_classes, self.dim_out, device=value.device)
-        logstd = torch.zeros(num_classes, self.dim_out, device=value.device)  # (num_classes, self.dim_out)
+        logstd = torch.zeros(
+            num_classes,
+            self.dim_out,
+            device=value.device)  # (num_classes, self.dim_out)
         out = batch_factorized_gaussian_log_prob(mu, logstd, value)
         assert out.shape == (batch_size, num_classes)
         return out
@@ -172,15 +205,15 @@ class BEMB(nn.Module):
                  num_sessions: int,
                  obs2prior_dict: Dict[str, bool],
                  latent_dim: int,
-                 latent_dim_price: Optional[int]=None,
-                 trace_log_q: bool=False,
-                 category_to_item: Dict[str, List[int]]=None,
-                 likelihood: str='within_category',
-                 num_user_obs: Optional[int]=None,
-                 num_item_obs: Optional[int]=None,
-                 num_session_obs: Optional[int]=None,
-                 num_price_obs: Optional[int]=None,
-                 num_taste_obs: Optional[int]=None  # Not used for now.
+                 latent_dim_price: Optional[int] = None,
+                 trace_log_q: bool = False,
+                 category_to_item: Dict[str, List[int]] = None,
+                 likelihood: str = 'within_category',
+                 num_user_obs: Optional[int] = None,
+                 num_item_obs: Optional[int] = None,
+                 num_session_obs: Optional[int] = None,
+                 num_price_obs: Optional[int] = None,
+                 num_taste_obs: Optional[int] = None  # Not used for now.
                  ) -> None:
         """
         Args:
@@ -268,7 +301,9 @@ class BEMB(nn.Module):
         }
 
         # dimension of each latent variable.
-        has_price = (self.latent_dim_price is not None) and (self.num_price_obs is not None)
+        has_price = (
+            self.latent_dim_price is not None) and (
+            self.num_price_obs is not None)
         self.coef_dim_dict = {
             'lambda_item': 1,
             'theta_user': self.latent_dim,
@@ -282,20 +317,22 @@ class BEMB(nn.Module):
         }
         prior_dict = dict()
         for coef_name, obs2prior in self.obs2prior_dict.items():
-            subject = coef_name.split('_')[-1]  # {user, item, session, price, taste}
+            # {user, item, session, price, taste}
+            subject = coef_name.split('_')[-1]
             if obs2prior:
-                prior_dict[coef_name] = LearnableGaussianPrior(dim_in=self.num_obs_dict[subject],
-                                                               dim_out=self.coef_dim_dict[coef_name])
+                prior_dict[coef_name] = LearnableGaussianPrior(
+                    dim_in=self.num_obs_dict[subject], dim_out=self.coef_dim_dict[coef_name])
             else:
-                prior_dict[coef_name] = StandardGaussianPrior(dim_in=self.num_obs_dict[subject],
-                                                              dim_out=self.coef_dim_dict[coef_name])
+                prior_dict[coef_name] = StandardGaussianPrior(
+                    dim_in=self.num_obs_dict[subject], dim_out=self.coef_dim_dict[coef_name])
         self.prior_dict = nn.ModuleDict(prior_dict)
 
         # ==========================================================================================
         # Create Variational Distributions.
         # ==========================================================================================
         variational_dict = dict()
-        # for now, assume all variational distributions are factorized Gaussians.
+        # for now, assume all variational distributions are factorized
+        # Gaussians.
         for coef_name in self.obs2prior_dict.keys():
             if coef_name.endswith('_user'):
                 num_classes = self.num_users
@@ -304,12 +341,12 @@ class BEMB(nn.Module):
             else:
                 num_classes = 1  # learnable constant.
 
-            variational_dict[coef_name] = VariationalFactorizedGaussian(num_classes,
-                                                                        self.coef_dim_dict[coef_name])
+            variational_dict[coef_name] = VariationalFactorizedGaussian(
+                num_classes, self.coef_dim_dict[coef_name])
 
         self.variational_dict = nn.ModuleDict(variational_dict)
 
-    def forward(self, batch, return_logit: bool=False) -> torch.Tensor:
+    def forward(self, batch, return_logit: bool = False) -> torch.Tensor:
         """Computes the log likelihood of choosing each item in each session.
 
         Args:
@@ -321,10 +358,12 @@ class BEMB(nn.Module):
         """
         sample_dict = dict()
         for coef_name, variational in self.variational_dict.items():
-            sample_dict[coef_name] = variational.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+            sample_dict[coef_name] = variational.mean.unsqueeze(
+                dim=0)  # (1, num_*, dim)
 
         # there is 1 random seed in this case.
-        out = self.log_likelihood(batch, sample_dict, return_logit)  # (num_seeds=1, num_sessions, num_items)
+        # (num_seeds=1, num_sessions, num_items)
+        out = self.log_likelihood(batch, sample_dict, return_logit)
         return out.squeeze()  # (num_sessions, num_items)
 
     @property
@@ -343,7 +382,8 @@ class BEMB(nn.Module):
     @torch.no_grad()
     def get_within_category_accuracy(self,
                                      log_p_all_items: torch.Tensor,
-                                     label: torch.LongTensor) -> Dict[str, float]:
+                                     label: torch.LongTensor) -> Dict[str,
+                                                                      float]:
         """A helper function for computing prediction accuracy (i.e., all non-differential metrics)
         within category.
         In particular, thie method calculates the accuracy, precision, recall and F1 score.
@@ -374,8 +414,10 @@ class BEMB(nn.Module):
             [Dict[str, float]]: A dictionary containing performance metrics.
         """
         # argmax: (num_sessions, num_categories), within category argmax.
-        # item IDs are consecutive, thus argmax is the same as IDs of the item with highest P.
-        _, argmax_by_category = scatter_max(log_p_all_items, self.category_idx, dim=-1)
+        # item IDs are consecutive, thus argmax is the same as IDs of the item
+        # with highest P.
+        _, argmax_by_category = scatter_max(
+            log_p_all_items, self.category_idx, dim=-1)
 
         # category_purchased[t] = the category of item label[t].
         # (num_sessions,)
@@ -383,17 +425,23 @@ class BEMB(nn.Module):
 
         # pred[t] = the item with highest utility from the category item label[t] belongs to.
         # (num_sessions,)
-        pred_from_category = argmax_by_category[torch.arange(len(label)), category_purchased]
+        pred_from_category = argmax_by_category[torch.arange(
+            len(label)), category_purchased]
 
-        within_category_accuracy = (pred_from_category == label).float().mean().item()
+        within_category_accuracy = (
+            pred_from_category == label).float().mean().item()
 
         # precision
         precision = list()
 
         recall = list()
         for i in range(self.num_items):
-            correct_i = torch.sum((torch.logical_and(pred_from_category == i, label == i)).float())
-            precision_i = correct_i / torch.sum((pred_from_category == i).float())
+            correct_i = torch.sum(
+                (torch.logical_and(
+                    pred_from_category == i,
+                    label == i)).float())
+            precision_i = correct_i / \
+                torch.sum((pred_from_category == i).float())
             recall_i = correct_i / torch.sum((label == i).float())
 
             # do not add if divided by zero.
@@ -422,7 +470,7 @@ class BEMB(nn.Module):
     def log_likelihood(self,
                        batch,
                        sample_dict,
-                       return_logit: bool=False
+                       return_logit: bool = False
                        ) -> torch.Tensor:
         """Computes the log probability of choosing each item in each session based on current model
         parameters.
@@ -447,13 +495,18 @@ class BEMB(nn.Module):
         """
         assert sample_dict.keys() == self.obs2prior_dict.keys()
 
-        # get the base utility of each item for each user with shape (num_seeds, num_users, num_items).
+        # get the base utility of each item for each user with shape
+        # (num_seeds, num_users, num_items).
 
         for v in sample_dict.values():
             num_seeds = v.shape[0]
             break
 
-        utility = torch.zeros(num_seeds, self.num_users, self.num_items, device=self.device)
+        utility = torch.zeros(
+            num_seeds,
+            self.num_users,
+            self.num_items,
+            device=self.device)
 
         # ==========================================================================================
         # 1. Time-invariant part of utility.
@@ -461,36 +514,47 @@ class BEMB(nn.Module):
 
         # 1.a. intercept term, lambda_item.
         if 'lambda_item' in sample_dict.keys():
-            assert sample_dict['lambda_item'].shape == (num_seeds, self.num_items, 1)
-            utility += torch.transpose(sample_dict['lambda_item'], 1, 2)  # boardcast across users.
+            assert sample_dict['lambda_item'].shape == (
+                num_seeds, self.num_items, 1)
+            # boardcast across users.
+            utility += torch.transpose(sample_dict['lambda_item'], 1, 2)
 
         # 1.b. theta_user and alpha_item interaction term.
         if 'theta_user' in sample_dict.keys() and 'alpha_item' in sample_dict.keys():
-            assert sample_dict['theta_user'].shape == (num_seeds, self.num_users, self.latent_dim)
-            assert sample_dict['alpha_item'].shape == (num_seeds, self.num_items, self.latent_dim)
+            assert sample_dict['theta_user'].shape == (
+                num_seeds, self.num_users, self.latent_dim)
+            assert sample_dict['alpha_item'].shape == (
+                num_seeds, self.num_items, self.latent_dim)
             # (num_seeds, num_users, latent_dim) bmm (num_seeds, latent_dim, num_items)
             # -> (num_seeds, num_users, num_items)
-            utility += torch.bmm(sample_dict['theta_user'], torch.transpose(sample_dict['alpha_item'], 1, 2))
+            utility += torch.bmm(sample_dict['theta_user'],
+                                 torch.transpose(sample_dict['alpha_item'], 1, 2))
 
         # 1.c. zeta_user * x_item_obs
         if 'zeta_user' in sample_dict.keys():
-            assert sample_dict['zeta_user'].shape == (num_seeds, self.num_users, self.num_item_obs)
+            assert sample_dict['zeta_user'].shape == (
+                num_seeds, self.num_users, self.num_item_obs)
             assert batch.item_obs.shape == (self.num_items, self.num_item_obs)
 
             # TODO: double check this.
-            item_obs = batch.item_obs.view(1, 1, self.num_items, self.num_item_obs)
-            zeta = sample_dict['zeta_user'].view(num_seeds, self.num_users, 1, self.num_item_obs)
+            item_obs = batch.item_obs.view(
+                1, 1, self.num_items, self.num_item_obs)
+            zeta = sample_dict['zeta_user'].view(
+                num_seeds, self.num_users, 1, self.num_item_obs)
             out = (item_obs * zeta).sum(dim=-1)
             assert out.shape == (num_seeds, self.num_users, self.num_items)
             utility += out
 
         # 1.d. iota_item * x_user_obs
         if 'iota_item' in sample_dict.keys():
-            assert sample_dict['iota_item'].shape == (num_seeds, self.num_items, self.num_user_obs)
+            assert sample_dict['iota_item'].shape == (
+                num_seeds, self.num_items, self.num_user_obs)
             assert batch.user_obs.shape == (self.num_users, self.num_user_obs)
 
-            user_obs = batch.user_obs.view(1, self.num_users, 1, self.num_user_obs)
-            iota = sample_dict['iota_item'].view(num_seeds, 1, self.num_items, self.num_user_obs)
+            user_obs = batch.user_obs.view(
+                1, self.num_users, 1, self.num_user_obs)
+            iota = sample_dict['iota_item'].view(
+                num_seeds, 1, self.num_items, self.num_user_obs)
             out = (user_obs * iota).sum(dim=-1)
             assert out.shape == (num_seeds, self.num_users, self.num_items)
             utility += out
@@ -499,18 +563,25 @@ class BEMB(nn.Module):
         # 2. Time-variant part of utility.
         # ==========================================================================================
         # convert to utility by session now.
-        # get the utility for choosing each items by the user corresponding to that session.
+        # get the utility for choosing each items by the user corresponding to
+        # that session.
         num_purchases = len(batch.user_index)
-        utility_by_purchase = utility[:, batch.user_index, :]  # (num_seeds, num_sessions, num_items)
+        # (num_seeds, num_sessions, num_items)
+        utility_by_purchase = utility[:, batch.user_index, :]
 
         # 2.a. mu_i * x_session_obs
         if 'mu_item' in sample_dict.keys():
-            assert sample_dict['mu_item'].shape == (num_seeds, self.num_items, self.num_session_obs)
-            assert batch.session_obs.shape == (self.num_sessions, self.num_session_obs)
-            session_obs = batch.session_obs[batch.session_index, :]  # (num_purchases, *)
+            assert sample_dict['mu_item'].shape == (
+                num_seeds, self.num_items, self.num_session_obs)
+            assert batch.session_obs.shape == (
+                self.num_sessions, self.num_session_obs)
+            # (num_purchases, *)
+            session_obs = batch.session_obs[batch.session_index, :]
             # index: (seed_id, purchase_id, item_id, obs_id).
-            session_obs = batch.session_obs.view(1, num_purchases, 1, self.num_session_obs)
-            mu = sample_dict['mu_item'].view(num_seeds, 1, self.num_items, self.num_session_obs)
+            session_obs = batch.session_obs.view(
+                1, num_purchases, 1, self.num_session_obs)
+            mu = sample_dict['mu_item'].view(
+                num_seeds, 1, self.num_items, self.num_session_obs)
             out = (mu * session_obs).sum(dim=-1)
             assert out.shape == (num_seeds, num_purchases, self.num_items)
             utility_by_purchase += out
@@ -521,39 +592,52 @@ class BEMB(nn.Module):
         # 2.c. price variable.
         if 'gamma_user' in sample_dict.keys() and 'beta_item' in sample_dict.keys():
             # change dim to self.latent_dim * self.num_price_obs.
-            assert sample_dict['gamma_user'].shape == (num_seeds, self.num_users,
-                                                       self.latent_dim_price * self.num_price_obs)
+            assert sample_dict['gamma_user'].shape == (
+                num_seeds, self.num_users, self.latent_dim_price * self.num_price_obs)
 
-            assert sample_dict['beta_item'].shape == (num_seeds, self.num_items,
-                                                      self.latent_dim_price * self.num_price_obs)
+            assert sample_dict['beta_item'].shape == (
+                num_seeds, self.num_items, self.latent_dim_price * self.num_price_obs)
 
-            assert batch.price_obs.shape == (self.num_sessions, self.num_items, self.num_price_obs)
+            assert batch.price_obs.shape == (
+                self.num_sessions, self.num_items, self.num_price_obs)
 
             # dims: (seed, user, item, price_obs, latent_dim)
-            gamma_user = sample_dict['gamma_user'].view(num_seeds, self.num_users, 1,
-                                                        self.num_price_obs, self.latent_dim_price)
-            beta_item = sample_dict['beta_item'].view(num_seeds, 1, self.num_items,
-                                                      self.num_price_obs, self.latent_dim_price)
+            gamma_user = sample_dict['gamma_user'].view(
+                num_seeds, self.num_users, 1, self.num_price_obs, self.latent_dim_price)
+            beta_item = sample_dict['beta_item'].view(
+                num_seeds, 1, self.num_items, self.num_price_obs, self.latent_dim_price)
 
             # dims: (seed, user, item, price_obs)
             coef = (gamma_user * beta_item).sum(dim=-1)
-            assert coef.shape == (num_seeds, self.num_users, self.num_items, self.num_price_obs)
+            assert coef.shape == (
+                num_seeds,
+                self.num_users,
+                self.num_items,
+                self.num_price_obs)
             coef = coef[:, batch.user_index, :, :]
-            assert coef.shape == (num_seeds, num_purchases, self.num_items, self.num_price_obs)
+            assert coef.shape == (
+                num_seeds,
+                num_purchases,
+                self.num_items,
+                self.num_price_obs)
 
-            price_obs = batch.price_obs[batch.session_index, :, :]  # (num_purchases, num_items, num_price_obs)
+            # (num_purchases, num_items, num_price_obs)
+            price_obs = batch.price_obs[batch.session_index, :, :]
 
-            price_obs = price_obs.view(1, num_purchases, self.num_items, self.num_price_obs)
+            price_obs = price_obs.view(
+                1, num_purchases, self.num_items, self.num_price_obs)
             out = (coef * price_obs).sum(dim=-1)
             assert out.shape == (num_seeds, num_purchases, self.num_items)
             utility_by_purchase += out
             # TODO: warn reseachers to create -log(price) in the dataloader!
 
-        assert utility_by_purchase.shape == (num_seeds, num_purchases, self.num_items)
+        assert utility_by_purchase.shape == (
+            num_seeds, num_purchases, self.num_items)
 
         if batch.item_availability is not None:
             # expand to the Monte Carlo sample dimension.
-            A = batch.item_availability[batch.session_index, :].unsqueeze(dim=0).expand(num_seeds, -1, -1)
+            A = batch.item_availability[batch.session_index, :].unsqueeze(
+                dim=0).expand(num_seeds, -1, -1)
             utility_by_purchase[~A] = -1.0e20
 
         if return_logit:
@@ -566,7 +650,8 @@ class BEMB(nn.Module):
             log_p = log_softmax(utility_by_purchase, dim=-1)
         elif self.likelihood == 'within_category':
             # compute log softmax separately within each category.
-            log_p = scatter_log_softmax(utility_by_purchase, self.category_idx, dim=-1)
+            log_p = scatter_log_softmax(
+                utility_by_purchase, self.category_idx, dim=-1)
         # output shape: (num_seeds, num_sessions, self.num_items)
         return log_p
 
@@ -577,7 +662,8 @@ class BEMB(nn.Module):
 
         total = torch.zeros(num_seeds, device=self.device)
         for coef_name, prior in self.prior_dict.items():
-            # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
+            # log_prob outputs (num_seeds, num_{items, users}), sum to
+            # (num_seeds).
             if self.obs2prior_dict[coef_name]:
                 if coef_name.endswith('_item'):
                     x_obs = batch.item_obs
@@ -590,14 +676,17 @@ class BEMB(nn.Module):
             total += prior.log_prob(x_obs, sample_dict[coef_name]).sum(dim=-1)
         return total
 
-    def log_variational(self, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def log_variational(self,
+                        sample_dict: Dict[str,
+                                          torch.Tensor]) -> torch.Tensor:
         total = torch.zeros([0], device=self.device)
         for coef_name, variational in self.variational_dict.items():
-            # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
+            # log_prob outputs (num_seeds, num_{items, users}), sum to
+            # (num_seeds).
             total += variational.log_prob(sample_dict[coef_name]).sum(dim=-1)
         return total
 
-    def elbo(self, batch, num_seeds: int=1) -> torch.Tensor:
+    def elbo(self, batch, num_seeds: int = 1) -> torch.Tensor:
         """Computes the current ELBO.
 
         Args:
@@ -613,13 +702,15 @@ class BEMB(nn.Module):
         # (num_seeds, num_classes, dim)
         sample_dict = dict()
         for coef_name, variational in self.variational_dict.items():
-            sample_dict[coef_name] = variational.reparameterize_sample(num_seeds)
+            sample_dict[coef_name] = variational.reparameterize_sample(
+                num_seeds)
 
         # 2. compute log p(latent) prior.
         # (num_seeds,)
         log_prior = self.log_prior(batch, sample_dict)
         # scalar
-        elbo = log_prior.mean()  # average over Monte Carlo samples for expectation.
+        # average over Monte Carlo samples for expectation.
+        elbo = log_prior.mean()
 
         # 3. compute the log likelihood log p(obs|latent).
         # (num_seeds, num_sessions, num_items)
@@ -629,11 +720,13 @@ class BEMB(nn.Module):
 
         # log_p_cond[*, session] = log prob of the item bought in this session.
         # (num_sessions,)
-        log_p_chosen_items = log_p_all_items[torch.arange(len(batch)), batch.label]
+        log_p_chosen_items = log_p_all_items[torch.arange(
+            len(batch)), batch.label]
         # scalar
         elbo += log_p_chosen_items.sum(dim=-1)  # sessions are independent.
 
-        # 4. optionally add log likelihood under variational distributions q(latent).
+        # 4. optionally add log likelihood under variational distributions
+        # q(latent).
         if self.trace_log_q:
             log_q = self.log_variational(sample_dict)  # (num_seeds,)
             elbo -= log_q.mean()  # scalar.

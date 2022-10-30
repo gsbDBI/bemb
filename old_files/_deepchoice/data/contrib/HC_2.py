@@ -20,7 +20,8 @@ def main(args):
 
     # label
     # what was actually chosen.
-    label = df[df['depvar'] == True].sort_values(by='idx.id1')['idx.id2'].reset_index(drop=True)
+    label = df[df['depvar']].sort_values(
+        by='idx.id1')['idx.id2'].reset_index(drop=True)
     # item_names = sorted(set(label.values))
 
     item_names = ['ec', 'ecc', 'er', 'erc', 'gc', 'gcc', 'hpc']
@@ -38,8 +39,19 @@ def main(args):
     category_dataset = ChoiceDataset(label=label.clone()).to('cuda')
 
     # item feature.
-    item_feat_cols = ['ich', 'och', 'icca', 'occa', 'inc.room', 'inc.cooling', 'int.cooling']
-    price_obs = utils.pivot3d(df, dim0='idx.id1', dim1='idx.id2', values=item_feat_cols)
+    item_feat_cols = [
+        'ich',
+        'och',
+        'icca',
+        'occa',
+        'inc.room',
+        'inc.cooling',
+        'int.cooling']
+    price_obs = utils.pivot3d(
+        df,
+        dim0='idx.id1',
+        dim1='idx.id2',
+        values=item_feat_cols)
     item_dataset = ChoiceDataset(label=label, price_obs=price_obs).to('cuda')
 
     # combine dataet
@@ -57,14 +69,16 @@ def main(args):
     model = NestedLogitModel(category_to_item=category_to_item,
                              category_coef_variation_dict={},
                              category_num_param_dict={},
-                            #  category_num_param_dict={'intercept': 1},
-                             item_coef_variation_dict={'price_obs': 'constant'},
+                             #  category_num_param_dict={'intercept': 1},
+                             item_coef_variation_dict={
+                                 'price_obs': 'constant'},
                              item_num_param_dict={'price_obs': 7}
                              )
 
     model = model.to(args.device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.03)
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.9999)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(
+        optimizer=optimizer, gamma=0.9999)
 
     for e in range(10000):
         for batch in data_loader:

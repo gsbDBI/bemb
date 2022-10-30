@@ -156,7 +156,8 @@ class Dataset_Train_Multitask(data.Dataset):
         self.count_dict = {}
         _uniq = np.unique(self.training_item_ids, return_counts=True)
         self.count_dict = dict(zip(_uniq[0], _uniq[1]))
-        # curr_training_data has columns=['date', 'item_id', 'user_id', 'num_purchase', 'category_id', 'wk', 'dayofweek', 'q', 'store']
+        # curr_training_data has columns=['date', 'item_id', 'user_id',
+        # 'num_purchase', 'category_id', 'wk', 'dayofweek', 'q', 'store']
         self.curr_training_data.sort_values(
             by=['date', 'user_id', 'item_id'], inplace=True)
         self.data_arr = np.array(self.curr_training_data)  # all integers.
@@ -211,7 +212,8 @@ class Dataset_Train_Multitask(data.Dataset):
         onehot = list()
         # Get trips, which is unique (user + store + date) tuples.
         # user_dates.shape[0] is the number of trips.
-        user_dates = curr_train_data[['user_id', 'date', 'wk', 'dayofweek']].drop_duplicates()
+        user_dates = curr_train_data[[
+            'user_id', 'date', 'wk', 'dayofweek']].drop_duplicates()
         self.user_dates = user_dates
         users = list(user_dates['user_id'])
         user_indices = np.array([self.user_ids_map[user] for user in users])
@@ -230,8 +232,12 @@ class Dataset_Train_Multitask(data.Dataset):
             index='date', columns='item_id', values='is_available')
         all_availabilities.fillna(False, inplace=True)
         # The pivot method should automatically sort columns and indices.
-        assert list(all_availabilities.columns) == sorted(all_availabilities.columns)
-        assert list(all_availabilities.index) == sorted(all_availabilities.index)
+        assert list(
+            all_availabilities.columns) == sorted(
+            all_availabilities.columns)
+        assert list(
+            all_availabilities.index) == sorted(
+            all_availabilities.index)
         assert all_availabilities.values.sum() == len(self.availability_data)
 
         train_wide = curr_train_data.groupby(
@@ -252,7 +258,8 @@ class Dataset_Train_Multitask(data.Dataset):
         columns = list(train.columns)  # categories.
         train = np.array(train)
 
-        # Convert itemID purchaseing history to ordinal encoded with consecutive integers.
+        # Convert itemID purchaseing history to ordinal encoded with
+        # consecutive integers.
         onehot = [
             [
                 -1 if int(train[i, j]) < 0
@@ -270,7 +277,8 @@ class Dataset_Train_Multitask(data.Dataset):
         prices_wide = self.item_sess_price_copy.pivot(
             index='date', columns='item_id', values='price')
         prices_wide.fillna(0, inplace=True)
-        prices = user_dates.set_index('date').join(prices_wide, how='left').reset_index()
+        prices = user_dates.set_index('date').join(
+            prices_wide, how='left').reset_index()
         prices.sort_values(by=['user_id', 'date'], inplace=True)
         prices = prices.iloc[:, -num_items:]
         prices = prices[list(self.item_list)]
@@ -344,9 +352,11 @@ class Dataset_Train_Multitask(data.Dataset):
         item_id = self.data_arr[index][1]
         item_month = int(item_date[-4:-2])
         if self.user_onehot:
-            return np.hstack([self.all_constants[index], self.all_obs_user[index]]), self.all_prices[index], self.all_onehot[index], self.user_onehots[index], np.float64(self.data_arr[index][4]), self.all_month_indicator[index], self.all_day_indicator[index], self.all_week_indicator[index], item_month, item_week, item_dayofweek, None, np.int64(item_date), np.int64(item_id)
+            return np.hstack([self.all_constants[index], self.all_obs_user[index]]), self.all_prices[index], self.all_onehot[index], self.user_onehots[index], np.float64(
+                self.data_arr[index][4]), self.all_month_indicator[index], self.all_day_indicator[index], self.all_week_indicator[index], item_month, item_week, item_dayofweek, None, np.int64(item_date), np.int64(item_id)
         else:
-            return np.hstack([self.all_constants[index], self.all_obs_user[index]]), self.all_prices[index], self.all_onehot[index], np.float64(self.data_arr[index][4]), self.all_month_indicator[index], self.all_day_indicator[index], self.all_week_indicator[index], item_month, item_week, item_dayofweek, None, np.int64(item_date), np.int64(item_id)
+            return np.hstack([self.all_constants[index], self.all_obs_user[index]]), self.all_prices[index], self.all_onehot[index], np.float64(
+                self.data_arr[index][4]), self.all_month_indicator[index], self.all_day_indicator[index], self.all_week_indicator[index], item_month, item_week, item_dayofweek, None, np.int64(item_date), np.int64(item_id)
 
 
 class Dataset_Multitask_NN(data.Dataset):
