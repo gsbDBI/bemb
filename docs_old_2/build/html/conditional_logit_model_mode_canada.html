@@ -1,0 +1,912 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Tutorial: Conditional Logit Model on ModeCanada Dataset &#8212; torch-choice  documentation</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Random Utility Model (RUM) Part II: Nested Logit Model" href="nested_logit_model_house_cooling.html" />
+    <link rel="prev" title="Tutorial: Data Management" href="data_management.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+<a class="navbar-brand" href="index.html">
+<p class="title">torch-choice</p>
+</a>
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="intro.html">
+  Introduction
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="install.html">
+  Installation
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="projects.html">
+  Research Projects using this Package
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="data_management.html">
+  Tutorial: Data Management
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="current reference internal nav-link" href="#">
+  Tutorial: Conditional Logit Model on ModeCanada Dataset
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="nested_logit_model_house_cooling.html">
+  Random Utility Model (RUM) Part II: Nested Logit Model
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="bemb.html">
+  bemb package
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="test.html">
+  Compatibility Check List
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar">
+              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+              </div>
+              <div class="sidebar-end-items">
+              </div>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#load-dataset">
+   Load Dataset
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#construct-the-item-index-tensor">
+     Construct the
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       item_index
+      </span>
+     </code>
+     tensor
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#construct-observables">
+     Construct Observables
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#create-the-model">
+   Create the Model
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#define-variation-of-each-beta-using-coef-variation-dict">
+     Define variation of each
+     <span class="math notranslate nohighlight">
+      \(\beta\)
+     </span>
+     using
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       coef_variation_dict
+      </span>
+     </code>
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#define-the-dimension-of-each-beta-using-num-param-dict">
+     Define the dimension of each
+     <span class="math notranslate nohighlight">
+      \(\beta\)
+     </span>
+     using
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       num_param_dict
+      </span>
+     </code>
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#number-of-items">
+     Number of items
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#number-of-users">
+     Number of users
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#train-the-model">
+   Train the Model
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#parameter-estimation-from-r">
+     Parameter Estimation from
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       R
+      </span>
+     </code>
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#r-output">
+     R Output
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <section class="tex2jax_ignore mathjax_ignore" id="tutorial-conditional-logit-model-on-modecanada-dataset">
+<h1>Tutorial: Conditional Logit Model on ModeCanada Dataset<a class="headerlink" href="#tutorial-conditional-logit-model-on-modecanada-dataset" title="Permalink to this headline">#</a></h1>
+<p><strong>Author: Tianyu Du (tianyudu&#64;stanford.edu)</strong></p>
+<p><strong>Update: May. 3, 2022</strong></p>
+<p><strong>Reference:</strong> This tutorial is modified from the <a class="reference external" href="https://cran.r-project.org/web/packages/mlogit/vignettes/c3.rum.html">Random utility model and the multinomial logit model</a> in th documentation of <code class="docutils literal notranslate"><span class="pre">mlogit</span></code> package in R.</p>
+<p>Please note that the dataset involved in this example is fairly small (2,779 choice records), so we don’t expect the performance to be faster than the R implementation.</p>
+<p>We provide this tutorial mainly to check the correctness of our prediction. The fully potential of PyTorch is better exploited on much larger dataset.</p>
+<p>The executable Jupyter notebook for this tutorial is located at <a class="reference external" href="https://github.com/gsbDBI/torch-choice/blob/main/tutorials/conditional_logit_model_mode_canada.ipynb">Random Utility Model (RUM) 1: Conditional Logit Model</a>.</p>
+<p>Let’s first import essential Python packages.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+
+<span class="kn">from</span> <span class="nn">torch_choice.data</span> <span class="kn">import</span> <span class="n">ChoiceDataset</span><span class="p">,</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">torch_choice.model</span> <span class="kn">import</span> <span class="n">ConditionalLogitModel</span>
+
+<span class="kn">from</span> <span class="nn">torch_choice.utils.run_helper</span> <span class="kn">import</span> <span class="n">run</span>
+</pre></div>
+</div>
+<p>This tutorial will run both with and without graphic processing unit (GPU). However, our package is <em>much</em> faster with GPU.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;CUDA device used: </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">get_device_name</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="s1">&#39;cuda&#39;</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Running tutorial on CPU.&#39;</span><span class="p">)</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="s1">&#39;cpu&#39;</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Running tutorial on CPU.
+</pre></div>
+</div>
+<section id="load-dataset">
+<h2>Load Dataset<a class="headerlink" href="#load-dataset" title="Permalink to this headline">#</a></h2>
+<p>We have included the <code class="docutils literal notranslate"><span class="pre">ModeCanada</span></code> dataset in our package, which is located at <code class="docutils literal notranslate"><span class="pre">./public_datasets/</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">ModeCanada</span></code> dataset contains individuals’ choice on traveling methods.</p>
+<p>The raw dataset is in a long-format, in which the <code class="docutils literal notranslate"><span class="pre">case</span></code> variable identifies each choice.
+Using the terminology mentioned in the data management tutorial, each choice is called a <em>purchasing record</em> (i.e., consumer bought the ticket of a particular travelling mode), and the total number of choices made is denoted as <span class="math notranslate nohighlight">\(B\)</span>.</p>
+<p>For example, the first four row below (with <code class="docutils literal notranslate"><span class="pre">case</span> <span class="pre">==</span> <span class="pre">109</span></code>) corresponds to the first choice, the <code class="docutils literal notranslate"><span class="pre">alt</span></code> column lists all alternatives/items available.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">choice</span></code> column identifies which alternative/item is chosen. The second row in the data snapshot below, we have <code class="docutils literal notranslate"><span class="pre">choice</span> <span class="pre">==</span> <span class="pre">1</span></code> and <code class="docutils literal notranslate"><span class="pre">alt</span> <span class="pre">==</span> <span class="pre">'air'</span></code> for <code class="docutils literal notranslate"><span class="pre">case</span> <span class="pre">==</span> <span class="pre">109</span></code>. This indicates the travelling mode chosen in <code class="docutils literal notranslate"><span class="pre">case</span> <span class="pre">=</span> <span class="pre">109</span></code> was <code class="docutils literal notranslate"><span class="pre">air</span></code>.</p>
+<p>Now we convert the raw dataset into the format compatible with our model, for a detailed tutorial on the compatible formats, please refer to the data management tutorial.</p>
+<p>We focus on cases when four alternatives were available by filtering <code class="docutils literal notranslate"><span class="pre">noalt</span> <span class="pre">==</span> <span class="pre">4</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;./public_datasets/ModeCanada.csv&#39;</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;noalt == 4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">&#39;case&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+</pre></div>
+</div>
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Unnamed: 0</th>
+      <th>case</th>
+      <th>alt</th>
+      <th>choice</th>
+      <th>dist</th>
+      <th>cost</th>
+      <th>ivt</th>
+      <th>ovt</th>
+      <th>freq</th>
+      <th>income</th>
+      <th>urban</th>
+      <th>noalt</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>304</td>
+      <td>109</td>
+      <td>train</td>
+      <td>0</td>
+      <td>377</td>
+      <td>58.25</td>
+      <td>215</td>
+      <td>74</td>
+      <td>4</td>
+      <td>45</td>
+      <td>0</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>305</td>
+      <td>109</td>
+      <td>air</td>
+      <td>1</td>
+      <td>377</td>
+      <td>142.80</td>
+      <td>56</td>
+      <td>85</td>
+      <td>9</td>
+      <td>45</td>
+      <td>0</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>306</td>
+      <td>109</td>
+      <td>bus</td>
+      <td>0</td>
+      <td>377</td>
+      <td>27.52</td>
+      <td>301</td>
+      <td>63</td>
+      <td>8</td>
+      <td>45</td>
+      <td>0</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>307</td>
+      <td>109</td>
+      <td>car</td>
+      <td>0</td>
+      <td>377</td>
+      <td>71.63</td>
+      <td>262</td>
+      <td>0</td>
+      <td>0</td>
+      <td>45</td>
+      <td>0</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>308</td>
+      <td>110</td>
+      <td>train</td>
+      <td>0</td>
+      <td>377</td>
+      <td>58.25</td>
+      <td>215</td>
+      <td>74</td>
+      <td>4</td>
+      <td>70</td>
+      <td>0</td>
+      <td>4</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<p>Since there are 4 rows corresponding to each <em>purchasing record</em>, the length of the long-format data is <span class="math notranslate nohighlight">\(4 \times B\)</span>.
+Please refer to the data management tutorial for notations.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">df</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>(11116, 12)
+</pre></div>
+</div>
+<section id="construct-the-item-index-tensor">
+<h3>Construct the <code class="docutils literal notranslate"><span class="pre">item_index</span></code> tensor<a class="headerlink" href="#construct-the-item-index-tensor" title="Permalink to this headline">#</a></h3>
+<p>The first thing is to construct the <code class="docutils literal notranslate"><span class="pre">item_index</span></code> tensor identifying which item (i.e., travel mode) was chosen in each purchasing record.</p>
+<p>We can now construct the <code class="docutils literal notranslate"><span class="pre">item_index</span></code> array containing which item was chosen in each purchasing record.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">item_index</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;choice&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">&#39;case&#39;</span><span class="p">)[</span><span class="s1">&#39;alt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">item_index</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>0       air
+1       air
+2       air
+3       air
+4       air
+       ...
+2774    car
+2775    car
+2776    car
+2777    car
+2778    car
+Name: alt, Length: 2779, dtype: object
+</pre></div>
+</div>
+<p>Since we will be training our model using <code class="docutils literal notranslate"><span class="pre">PyTorch</span></code>, we need to encode <code class="docutils literal notranslate"><span class="pre">{'air',</span> <span class="pre">'bus',</span> <span class="pre">'car',</span> <span class="pre">'train'}</span></code> into integer values.</p>
+<table class="colwidths-auto table">
+<thead>
+<tr class="row-odd"><th class="text-left head"><p>Travel Mode Name</p></th>
+<th class="text-center head"><p>Encoded Integer Values</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-left"><p>air</p></td>
+<td class="text-center"><p>0</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p>bus</p></td>
+<td class="text-center"><p>1</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p>car</p></td>
+<td class="text-center"><p>2</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p>train</p></td>
+<td class="text-center"><p>3</p></td>
+</tr>
+</tbody>
+</table>
+<p>The generated <code class="docutils literal notranslate"><span class="pre">item_index</span></code> would be a tensor of shape 2,778 (i.e., number of purchasing records in this dataset) with values <code class="docutils literal notranslate"><span class="pre">{0,</span> <span class="pre">1,</span> <span class="pre">2,</span> <span class="pre">3}</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">item_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;air&#39;</span><span class="p">,</span> <span class="s1">&#39;bus&#39;</span><span class="p">,</span> <span class="s1">&#39;car&#39;</span><span class="p">,</span> <span class="s1">&#39;train&#39;</span><span class="p">]</span>
+<span class="n">num_items</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">encoder</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">item_names</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_items</span><span class="p">)))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">encoder</span><span class="si">=:}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">item_index</span> <span class="o">=</span> <span class="n">item_index</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">encoder</span><span class="p">[</span><span class="n">x</span><span class="p">])</span>
+<span class="n">item_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">item_index</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">item_index</span><span class="si">=:}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>encoder={&#39;air&#39;: 0, &#39;bus&#39;: 1, &#39;car&#39;: 2, &#39;train&#39;: 3}
+item_index=tensor([0, 0, 0,  ..., 2, 2, 2])
+</pre></div>
+</div>
+</section>
+<section id="construct-observables">
+<h3>Construct Observables<a class="headerlink" href="#construct-observables" title="Permalink to this headline">#</a></h3>
+<p>Then let’s constrct tensors for observables.
+As mentioned in the data management tutorial, the <em>session</em> is capturing the temporal dimension of our data.
+Since we have different values <code class="docutils literal notranslate"><span class="pre">cost</span></code>, <code class="docutils literal notranslate"><span class="pre">freq</span></code> and <code class="docutils literal notranslate"><span class="pre">ovt</span></code> for each purchasing record and for each item, it’s natural to say each purchasing record has its own session.</p>
+<p>Consequently, these three variables are <code class="docutils literal notranslate"><span class="pre">price</span></code> observables since they vary by both item and session.
+The tensor holding these observables has shape <span class="math notranslate nohighlight">\((\text{numer of purchasing records}, \text{number of items}, 3)\)</span></p>
+<p>We do the same for variable <code class="docutils literal notranslate"><span class="pre">ivt</span></code>, we put <code class="docutils literal notranslate"><span class="pre">ivt</span></code> into a separate tensor because we want to model its coefficient differently later.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">price_cost_freq_ovt</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">pivot3d</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">dim0</span><span class="o">=</span><span class="s1">&#39;case&#39;</span><span class="p">,</span> <span class="n">dim1</span><span class="o">=</span><span class="s1">&#39;alt&#39;</span><span class="p">,</span>
+                                    <span class="n">values</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;cost&#39;</span><span class="p">,</span> <span class="s1">&#39;freq&#39;</span><span class="p">,</span> <span class="s1">&#39;ovt&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">price_cost_freq_ovt</span><span class="o">.</span><span class="n">shape</span><span class="si">=:}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="n">price_ivt</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">pivot3d</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">dim0</span><span class="o">=</span><span class="s1">&#39;case&#39;</span><span class="p">,</span> <span class="n">dim1</span><span class="o">=</span><span class="s1">&#39;alt&#39;</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="s1">&#39;ivt&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">price_ivt</span><span class="o">.</span><span class="n">shape</span><span class="si">=:}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>price_cost_freq_ovt.shape=torch.Size([2779, 4, 3])
+price_ivt.shape=torch.Size([2779, 4, 1])
+</pre></div>
+</div>
+<p>In contrast, the <code class="docutils literal notranslate"><span class="pre">income</span></code> variable varies only by session (i.e., purchasing record), but not by item. <code class="docutils literal notranslate"><span class="pre">income</span></code> is therefore naturally a <code class="docutils literal notranslate"><span class="pre">session</span></code> variable.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">session_income</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;case&#39;</span><span class="p">)[</span><span class="s1">&#39;income&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+<span class="n">session_income</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">session_income</span><span class="o">.</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">session_income</span><span class="o">.</span><span class="n">shape</span><span class="si">=:}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>session_income.shape=torch.Size([2779, 1])
+</pre></div>
+</div>
+<p>To summarize, the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> constructed contains 2779 choice records. Since the original dataset did not reveal the identity of each decision maker, we consider all 2779 choices were made by a single user but in 2779 different sessions to handle variations.</p>
+<p>In this case, the <code class="docutils literal notranslate"><span class="pre">cost</span></code>, <code class="docutils literal notranslate"><span class="pre">freq</span></code> and <code class="docutils literal notranslate"><span class="pre">ovt</span></code> are observables depending on both sessions and items, we created a <code class="docutils literal notranslate"><span class="pre">price_cost_freq_ovt</span></code> tensor with shape <code class="docutils literal notranslate"><span class="pre">(num_sessions,</span> <span class="pre">num_items,</span> <span class="pre">3)</span> <span class="pre">=</span> <span class="pre">(2779,</span> <span class="pre">4,</span> <span class="pre">3)</span></code> to contain these variables.
+In contrast, the <code class="docutils literal notranslate"><span class="pre">income</span></code> information depends only on session but not on items, hence we create the <code class="docutils literal notranslate"><span class="pre">session_income</span></code> tensor to store it.</p>
+<p>Because we wish to fit item-specific coefficients for the <code class="docutils literal notranslate"><span class="pre">ivt</span></code> variable, which varies by both sessions and items as well, we create another <code class="docutils literal notranslate"><span class="pre">price_ivt</span></code> tensor in addition to the <code class="docutils literal notranslate"><span class="pre">price_cost_freq_ovt</span></code> tensor.</p>
+<p>Lastly, we put all tensors we created to a single <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> object, and move the dataset to the appropriate device.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span> <span class="o">=</span> <span class="n">ChoiceDataset</span><span class="p">(</span><span class="n">item_index</span><span class="o">=</span><span class="n">item_index</span><span class="p">,</span>
+                        <span class="n">price_cost_freq_ovt</span><span class="o">=</span><span class="n">price_cost_freq_ovt</span><span class="p">,</span>
+                        <span class="n">session_income</span><span class="o">=</span><span class="n">session_income</span><span class="p">,</span>
+                        <span class="n">price_ivt</span><span class="o">=</span><span class="n">price_ivt</span>
+                        <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can <code class="docutils literal notranslate"><span class="pre">print(dataset)</span></code> to check shapes of tensors contained in the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ChoiceDataset(label=[], item_index=[2779], user_index=[], session_index=[2779], item_availability=[], price_cost_freq_ovt=[2779, 4, 3], session_income=[2779, 1], price_ivt=[2779, 4, 1], device=cpu)
+</pre></div>
+</div>
+</section>
+</section>
+<section id="create-the-model">
+<h2>Create the Model<a class="headerlink" href="#create-the-model" title="Permalink to this headline">#</a></h2>
+<p>We now construct the <code class="docutils literal notranslate"><span class="pre">ConditionalLogitModel</span></code> to fit the dataset we constructed above.</p>
+<p>To start with, we aim to estimate the following model formulation:</p>
+<div class="math notranslate nohighlight">
+\[
+U_{uit} = \beta^0_i + \beta^{1\top} X^{price: (cost, freq, ovt)}_{it} + \beta^2_i X^{session:income}_t + \beta^3_i X_{it}^{price:ivt} + \epsilon_{uit}
+\]</div>
+<p>We now initialize the <code class="docutils literal notranslate"><span class="pre">ConditionalLogitModel</span></code> to predict choices from the dataset.
+Please see the documentation for a complete description of the <code class="docutils literal notranslate"><span class="pre">ConditionalLogitModel</span></code> class.</p>
+<p>At it’s core, the <code class="docutils literal notranslate"><span class="pre">ConditionalLogitModel</span></code> constructor requires the following four components.</p>
+<section id="define-variation-of-each-beta-using-coef-variation-dict">
+<h3>Define variation of each <span class="math notranslate nohighlight">\(\beta\)</span> using <code class="docutils literal notranslate"><span class="pre">coef_variation_dict</span></code><a class="headerlink" href="#define-variation-of-each-beta-using-coef-variation-dict" title="Permalink to this headline">#</a></h3>
+<p>The keyword <code class="docutils literal notranslate"><span class="pre">coef_variation_dict</span></code> is a dictionary with variable names (defined above while constructing the dataset) as keys and values from <code class="docutils literal notranslate"><span class="pre">{constant,</span> <span class="pre">user,</span> <span class="pre">item,</span> <span class="pre">item-full}</span></code>.</p>
+<p>For instance, since we wish to have constant coefficients for <code class="docutils literal notranslate"><span class="pre">cost</span></code>, <code class="docutils literal notranslate"><span class="pre">freq</span></code> and <code class="docutils literal notranslate"><span class="pre">ovt</span></code> observables, and these three observables are stored in the <code class="docutils literal notranslate"><span class="pre">price_cost_freq_ovt</span></code> tensor of the choice dataset, we set <code class="docutils literal notranslate"><span class="pre">coef_variation_dict['price_cost_freq_ovt']</span> <span class="pre">=</span> <span class="pre">'constant'</span></code> (corresponding to the <span class="math notranslate nohighlight">\(\beta^{1\top} X^{price: (cost, freq, ovt)}_{it}\)</span> term above).</p>
+<p>The models allows for the option of zeroing coefficient for one item.
+The variation of <span class="math notranslate nohighlight">\(\beta^3\)</span> above is specified as <code class="docutils literal notranslate"><span class="pre">item-full</span></code> which indicates 4 values of <span class="math notranslate nohighlight">\(\beta^3\)</span> is learned (one for each item).
+In contrast, <span class="math notranslate nohighlight">\(\beta^0, \beta^2\)</span> are specified to have variation <code class="docutils literal notranslate"><span class="pre">item</span></code> instead of <code class="docutils literal notranslate"><span class="pre">item-full</span></code>. In this case, the <span class="math notranslate nohighlight">\(\beta\)</span> correspond to the first item (i.e., the baseline item, which is encoded as 0 in the label tensor, <code class="docutils literal notranslate"><span class="pre">air</span></code> in our example) is force to be zero.</p>
+<p>The researcher needs to declare <code class="docutils literal notranslate"><span class="pre">intercept</span></code> explicitly for the model to fit an intercept as well, otherwise the model assumes zero intercept term.</p>
+</section>
+<section id="define-the-dimension-of-each-beta-using-num-param-dict">
+<h3>Define the dimension of each <span class="math notranslate nohighlight">\(\beta\)</span> using <code class="docutils literal notranslate"><span class="pre">num_param_dict</span></code><a class="headerlink" href="#define-the-dimension-of-each-beta-using-num-param-dict" title="Permalink to this headline">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">num_param_dict</span></code> is a dictionary with keys exactly the same as the <code class="docutils literal notranslate"><span class="pre">coef_variation_dict</span></code>.
+Each of dictionary values tells the dimension of the corresponding observables, hence the dimension of the coefficient.
+For example, the <code class="docutils literal notranslate"><span class="pre">price_cost_freq_ovt</span></code> consists of three observables and we set the corresponding to three.</p>
+<p>Even the model can infer <code class="docutils literal notranslate"><span class="pre">num_param_dict['intercept']</span> <span class="pre">=</span> <span class="pre">1</span></code>, but we recommend the research to include it for completeness.</p>
+</section>
+<section id="number-of-items">
+<h3>Number of items<a class="headerlink" href="#number-of-items" title="Permalink to this headline">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">num_items</span></code> keyword informs the model how many alternatives users are choosing from.</p>
+</section>
+<section id="number-of-users">
+<h3>Number of users<a class="headerlink" href="#number-of-users" title="Permalink to this headline">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">num_users</span></code> keyword is an optional integer informing the model how many users there are in the dataset. However, in this example we implicitly assume there is only one user making all the decisions and we do not have any <code class="docutils literal notranslate"><span class="pre">user_obs</span></code> involved, hence <code class="docutils literal notranslate"><span class="pre">num_users</span></code> argument is not supplied.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">ConditionalLogitModel</span><span class="p">(</span><span class="n">coef_variation_dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;price_cost_freq_ovt&#39;</span><span class="p">:</span> <span class="s1">&#39;constant&#39;</span><span class="p">,</span>
+                                                   <span class="s1">&#39;session_income&#39;</span><span class="p">:</span> <span class="s1">&#39;item&#39;</span><span class="p">,</span>
+                                                   <span class="s1">&#39;price_ivt&#39;</span><span class="p">:</span> <span class="s1">&#39;item-full&#39;</span><span class="p">,</span>
+                                                   <span class="s1">&#39;intercept&#39;</span><span class="p">:</span> <span class="s1">&#39;item&#39;</span><span class="p">},</span>
+                              <span class="n">num_param_dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;price_cost_freq_ovt&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                                              <span class="s1">&#39;session_income&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                              <span class="s1">&#39;price_ivt&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                              <span class="s1">&#39;intercept&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+                              <span class="n">num_items</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Then we move the model to the appropriate device.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>One can print the <code class="docutils literal notranslate"><span class="pre">ConditionalLogitModel</span></code> object to obtain a summary of the model.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ConditionalLogitModel(
+  (coef_dict): ModuleDict(
+    (price_cost_freq_ovt): Coefficient(variation=constant, num_items=4, num_users=None, num_params=3, 3 trainable parameters in total).
+    (session_income): Coefficient(variation=item, num_items=4, num_users=None, num_params=1, 3 trainable parameters in total).
+    (price_ivt): Coefficient(variation=item-full, num_items=4, num_users=None, num_params=1, 4 trainable parameters in total).
+    (intercept): Coefficient(variation=item, num_items=4, num_users=None, num_params=1, 3 trainable parameters in total).
+  )
+)
+Conditional logistic discrete choice model, expects input features:
+
+X[price_cost_freq_ovt] with 3 parameters, with constant level variation.
+X[session_income] with 1 parameters, with item level variation.
+X[price_ivt] with 1 parameters, with item-full level variation.
+X[intercept] with 1 parameters, with item level variation.
+</pre></div>
+</div>
+</section>
+</section>
+<section id="train-the-model">
+<h2>Train the Model<a class="headerlink" href="#train-the-model" title="Permalink to this headline">#</a></h2>
+<p>We provide an easy-to-use helper function <code class="docutils literal notranslate"><span class="pre">run()</span></code> imported from <code class="docutils literal notranslate"><span class="pre">torch_choice.utils.run_helper</span></code> to fit the model with a particular dataset.</p>
+<p>We provide an easy-to-use model runner for both <code class="docutils literal notranslate"><span class="pre">ConditionalLogitModel</span></code> and <code class="docutils literal notranslate"><span class="pre">NestedLogitModel</span></code> (see later) instances.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">run()</span></code> mehtod supports mini-batch updating as well, for small datasets like the one we are dealing right now, we can use <code class="docutils literal notranslate"><span class="pre">batch_size</span> <span class="pre">=</span> <span class="pre">-1</span></code> to conduct full-batch gradient update.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+<span class="n">run</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">num_epochs</span><span class="o">=</span><span class="mi">50000</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Time taken:&#39;</span><span class="p">,</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>==================== received model ====================
+ConditionalLogitModel(
+  (coef_dict): ModuleDict(
+    (price_cost_freq_ovt): Coefficient(variation=constant, num_items=4, num_users=None, num_params=3, 3 trainable parameters in total).
+    (session_income): Coefficient(variation=item, num_items=4, num_users=None, num_params=1, 3 trainable parameters in total).
+    (price_ivt): Coefficient(variation=item-full, num_items=4, num_users=None, num_params=1, 4 trainable parameters in total).
+    (intercept): Coefficient(variation=item, num_items=4, num_users=None, num_params=1, 3 trainable parameters in total).
+  )
+)
+Conditional logistic discrete choice model, expects input features:
+
+X[price_cost_freq_ovt] with 3 parameters, with constant level variation.
+X[session_income] with 1 parameters, with item level variation.
+X[price_ivt] with 1 parameters, with item-full level variation.
+X[intercept] with 1 parameters, with item level variation.
+==================== received dataset ====================
+ChoiceDataset(label=[], item_index=[2779], user_index=[], session_index=[2779], item_availability=[], price_cost_freq_ovt=[2779, 4, 3], session_income=[2779, 1], price_ivt=[2779, 4, 1], device=cpu)
+==================== training the model ====================
+Epoch 5000: Log-likelihood=-1875.552490234375
+Epoch 10000: Log-likelihood=-1892.94775390625
+Epoch 15000: Log-likelihood=-1877.9156494140625
+Epoch 20000: Log-likelihood=-1881.0845947265625
+Epoch 25000: Log-likelihood=-1884.7335205078125
+Epoch 30000: Log-likelihood=-1874.423828125
+Epoch 35000: Log-likelihood=-1875.3016357421875
+Epoch 40000: Log-likelihood=-1874.3779296875
+Epoch 45000: Log-likelihood=-1875.703125
+Epoch 50000: Log-likelihood=-1899.8175048828125
+==================== model results ====================
+Training Epochs: 50000
+
+Learning Rate: 0.01
+
+Batch Size: 2779 out of 2779 observations in total
+
+Final Log-likelihood: -1899.8175048828125
+
+Coefficients:
+
+| Coefficient           |   Estimation |   Std. Err. |
+|:----------------------|-------------:|------------:|
+| price_cost_freq_ovt_0 |  -0.0342194  |  0.00731707 |
+| price_cost_freq_ovt_1 |   0.092262   |  0.00520946 |
+| price_cost_freq_ovt_2 |  -0.0439827  |  0.00342765 |
+| session_income_0      |  -0.0901207  |  0.0205214  |
+| session_income_1      |  -0.0272581  |  0.00385396 |
+| session_income_2      |  -0.0390468  |  0.00428838 |
+| price_ivt_0           |   0.0592097  |  0.0102933  |
+| price_ivt_1           |  -0.00753696 |  0.00496264 |
+| price_ivt_2           |  -0.00604297 |  0.00193414 |
+| price_ivt_3           |  -0.00207518 |  0.00123286 |
+| intercept_0           |   0.700786   |  1.39368    |
+| intercept_1           |   1.85016    |  0.728283   |
+| intercept_2           |   3.2782     |  0.648064   |
+Time taken: 179.84411025047302
+</pre></div>
+</div>
+<section id="parameter-estimation-from-r">
+<h3>Parameter Estimation from <code class="docutils literal notranslate"><span class="pre">R</span></code><a class="headerlink" href="#parameter-estimation-from-r" title="Permalink to this headline">#</a></h3>
+<p>The following is the R-output from the <code class="docutils literal notranslate"><span class="pre">mlogit</span></code> implementation, the estimation, standard error, and log-likelihood from our <code class="docutils literal notranslate"><span class="pre">torch_choice</span></code> implementation is the same as the result from <code class="docutils literal notranslate"><span class="pre">mlogit</span></code> implementation.</p>
+<p>We see that the final log-likelihood of models estimated using two packages are all around <code class="docutils literal notranslate"><span class="pre">-1874</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">run()</span></code> method calculates the standard deviation using <span class="math notranslate nohighlight">\(\sqrt{\text{diag}(H^{-1})}\)</span>, where <span class="math notranslate nohighlight">\(H\)</span> is the hessian of negative log-likelihood with repsect to model parameters.</p>
+<p>Names of coefficients are slightly different, one can use the following conversion table to compare estimations and standard deviations reported by both packages.</p>
+<table class="colwidths-auto table">
+<thead>
+<tr class="row-odd"><th class="text-center head"><p>Coefficient Name in Python</p></th>
+<th class="text-right head"><p>Estimation</p></th>
+<th class="text-right head"><p>Std. Err.</p></th>
+<th class="text-center head"><p>Coeffcient Name in R</p></th>
+<th class="text-right head"><p>R Estimation</p></th>
+<th class="text-right head"><p>R Std. Err.</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-center"><p>price_cost_freq_ovt_0</p></td>
+<td class="text-right"><p>-0.0342194</p></td>
+<td class="text-right"><p>0.00731707</p></td>
+<td class="text-center"><p>cost</p></td>
+<td class="text-right"><p>-0.0333389</p></td>
+<td class="text-right"><p>0.0070955</p></td>
+</tr>
+<tr class="row-odd"><td class="text-center"><p>price_cost_freq_ovt_1</p></td>
+<td class="text-right"><p>0.092262</p></td>
+<td class="text-right"><p>0.00520946</p></td>
+<td class="text-center"><p>freq</p></td>
+<td class="text-right"><p>0.0925297</p></td>
+<td class="text-right"><p>0.0050976</p></td>
+</tr>
+<tr class="row-even"><td class="text-center"><p>price_cost_freq_ovt_2</p></td>
+<td class="text-right"><p>-0.0439827</p></td>
+<td class="text-right"><p>0.00342765</p></td>
+<td class="text-center"><p>ovt</p></td>
+<td class="text-right"><p>-0.0430036</p></td>
+<td class="text-right"><p>0.0032247</p></td>
+</tr>
+<tr class="row-odd"><td class="text-center"><p>session_income_0</p></td>
+<td class="text-right"><p>-0.0901207</p></td>
+<td class="text-right"><p>0.0205214</p></td>
+<td class="text-center"><p>income:bus</p></td>
+<td class="text-right"><p>-0.0890867</p></td>
+<td class="text-right"><p>0.0183471</p></td>
+</tr>
+<tr class="row-even"><td class="text-center"><p>session_income_1</p></td>
+<td class="text-right"><p>-0.0272581</p></td>
+<td class="text-right"><p>0.00385396</p></td>
+<td class="text-center"><p>income:car</p></td>
+<td class="text-right"><p>-0.0279930</p></td>
+<td class="text-right"><p>0.0038726</p></td>
+</tr>
+<tr class="row-odd"><td class="text-center"><p>session_income_2</p></td>
+<td class="text-right"><p>-0.0390468</p></td>
+<td class="text-right"><p>0.00428838</p></td>
+<td class="text-center"><p>ivt:train</p></td>
+<td class="text-right"><p>-0.0014504</p></td>
+<td class="text-right"><p>0.0011875</p></td>
+</tr>
+<tr class="row-even"><td class="text-center"><p>price_ivt_0</p></td>
+<td class="text-right"><p>0.0592097</p></td>
+<td class="text-right"><p>0.0102933</p></td>
+<td class="text-center"><p>ivt:air</p></td>
+<td class="text-right"><p>0.0595097</p></td>
+<td class="text-right"><p>0.0100727</p></td>
+</tr>
+<tr class="row-odd"><td class="text-center"><p>price_ivt_1</p></td>
+<td class="text-right"><p>-0.00753696</p></td>
+<td class="text-right"><p>0.00496264</p></td>
+<td class="text-center"><p>ivt:bus</p></td>
+<td class="text-right"><p>-0.0067835</p></td>
+<td class="text-right"><p>0.0044334</p></td>
+</tr>
+<tr class="row-even"><td class="text-center"><p>price_ivt_2</p></td>
+<td class="text-right"><p>-0.00604297</p></td>
+<td class="text-right"><p>0.00193414</p></td>
+<td class="text-center"><p>ivt:car</p></td>
+<td class="text-right"><p>-0.0064603</p></td>
+<td class="text-right"><p>0.0018985</p></td>
+</tr>
+<tr class="row-odd"><td class="text-center"><p>price_ivt_3</p></td>
+<td class="text-right"><p>-0.00207518</p></td>
+<td class="text-right"><p>0.00123286</p></td>
+<td class="text-center"><p>ivt:train</p></td>
+<td class="text-right"><p>-0.0014504</p></td>
+<td class="text-right"><p>0.0011875</p></td>
+</tr>
+<tr class="row-even"><td class="text-center"><p>intercept_0</p></td>
+<td class="text-right"><p>0.700786</p></td>
+<td class="text-right"><p>1.39368</p></td>
+<td class="text-center"><p>(Intercept):bus</p></td>
+<td class="text-right"><p>0.6983381</p></td>
+<td class="text-right"><p>1.2802466</p></td>
+</tr>
+<tr class="row-odd"><td class="text-center"><p>intercept_1</p></td>
+<td class="text-right"><p>1.85016</p></td>
+<td class="text-right"><p>0.728283</p></td>
+<td class="text-center"><p>(Intercept):car</p></td>
+<td class="text-right"><p>1.8441129</p></td>
+<td class="text-right"><p>0.7085089</p></td>
+</tr>
+<tr class="row-even"><td class="text-center"><p>intercept_2</p></td>
+<td class="text-right"><p>3.2782</p></td>
+<td class="text-right"><p>0.648064</p></td>
+<td class="text-center"><p>(Intercept):train</p></td>
+<td class="text-right"><p>3.2741952</p></td>
+<td class="text-right"><p>0.6244152</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="r-output">
+<h3>R Output<a class="headerlink" href="#r-output" title="Permalink to this headline">#</a></h3>
+<div class="highlight-r notranslate"><div class="highlight"><pre><span></span><span class="nf">install.packages</span><span class="p">(</span><span class="s">&quot;mlogit&quot;</span><span class="p">)</span>
+<span class="nf">library</span><span class="p">(</span><span class="s">&quot;mlogit&quot;</span><span class="p">)</span>
+<span class="nf">data</span><span class="p">(</span><span class="s">&quot;ModeCanada&quot;</span><span class="p">,</span> <span class="n">package</span> <span class="o">=</span> <span class="s">&quot;mlogit&quot;</span><span class="p">)</span>
+<span class="n">MC</span> <span class="o">&lt;-</span> <span class="nf">dfidx</span><span class="p">(</span><span class="n">ModeCanada</span><span class="p">,</span> <span class="n">subset</span> <span class="o">=</span> <span class="n">noalt</span> <span class="o">==</span> <span class="m">4</span><span class="p">)</span>
+<span class="n">ml.MC1</span> <span class="o">&lt;-</span> <span class="nf">mlogit</span><span class="p">(</span><span class="n">choice</span> <span class="o">~</span> <span class="n">cost</span> <span class="o">+</span> <span class="n">freq</span> <span class="o">+</span> <span class="n">ovt</span> <span class="o">|</span> <span class="n">income</span> <span class="o">|</span> <span class="n">ivt</span><span class="p">,</span> <span class="n">MC</span><span class="p">,</span> <span class="n">reflevel</span><span class="o">=</span><span class="s">&#39;air&#39;</span><span class="p">)</span>
+
+<span class="nf">summary</span><span class="p">(</span><span class="n">ml.MC1</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Call:
+mlogit(formula = choice ~ cost + freq + ovt | income | ivt, data = MC,
+    reflevel = &quot;air&quot;, method = &quot;nr&quot;)
+
+Frequencies of alternatives:choice
+      air     train       bus       car
+0.3738755 0.1666067 0.0035984 0.4559194
+
+nr method
+9 iterations, 0h:0m:0s
+g&#39;(-H)^-1g = 0.00014
+successive function values within tolerance limits
+
+Coefficients :
+                    Estimate Std. Error  z-value  Pr(&gt;|z|)
+(Intercept):train  3.2741952  0.6244152   5.2436 1.575e-07 ***
+(Intercept):bus    0.6983381  1.2802466   0.5455 0.5854292
+(Intercept):car    1.8441129  0.7085089   2.6028 0.0092464 **
+cost              -0.0333389  0.0070955  -4.6986 2.620e-06 ***
+freq               0.0925297  0.0050976  18.1517 &lt; 2.2e-16 ***
+ovt               -0.0430036  0.0032247 -13.3356 &lt; 2.2e-16 ***
+income:train      -0.0381466  0.0040831  -9.3426 &lt; 2.2e-16 ***
+income:bus        -0.0890867  0.0183471  -4.8556 1.200e-06 ***
+income:car        -0.0279930  0.0038726  -7.2286 4.881e-13 ***
+ivt:air            0.0595097  0.0100727   5.9080 3.463e-09 ***
+ivt:train         -0.0014504  0.0011875  -1.2214 0.2219430
+ivt:bus           -0.0067835  0.0044334  -1.5301 0.1259938
+ivt:car           -0.0064603  0.0018985  -3.4029 0.0006668 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Log-Likelihood: -1874.3
+McFadden R^2:  0.35443
+Likelihood ratio test : chisq = 2058.1 (p.value = &lt; 2.22e-16)
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+              </div>
+              
+              
+              <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="data_management.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">Tutorial: Data Management</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="nested_logit_model_house_cooling.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Random Utility Model (RUM) Part II: Nested Logit Model</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, Tianyu Du, Ayush Kanodia.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

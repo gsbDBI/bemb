@@ -1,30 +1,26 @@
-site_name: Bayesian Embedding (BEMB)
+site_name: Deep Choice
 site_url: https://example.com/
-docs_dir: docs_src
-site_dir: docs
 nav:
     - Home: index.md
     - About: intro.md
-    - Torch Choice Documentation: https://gsbdbi.github.io/torch-choice/
-    - Introduction: https://gsbdbi.github.io/torch-choice/intro/
-    - Documentation for Torch-Choice: https://gsbdbi.github.io/torch-choice/
-    - Tutorial for Data Management: https://gsbdbi.github.io/torch-choice/data_management/
-    - Tutorial for Easy Data Management and Stata Users: https://gsbdbi.github.io/torch-choice/easy_data_management/
+    - Get Started: install.md
+    - Tutorial for Data Management: data_management.md
+    - Tutorial for Easy Data Management and Stata Users: easy_data_management.md
+    - Tutorial for Conditional Logit Model: conditional_logit_model_mode_canada.md
+    - Tutorial for Nested Logit Model: nested_logit_model_house_cooling.md
     - Tutorial for Bayesian Embedding (BEMB): bemb.md
     - Tutorial for BEMB obs2prior feature: bemb_obs2prior_simulation.md
-    - Tutorial for Inference with BEMB: bemb_inference.md
     - Related Projects: projects.md
     - Compatibility Tests: test.md
+    - API Reference Torch-Choice: api_torch_choice.md
     - API Reference BEMB: api_bemb.md
 
 # theme: readthedocs
 theme:
     name: material
-    custom_dir: docs_src/overrides
+    custom_dir: docs/overrides
     icon:
         logo: stanford/stanford
-    palette:
-        primary: light blue
 
 plugins:
     - search
@@ -39,7 +35,7 @@ markdown_extensions:
       emoji_generator: !!python/name:materialx.emoji.to_svg
       options:
         custom_icons:
-          - docs_src/overrides/.icons
+          - docs/overrides/.icons
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.superfences

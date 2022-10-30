@@ -1,0 +1,1349 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>bemb.model package &#8212; torch-choice  documentation</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Compatibility Check List" href="test.html" />
+    <link rel="prev" title="bemb package" href="bemb.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+<a class="navbar-brand" href="index.html">
+<p class="title">torch-choice</p>
+</a>
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="intro.html">
+  Introduction
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="install.html">
+  Installation
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="projects.html">
+  Research Projects using this Package
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="data_management.html">
+  Tutorial: Data Management
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="conditional_logit_model_mode_canada.html">
+  Tutorial: Conditional Logit Model on ModeCanada Dataset
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="nested_logit_model_house_cooling.html">
+  Random Utility Model (RUM) Part II: Nested Logit Model
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="bemb.html">
+  bemb package
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="test.html">
+  Compatibility Check List
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar">
+              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="current nav bd-sidenav">
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   bemb.model package
+  </a>
+ </li>
+</ul>
+
+  </div>
+</nav>
+              </div>
+              <div class="sidebar-end-items">
+              </div>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#submodules">
+   Submodules
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#module-bemb.model.bayesian_coefficient">
+   bemb.model.bayesian_coefficient module
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#module-bemb.model.bayesian_linear">
+   bemb.model.bayesian_linear module
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#module-bemb.model.bemb">
+   bemb.model.bemb module
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#module-bemb.model.bemb_flex_lightning">
+   bemb.model.bemb_flex_lightning module
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#module-bemb.model">
+   Module contents
+  </a>
+ </li>
+</ul>
+
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <section id="bemb-model-package">
+<h1>bemb.model package<a class="headerlink" href="#bemb-model-package" title="Permalink to this headline">#</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">#</a></h2>
+</section>
+<section id="module-bemb.model.bayesian_coefficient">
+<span id="bemb-model-bayesian-coefficient-module"></span><h2>bemb.model.bayesian_coefficient module<a class="headerlink" href="#module-bemb.model.bayesian_coefficient" title="Permalink to this headline">#</a></h2>
+<p>Bayesian Coefficient is the building block for the BEMB model.</p>
+<p>Author: Tianyu Du
+Update: Apr. 28, 2022</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="bemb.model.bayesian_coefficient.BayesianCoefficient">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bemb.model.bayesian_coefficient.</span></span><span class="sig-name descname"><span class="pre">BayesianCoefficient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs2prior</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_variance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bemb.model.bayesian_coefficient.BayesianCoefficient" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="bemb.model.bayesian_coefficient.BayesianCoefficient.device">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">device</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.device</span></em><a class="headerlink" href="#bemb.model.bayesian_coefficient.BayesianCoefficient.device" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the device of tensors contained in this module.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bayesian_coefficient.BayesianCoefficient.log_prior">
+<span class="sig-name descname"><span class="pre">log_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H_sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#bemb.model.bayesian_coefficient.BayesianCoefficient.log_prior" title="Permalink to this definition">#</a></dt>
+<dd><p>Computes the logP_{Prior}(Coefficient Sample) for provided samples of the coefficient. The prior will either be a
+zero-mean Gaussian (if <code class="docutils literal notranslate"><span class="pre">obs2prior</span></code> is False) or a Gaussian with a learnable mean (if <code class="docutils literal notranslate"><span class="pre">obs2prior</span></code> is True).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>sample</strong> – Monte Carlo samples of the variable with shape (num_seeds, num_classes, dim), where</p>
+</dd>
+</dl>
+<p>sample[i, :, :] corresponds to one sample of the coefficient.
+:type sample: torch.Tensor
+:param # arguments required only if <code class="docutils literal notranslate"><span class="pre">obs2prior</span> <span class="pre">==</span> <span class="pre">True</span></code>:
+:param H_sample: Monte Carlo samples of the weight in obs2prior term, with shape
+(num_seeds, dim, self.num_obs), this is required if and only if obs2prior == True.
+Defaults to None.
+:type H_sample: Optional[torch.Tensor], optional
+:param x_obs: observables for obs2prior with shape (num_classes, num_obs),
+only required if and only if obs2prior == True.
+Defaults to None.
+:type x_obs: Optional[torch.Tensor], optional</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the log prior of the variable with shape (num_seeds, num_classes).</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bayesian_coefficient.BayesianCoefficient.log_variational">
+<span class="sig-name descname"><span class="pre">log_variational</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#bemb.model.bayesian_coefficient.BayesianCoefficient.log_variational" title="Permalink to this definition">#</a></dt>
+<dd><p>Given a set of sampled values of coefficients, with shape (num_seeds, num_classes, dim), computes the
+the log probability of these sampled values of coefficients under the current variational distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>sample</strong> – a tensor of shape (num_seeds, num_classes, dim) containing sampled values of coefficients,</p>
+</dd>
+</dl>
+<p>where sample[i, :, :] corresponds to one sample of the coefficient.
+:type sample: torch.Tensor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="n">tensor</span> <span class="n">of</span> <span class="n">shape</span> <span class="p">(</span><span class="n">num_seeds</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">)</span> <span class="n">containing</span> <span class="n">the</span> <span class="n">log</span> <span class="n">probability</span> <span class="n">of</span> <span class="n">provided</span> <span class="n">samples</span>
+    <span class="n">under</span> <span class="n">the</span> <span class="n">variational</span> <span class="n">distribution</span><span class="o">.</span> <span class="n">The</span> <span class="n">output</span> <span class="ow">is</span> <span class="n">splitted</span> <span class="n">by</span> <span class="n">random</span> <span class="n">seeds</span> <span class="ow">and</span> <span class="n">classes</span><span class="p">,</span> <span class="n">you</span> <span class="n">can</span> <span class="nb">sum</span>
+    <span class="n">along</span> <span class="n">the</span> <span class="n">second</span> <span class="n">axis</span> <span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">e</span><span class="o">.</span><span class="p">,</span> <span class="n">the</span> <span class="n">num_classes</span> <span class="n">axis</span><span class="p">)</span> <span class="n">to</span> <span class="n">get</span> <span class="n">the</span> <span class="n">total</span> <span class="n">log</span> <span class="n">probability</span><span class="o">.</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bayesian_coefficient.BayesianCoefficient.rsample">
+<span class="sig-name descname"><span class="pre">rsample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_seeds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#bemb.model.bayesian_coefficient.BayesianCoefficient.rsample" title="Permalink to this definition">#</a></dt>
+<dd><p>Samples values of the coefficient from the variational distribution using re-parameterization trick.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>num_seeds</strong> (<em>int</em><em>, </em><em>optional</em>) – number of values to be sampled. Defaults to 1.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>if `obs2prior` is disabled, returns a tensor of shape (num_seeds, num_classes, dim)
+    where each output[i, :, :] corresponds to one sample of the coefficient.
+    If `obs2prior` is enabled, returns a tuple of samples: (1) a tensor of shape (num_seeds, num_classes, dim) containing
+    sampled values of coefficient, and (2) a tensor o shape (num_seeds, dim, num_obs) containing samples of the H weight
+    in the prior distribution.
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Union[torch.Tensor, Tuple[torch.Tensor]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bemb.model.bayesian_coefficient.BayesianCoefficient.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#bemb.model.bayesian_coefficient.BayesianCoefficient.training" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bayesian_coefficient.BayesianCoefficient.update_variational_mean_fixed">
+<span class="sig-name descname"><span class="pre">update_variational_mean_fixed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#bemb.model.bayesian_coefficient.BayesianCoefficient.update_variational_mean_fixed" title="Permalink to this definition">#</a></dt>
+<dd><p>Updates the fixed part of the mean of the variational distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>new_value</strong> (<em>torch.Tensor</em>) – the new value of the fixed part of the mean of the variational distribution.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bemb.model.bayesian_coefficient.BayesianCoefficient.variational_distribution">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">variational_distribution</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.distributions.lowrank_multivariate_normal.LowRankMultivariateNormal</span></em><a class="headerlink" href="#bemb.model.bayesian_coefficient.BayesianCoefficient.variational_distribution" title="Permalink to this definition">#</a></dt>
+<dd><p>Constructs the current variational distribution of the coefficient from current variational mean and covariance.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bemb.model.bayesian_coefficient.BayesianCoefficient.variational_mean">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">variational_mean</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.Tensor</span></em><a class="headerlink" href="#bemb.model.bayesian_coefficient.BayesianCoefficient.variational_mean" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the mean of the variational distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the current mean of the variational distribution with shape (num_classes, dim).</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bemb.model.bayesian_linear">
+<span id="bemb-model-bayesian-linear-module"></span><h2>bemb.model.bayesian_linear module<a class="headerlink" href="#module-bemb.model.bayesian_linear" title="Permalink to this headline">#</a></h2>
+<p>Bayesian tensor object.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="bemb.model.bayesian_linear.BayesianLinear">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bemb.model.bayesian_linear.</span></span><span class="sig-name descname"><span class="pre">BayesianLinear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_features</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_features</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">W_variational_mean_fixed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">W_prior_variance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_prior_variance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bemb.model.bayesian_linear.BayesianLinear" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="bemb.model.bayesian_linear.BayesianLinear.W_variational_distribution">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">W_variational_distribution</span></span><a class="headerlink" href="#bemb.model.bayesian_linear.BayesianLinear.W_variational_distribution" title="Permalink to this definition">#</a></dt>
+<dd><p>the weight variational distribution.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bemb.model.bayesian_linear.BayesianLinear.W_variational_mean">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">W_variational_mean</span></span><a class="headerlink" href="#bemb.model.bayesian_linear.BayesianLinear.W_variational_mean" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bemb.model.bayesian_linear.BayesianLinear.b_variational_distribution">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">b_variational_distribution</span></span><a class="headerlink" href="#bemb.model.bayesian_linear.BayesianLinear.b_variational_distribution" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bemb.model.bayesian_linear.BayesianLinear.device">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">device</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.device</span></em><a class="headerlink" href="#bemb.model.bayesian_linear.BayesianLinear.device" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bayesian_linear.BayesianLinear.dsample">
+<span class="sig-name descname"><span class="pre">dsample</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bemb.model.bayesian_linear.BayesianLinear.dsample" title="Permalink to this definition">#</a></dt>
+<dd><p>Deterministic sample method, set (W, b) sample to the mean of variational distribution.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bayesian_linear.BayesianLinear.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'multiply'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bemb.model.bayesian_linear.BayesianLinear.forward" title="Permalink to this definition">#</a></dt>
+<dd><p>Forward with weight sampling. Forward does out = XW + b, for forward() method behaves like the embedding layer
+in PyTorch, use the lookup() method.
+To have determinstic results, call self.dsample() before executing.
+To have stochastic results, call self.rsample() before executing.
+mode in [‘multiply’, ‘lookup’]</p>
+<p>output shape: (num_seeds, batch_size, out_features).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bayesian_linear.BayesianLinear.log_prior">
+<span class="sig-name descname"><span class="pre">log_prior</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bemb.model.bayesian_linear.BayesianLinear.log_prior" title="Permalink to this definition">#</a></dt>
+<dd><p>Evaluate the likelihood of the provided samples of parameter under the current prior distribution.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bayesian_linear.BayesianLinear.log_variational">
+<span class="sig-name descname"><span class="pre">log_variational</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bemb.model.bayesian_linear.BayesianLinear.log_variational" title="Permalink to this definition">#</a></dt>
+<dd><p>Evaluate the likelihood of the provided samples of parameter under the current variational distribution.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bayesian_linear.BayesianLinear.rsample">
+<span class="sig-name descname"><span class="pre">rsample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_seeds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#bemb.model.bayesian_linear.BayesianLinear.rsample" title="Permalink to this definition">#</a></dt>
+<dd><p>sample all parameters using re-parameterization trick.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bemb.model.bayesian_linear.BayesianLinear.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#bemb.model.bayesian_linear.BayesianLinear.training" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bemb.model.bemb">
+<span id="bemb-model-bemb-module"></span><h2>bemb.model.bemb module<a class="headerlink" href="#module-bemb.model.bemb" title="Permalink to this headline">#</a></h2>
+<p>The core class of the Bayesian EMBedding (BEMB) model.</p>
+<p>Author: Tianyu Du
+Update: Apr. 28, 2022</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="bemb.model.bemb.BEMBFlex">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bemb.model.bemb.</span></span><span class="sig-name descname"><span class="pre">BEMBFlex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">utility_formula</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs2prior_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coef_dim_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_items</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pred_item</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_variance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_users</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_sessions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trace_log_q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">category_to_item</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_user_obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_item_obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_session_obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_price_obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_taste_obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">additional_modules</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.nn.modules.module.Module</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bemb.model.bemb.BEMBFlex" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="bemb.model.bemb.BEMBFlex.device">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">device</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.device</span></em><a class="headerlink" href="#bemb.model.bemb.BEMBFlex.device" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bemb.BEMBFlex.elbo">
+<span class="sig-name descname"><span class="pre">elbo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch_choice.data.choice_dataset.ChoiceDataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_seeds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#bemb.model.bemb.BEMBFlex.elbo" title="Permalink to this definition">#</a></dt>
+<dd><p>A combined method to computes the current ELBO given a batch, this method is used for training the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batch</strong> (<em>ChoiceDataset</em>) – a ChoiceDataset containing necessary information.</p></li>
+<li><p><strong>num_seeds</strong> – the number of Monte Carlo samples from variational distributions</p></li>
+</ul>
+</dd>
+</dl>
+<p>to evaluate the expectation in ELBO.
+Defaults to 1.
+:type num_seeds: int, optional</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a scalar tensor of the ELBO estimated from num_seeds Monte Carlo samples.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bemb.BEMBFlex.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch_choice.data.choice_dataset.ChoiceDataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_scope</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deterministic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_seeds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#bemb.model.bemb.BEMBFlex.forward" title="Permalink to this definition">#</a></dt>
+<dd><p>A combined method for inference with the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batch</strong> (<em>ChoiceDataset</em>) – batch data containing choice information.</p></li>
+<li><p><strong>return_type</strong> – either ‘log_prob’ or ‘utility’.</p></li>
+</ul>
+</dd>
+</dl>
+<p>‘log_prob’: return the log-probability (by within-category log-softmax) for items
+‘utility’: return the utility value of items.
+:type return_type: str
+:param return_scope: either ‘item_index’ or ‘all_items’.
+‘item_index’: for each observation i, return log-prob/utility for the chosen item batch.item_index[i] only.
+‘all_items’: for each observation i, return log-prob/utility for all items.
+:type return_scope: str
+:param deterministic: True: expectations of parameter variational distributions are used for inference.
+False: the user needs to supply a dictionary of sampled parameters for inference.
+Defaults to True.
+:type deterministic: bool, optional
+:param sample_dict: sampled parameters for inference task.
+This is not needed when <code class="docutils literal notranslate"><span class="pre">deterministic</span></code> is True.
+When <code class="docutils literal notranslate"><span class="pre">deterministic</span></code> is False, the user can supply a <code class="docutils literal notranslate"><span class="pre">sample_dict</span></code>. If <code class="docutils literal notranslate"><span class="pre">sample_dict</span></code> is not provided,
+this method will create <code class="docutils literal notranslate"><span class="pre">num_seeds</span></code> samples.
+Defaults to None.
+:type sample_dict: Optional[Dict[str, torch.Tensor]], optional
+:param num_seeds: the number of random samples of parameters to construct. This is only required
+if <code class="docutils literal notranslate"><span class="pre">deterministic</span></code> is False (i.e., stochastic mode) and <code class="docutils literal notranslate"><span class="pre">sample_dict</span></code> is not provided.
+Defaults to None.
+:type num_seeds: Optional[int]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>a tensor of log-probabilities or utilities, depending on `return_type`.
+    The shape of the returned tensor depends on `return_scope` and `deterministic`.
+    -------------------------------------------------------------------------
+    | `return_scope` | `deterministic` |         Output shape               |
+    -------------------------------------------------------------------------
+    |   &#39;item_index` |      True       | (len(batch),)                      |
+    -------------------------------------------------------------------------
+    |   &#39;all_items&#39;  |      True       | (len(batch), num_items)            |
+    -------------------------------------------------------------------------
+    |   &#39;item_index&#39; |      False      | (num_seeds, len(batch))            |
+    -------------------------------------------------------------------------
+    |   &#39;all_items&#39;  |      False      | (num_seeds, len(batch), num_items) |
+    -------------------------------------------------------------------------
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bemb.BEMBFlex.get_within_category_accuracy">
+<span class="sig-name descname"><span class="pre">get_within_category_accuracy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_p_all_items</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#bemb.model.bemb.BEMBFlex.get_within_category_accuracy" title="Permalink to this definition">#</a></dt>
+<dd><p>A helper function for computing prediction accuracy (i.e., all non-differential metrics)
+within category.
+In particular, this method calculates the accuracy, precision, recall and F1 score.</p>
+<p>This method has the same functionality as the following peusodcode:
+for C in categories:
+# get sessions in which item in category C was purchased.
+T &lt;- (t for t in {0,1,…, len(label)-1} if label[t] is in C)
+Y &lt;- label[T]</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">predictions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">T</span><span class="p">:</span>
+    <span class="c1"># get the prediction within category for this session.</span>
+    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">argmax_</span><span class="p">{</span><span class="n">items</span> <span class="ow">in</span> <span class="n">C</span><span class="p">}</span> <span class="n">log</span> <span class="n">prob</span> <span class="n">computed</span> <span class="n">before</span><span class="o">.</span>
+    <span class="n">predictions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y_pred</span><span class="p">)</span>
+
+<span class="n">accuracy</span> <span class="o">=</span> <span class="n">mean</span><span class="p">(</span><span class="n">Y</span> <span class="o">==</span> <span class="n">predictions</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Similarly, this function computes precision, recall and f1score as well.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>log_p_all_items</strong> – shape (num_sessions, num_items) the log probability of</p>
+</dd>
+</dl>
+<p>choosing each item in each session.
+:type log_p_all_items: torch.Tensor
+:param label: shape (num_sessions,), the IDs of items purchased in each session.
+:type label: torch.LongTensor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A dictionary containing performance metrics.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>[Dict[str, float]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bemb.BEMBFlex.log_likelihood_all_items">
+<span class="sig-name descname"><span class="pre">log_likelihood_all_items</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch_choice.data.choice_dataset.ChoiceDataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_logit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#bemb.model.bemb.BEMBFlex.log_likelihood_all_items" title="Permalink to this definition">#</a></dt>
+<dd><p>NOTE to developers:
+This method computes utilities for all items available, which is a relatively slow operation. For
+training the model, you only need the utility/log-prob for the chosen/relevant item (i.e., item_index[i] for each i-th observation).
+Use this method for inference only.
+Use self.log_likelihood_item_index() for training instead.</p>
+<p>Computes the log probability of choosing <code class="docutils literal notranslate"><span class="pre">each</span></code> item in each session based on current model parameters.
+This method allows for specifying {user, item}_latent_value for Monte Carlo estimation in ELBO.
+For actual prediction tasks, use the forward() function, which will use means of variational
+distributions for user and item latents.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batch</strong> (<em>ChoiceDataset</em>) – a ChoiceDataset object containing relevant information.</p></li>
+<li><p><strong>return_logit</strong> (<em>bool</em>) – if set to True, return the log-probability, otherwise return the logit/utility.</p></li>
+<li><p><strong>sample_dict</strong> – Monte Carlo samples for model coefficients</p></li>
+</ul>
+</dd>
+</dl>
+<p>(i.e., those Greek letters).
+sample_dict.keys() should be the same as keys of self.obs2prior_dict, i.e., those
+greek letters actually enter the functional form of utility.
+The value of sample_dict should be tensors of shape (num_seeds, num_classes, dim)
+where num_classes in {num_users, num_items, 1}
+and dim in {latent_dim(K), num_item_obs, num_user_obs, 1}.
+:type sample_dict: Dict[str, torch.Tensor]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="n">tensor</span> <span class="n">of</span> <span class="n">shape</span> <span class="p">(</span><span class="n">num_seeds</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_items</span><span class="p">),</span> <span class="n">where</span>
+    <span class="n">out</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">]</span> <span class="ow">is</span> <span class="n">the</span> <span class="n">probability</span> <span class="n">of</span> <span class="n">choosing</span> <span class="n">item</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">session</span> <span class="n">y</span> <span class="n">conditioned</span> <span class="n">on</span>
+    <span class="n">latents</span> <span class="n">to</span> <span class="n">be</span> <span class="n">the</span> <span class="n">x</span><span class="o">-</span><span class="n">th</span> <span class="n">Monte</span> <span class="n">Carlo</span> <span class="n">sample</span><span class="o">.</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bemb.BEMBFlex.log_likelihood_item_index">
+<span class="sig-name descname"><span class="pre">log_likelihood_item_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch_choice.data.choice_dataset.ChoiceDataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_logit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#bemb.model.bemb.BEMBFlex.log_likelihood_item_index" title="Permalink to this definition">#</a></dt>
+<dd><p>NOTE for developers:
+This method is more efficient and only computes log-likelihood/logit(utility) for item in item_index[i] for each
+i-th observation.
+Developers should use use <code class="docutils literal notranslate"><span class="pre">log_likelihood_all_items</span></code> for inference purpose and to computes log-likelihoods/utilities
+for ALL items for the i-th observation.</p>
+<p>Computes the log probability of choosing item_index[i] in each session based on current model parameters.
+This method allows for specifying {user, item}_latent_value for Monte Carlo estimation in ELBO.
+For actual prediction tasks, use the forward() function, which will use means of variational
+distributions for user and item latents.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batch</strong> (<em>ChoiceDataset</em>) – a ChoiceDataset object containing relevant information.</p></li>
+<li><p><strong>return_logit</strong> (<em>bool</em>) – if set to True, return the log-probability, otherwise return the logit/utility.</p></li>
+<li><p><strong>sample_dict</strong> – Monte Carlo samples for model coefficients</p></li>
+</ul>
+</dd>
+</dl>
+<p>(i.e., those Greek letters).
+sample_dict.keys() should be the same as keys of self.obs2prior_dict, i.e., those
+greek letters actually enter the functional form of utility.
+The value of sample_dict should be tensors of shape (num_seeds, num_classes, dim)
+where num_classes in {num_users, num_items, 1}
+and dim in {latent_dim(K), num_item_obs, num_user_obs, 1}.
+:type sample_dict: Dict[str, torch.Tensor]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="n">tensor</span> <span class="n">of</span> <span class="n">shape</span> <span class="p">(</span><span class="n">num_seeds</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">)),</span> <span class="n">where</span>
+    <span class="n">out</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]</span> <span class="ow">is</span> <span class="n">the</span> <span class="n">probabilities</span> <span class="n">of</span> <span class="n">choosing</span> <span class="n">item</span> <span class="n">batch</span><span class="o">.</span><span class="n">item</span><span class="p">[</span><span class="n">y</span><span class="p">]</span> <span class="ow">in</span> <span class="n">session</span> <span class="n">y</span>
+    <span class="n">conditioned</span> <span class="n">on</span> <span class="n">latents</span> <span class="n">to</span> <span class="n">be</span> <span class="n">the</span> <span class="n">x</span><span class="o">-</span><span class="n">th</span> <span class="n">Monte</span> <span class="n">Carlo</span> <span class="n">sample</span><span class="o">.</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bemb.BEMBFlex.log_prior">
+<span class="sig-name descname"><span class="pre">log_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch_choice.data.choice_dataset.ChoiceDataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#bemb.model.bemb.BEMBFlex.log_prior" title="Permalink to this definition">#</a></dt>
+<dd><p>Calculates the log-likelihood of Monte Carlo samples of Bayesian coefficients under their
+prior distribution. This method assume coefficients are statistically independent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>batch</strong> – a dataset object contains observables for computing the prior distribution</p>
+</dd>
+</dl>
+<p>if obs2prior is True.
+:type batch: ChoiceDataset
+:param sample_dict: a dictionary coefficient names to Monte Carlo samples.
+:type sample_dict: Dict[str, torch.Tensor]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – [description]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="n">tensor</span> <span class="k">with</span> <span class="n">shape</span> <span class="p">(</span><span class="n">num_seeds</span><span class="p">,)</span> <span class="n">of</span> <span class="p">[</span> <span class="n">log</span> <span class="n">P_</span><span class="p">{</span><span class="n">prior_distribution</span><span class="p">}(</span><span class="n">param</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="p">],</span>
+    <span class="n">where</span> <span class="n">param</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">is</span> <span class="n">the</span> <span class="n">i</span><span class="o">-</span><span class="n">th</span> <span class="n">Monte</span> <span class="n">Carlo</span> <span class="n">sample</span><span class="o">.</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>torch.scalar_tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bemb.BEMBFlex.log_variational">
+<span class="sig-name descname"><span class="pre">log_variational</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#bemb.model.bemb.BEMBFlex.log_variational" title="Permalink to this definition">#</a></dt>
+<dd><p>Calculate the log-likelihood of samples in sample_dict under the current variational
+distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>sample_dict</strong> – a dictionary coefficient names to Monte Carlo</p>
+</dd>
+</dl>
+<p>samples.
+:type sample_dict: Dict[str, torch.Tensor]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="n">tensor</span> <span class="n">of</span> <span class="n">shape</span> <span class="p">(</span><span class="n">num_seeds</span><span class="p">)</span> <span class="n">of</span> <span class="p">[</span> <span class="n">log</span> <span class="n">P_</span><span class="p">{</span><span class="n">variational_distribution</span><span class="p">}(</span><span class="n">param</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="p">],</span>
+    <span class="n">where</span> <span class="n">param</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">is</span> <span class="n">the</span> <span class="n">i</span><span class="o">-</span><span class="n">th</span> <span class="n">Monte</span> <span class="n">Carlo</span> <span class="n">sample</span><span class="o">.</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bemb.model.bemb.BEMBFlex.num_params">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">num_params</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#bemb.model.bemb.BEMBFlex.num_params" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bemb.BEMBFlex.sample_coefficient_dictionary">
+<span class="sig-name descname"><span class="pre">sample_coefficient_dictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_seeds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#bemb.model.bemb.BEMBFlex.sample_coefficient_dictionary" title="Permalink to this definition">#</a></dt>
+<dd><p>A helper function to sample parameters from coefficients.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>num_seeds</strong> (<em>int</em>) – number of random samples.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>a dictionary maps coefficient names to tensor of sampled coefficient parameters,
+    where the first dimension of the sampled tensor has size `num_seeds`.
+    Each sample tensor has shape (num_seeds, num_classes, dim).
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Dict[str, torch.Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bemb.model.bemb.BEMBFlex.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#bemb.model.bemb.BEMBFlex.training" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bemb.model.bemb.PositiveInteger">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bemb.model.bemb.</span></span><span class="sig-name descname"><span class="pre">PositiveInteger</span></span><a class="headerlink" href="#bemb.model.bemb.PositiveInteger" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bemb.model.bemb.parse_utility">
+<span class="sig-prename descclassname"><span class="pre">bemb.model.bemb.</span></span><span class="sig-name descname"><span class="pre">parse_utility</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">utility_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#bemb.model.bemb.parse_utility" title="Permalink to this definition">#</a></dt>
+<dd><p>A helper function parse utility string into a list of additive terms.</p>
+<p class="rubric">Example</p>
+<p>utility_string = ‘lambda_item + theta_user * alpha_item + gamma_user * beta_item * price_obs’
+output = [
+{
+‘coefficient’: [‘lambda_item’],
+‘observable’: None
+},
+{
+‘coefficient’: [‘theta_user’, ‘alpha_item’],
+‘observable’: None
+},
+{
+‘coefficient’: [‘gamma_user’, ‘beta_item’],
+‘observable’: ‘price_obs’
+}
+]</p>
+</dd></dl>
+
+</section>
+<section id="module-bemb.model.bemb_flex_lightning">
+<span id="bemb-model-bemb-flex-lightning-module"></span><h2>bemb.model.bemb_flex_lightning module<a class="headerlink" href="#module-bemb.model.bemb_flex_lightning" title="Permalink to this headline">#</a></h2>
+<p>PyTorch lightning wrapper for the BEMB Flex model, allows for more smooth model training and inference. You can still
+use this package without using LitBEMBFlex.</p>
+<p>Author: Tianyu Du
+Update: Apr. 29, 2022</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="bemb.model.bemb_flex_lightning.LitBEMBFlex">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bemb.model.bemb_flex_lightning.</span></span><span class="sig-name descname"><span class="pre">LitBEMBFlex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">learning_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_seeds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bemb.model.bemb_flex_lightning.LitBEMBFlex" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">pytorch_lightning.core.lightning.LightningModule</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bemb_flex_lightning.LitBEMBFlex.configure_optimizers">
+<span class="sig-name descname"><span class="pre">configure_optimizers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bemb.model.bemb_flex_lightning.LitBEMBFlex.configure_optimizers" title="Permalink to this definition">#</a></dt>
+<dd><p>Choose what optimizers and learning-rate schedulers to use in your optimization.
+Normally you’d need one. But in the case of GANs or similar you might have multiple.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Any of these 6 options.</p>
+</dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>- **Single optimizer**.
+- **List or Tuple** of optimizers.
+- **Two lists** - The first list has multiple optimizers, and the second has multiple LR schedulers
+  (or multiple ``lr_scheduler_config``).
+- **Dictionary**, with an ``&quot;optimizer&quot;`` key, and (optionally) a ``&quot;lr_scheduler&quot;``
+  key whose value is a single LR scheduler or ``lr_scheduler_config``.
+- **Tuple of dictionaries** as described above, with an optional ``&quot;frequency&quot;`` key.
+- **None** - Fit will run without any optimizer.
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">lr_scheduler_config</span></code> is a dictionary which contains the scheduler and its associated configuration.
+The default configuration is shown below.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">lr_scheduler_config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># REQUIRED: The scheduler instance</span>
+    <span class="s2">&quot;scheduler&quot;</span><span class="p">:</span> <span class="n">lr_scheduler</span><span class="p">,</span>
+    <span class="c1"># The unit of the scheduler&#39;s step size, could also be &#39;step&#39;.</span>
+    <span class="c1"># &#39;epoch&#39; updates the scheduler on epoch end whereas &#39;step&#39;</span>
+    <span class="c1"># updates it after a optimizer update.</span>
+    <span class="s2">&quot;interval&quot;</span><span class="p">:</span> <span class="s2">&quot;epoch&quot;</span><span class="p">,</span>
+    <span class="c1"># How many epochs/steps should pass between calls to</span>
+    <span class="c1"># `scheduler.step()`. 1 corresponds to updating the learning</span>
+    <span class="c1"># rate after every epoch/step.</span>
+    <span class="s2">&quot;frequency&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="c1"># Metric to to monitor for schedulers like `ReduceLROnPlateau`</span>
+    <span class="s2">&quot;monitor&quot;</span><span class="p">:</span> <span class="s2">&quot;val_loss&quot;</span><span class="p">,</span>
+    <span class="c1"># If set to `True`, will enforce that the value specified &#39;monitor&#39;</span>
+    <span class="c1"># is available when the scheduler is updated, thus stopping</span>
+    <span class="c1"># training if not found. If set to `False`, it will only produce a warning</span>
+    <span class="s2">&quot;strict&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="c1"># If using the `LearningRateMonitor` callback to monitor the</span>
+    <span class="c1"># learning rate progress, this keyword can be used to specify</span>
+    <span class="c1"># a custom logged name</span>
+    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>When there are schedulers in which the <code class="docutils literal notranslate"><span class="pre">.step()</span></code> method is conditioned on a value, such as the
+:class:<code class="docutils literal notranslate"><span class="pre">torch.optim.lr_scheduler.ReduceLROnPlateau</span></code> scheduler, Lightning requires that the
+<code class="docutils literal notranslate"><span class="pre">lr_scheduler_config</span></code> contains the keyword <code class="docutils literal notranslate"><span class="pre">&quot;monitor&quot;</span></code> set to the metric name that the scheduler
+should be conditioned on.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># The ReduceLROnPlateau scheduler requires a monitor</span>
+<span class="k">def</span> <span class="nf">configure_optimizers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;optimizer&quot;</span><span class="p">:</span> <span class="n">optimizer</span><span class="p">,</span>
+        <span class="s2">&quot;lr_scheduler&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;scheduler&quot;</span><span class="p">:</span> <span class="n">ReduceLROnPlateau</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="o">...</span><span class="p">),</span>
+            <span class="s2">&quot;monitor&quot;</span><span class="p">:</span> <span class="s2">&quot;metric_to_track&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;frequency&quot;</span><span class="p">:</span> <span class="s2">&quot;indicates how often the metric is updated&quot;</span>
+            <span class="c1"># If &quot;monitor&quot; references validation metrics, then &quot;frequency&quot; should be set to a</span>
+            <span class="c1"># multiple of &quot;trainer.check_val_every_n_epoch&quot;.</span>
+        <span class="p">},</span>
+    <span class="p">}</span>
+
+
+<span class="c1"># In the case of two optimizers, only one using the ReduceLROnPlateau scheduler</span>
+<span class="k">def</span> <span class="nf">configure_optimizers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">optimizer1</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+    <span class="n">optimizer2</span> <span class="o">=</span> <span class="n">SGD</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+    <span class="n">scheduler1</span> <span class="o">=</span> <span class="n">ReduceLROnPlateau</span><span class="p">(</span><span class="n">optimizer1</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+    <span class="n">scheduler2</span> <span class="o">=</span> <span class="n">LambdaLR</span><span class="p">(</span><span class="n">optimizer2</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;optimizer&quot;</span><span class="p">:</span> <span class="n">optimizer1</span><span class="p">,</span>
+            <span class="s2">&quot;lr_scheduler&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;scheduler&quot;</span><span class="p">:</span> <span class="n">scheduler1</span><span class="p">,</span>
+                <span class="s2">&quot;monitor&quot;</span><span class="p">:</span> <span class="s2">&quot;metric_to_track&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;optimizer&quot;</span><span class="p">:</span> <span class="n">optimizer2</span><span class="p">,</span> <span class="s2">&quot;lr_scheduler&quot;</span><span class="p">:</span> <span class="n">scheduler2</span><span class="p">},</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p>Metrics can be made available to monitor by simply logging it using
+<code class="docutils literal notranslate"><span class="pre">self.log('metric_to_track',</span> <span class="pre">metric_val)</span></code> in your :class:<code class="docutils literal notranslate"><span class="pre">~pytorch_lightning.core.lightning.LightningModule</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">frequency</span></code> value specified in a dict along with the <code class="docutils literal notranslate"><span class="pre">optimizer</span></code> key is an int corresponding
+to the number of sequential batches optimized with the specific optimizer.
+It should be given to none or to all of the optimizers.
+There is a difference between passing multiple optimizers in a list,
+and passing multiple optimizers in dictionaries with a frequency of 1:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="n">In</span> <span class="n">the</span> <span class="n">former</span> <span class="n">case</span><span class="p">,</span> <span class="nb">all</span> <span class="n">optimizers</span> <span class="n">will</span> <span class="n">operate</span> <span class="n">on</span> <span class="n">the</span> <span class="n">given</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">each</span> <span class="n">optimization</span> <span class="n">step</span><span class="o">.</span>
+<span class="o">-</span> <span class="n">In</span> <span class="n">the</span> <span class="n">latter</span><span class="p">,</span> <span class="n">only</span> <span class="n">one</span> <span class="n">optimizer</span> <span class="n">will</span> <span class="n">operate</span> <span class="n">on</span> <span class="n">the</span> <span class="n">given</span> <span class="n">batch</span> <span class="n">at</span> <span class="n">every</span> <span class="n">step</span><span class="o">.</span>
+</pre></div>
+</div>
+<p>This is different from the <code class="docutils literal notranslate"><span class="pre">frequency</span></code> value specified in the <code class="docutils literal notranslate"><span class="pre">lr_scheduler_config</span></code> mentioned above.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">configure_optimizers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">optimizer_one</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">SGD</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+    <span class="n">optimizer_two</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">SGD</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s2">&quot;optimizer&quot;</span><span class="p">:</span> <span class="n">optimizer_one</span><span class="p">,</span> <span class="s2">&quot;frequency&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;optimizer&quot;</span><span class="p">:</span> <span class="n">optimizer_two</span><span class="p">,</span> <span class="s2">&quot;frequency&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">},</span>
+    <span class="p">]</span>
+</pre></div>
+</div>
+<p>In this example, the first optimizer will be used for the first 5 steps,
+the second optimizer for the next 10 steps and that cycle will continue.
+If an LR scheduler is specified for an optimizer using the <code class="docutils literal notranslate"><span class="pre">lr_scheduler</span></code> key in the above dict,
+the scheduler will only be updated when its optimizer is being used.</p>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">..</span> <span class="n">code</span><span class="p">::</span>
+</pre></div>
+</div>
+<blockquote>
+<div><p># most cases. no learning rate scheduler
+def configure_optimizers(self):</p>
+<blockquote>
+<div><p>return Adam(self.parameters(), lr=1e-3)</p>
+</div></blockquote>
+<p># multiple optimizer case (e.g.: GAN)
+def configure_optimizers(self):</p>
+<blockquote>
+<div><p>gen_opt = Adam(self.model_gen.parameters(), lr=0.01)
+dis_opt = Adam(self.model_dis.parameters(), lr=0.02)
+return gen_opt, dis_opt</p>
+</div></blockquote>
+<p># example with learning rate schedulers
+def configure_optimizers(self):</p>
+<blockquote>
+<div><p>gen_opt = Adam(self.model_gen.parameters(), lr=0.01)
+dis_opt = Adam(self.model_dis.parameters(), lr=0.02)
+dis_sch = CosineAnnealing(dis_opt, T_max=10)
+return [gen_opt, dis_opt], [dis_sch]</p>
+</div></blockquote>
+<p># example with step-based learning rate schedulers
+# each optimizer has its own scheduler
+def configure_optimizers(self):</p>
+<blockquote>
+<div><p>gen_opt = Adam(self.model_gen.parameters(), lr=0.01)
+dis_opt = Adam(self.model_dis.parameters(), lr=0.02)
+gen_sch = {</p>
+<blockquote>
+<div><p>‘scheduler’: ExponentialLR(gen_opt, 0.99),
+‘interval’: ‘step’  # called after each training step</p>
+</div></blockquote>
+<p>}
+dis_sch = CosineAnnealing(dis_opt, T_max=10) # called every epoch
+return [gen_opt, dis_opt], [gen_sch, dis_sch]</p>
+</div></blockquote>
+<p># example with optimizer frequencies
+# see training procedure in <cite>Improved Training of Wasserstein GANs</cite>, Algorithm 1
+# <a class="reference external" href="https://arxiv.org/abs/1704.00028">https://arxiv.org/abs/1704.00028</a>
+def configure_optimizers(self):</p>
+<blockquote>
+<div><p>gen_opt = Adam(self.model_gen.parameters(), lr=0.01)
+dis_opt = Adam(self.model_dis.parameters(), lr=0.02)
+n_critic = 5
+return (</p>
+<blockquote>
+<div><p>{‘optimizer’: dis_opt, ‘frequency’: n_critic},
+{‘optimizer’: gen_opt, ‘frequency’: 1}</p>
+</div></blockquote>
+<p>)</p>
+</div></blockquote>
+</div></blockquote>
+<p>Some things to know:</p>
+<ul class="simple">
+<li><p>Lightning calls <code class="docutils literal notranslate"><span class="pre">.backward()</span></code> and <code class="docutils literal notranslate"><span class="pre">.step()</span></code> on each optimizer and learning rate scheduler as needed.</p></li>
+<li><p>If you use 16-bit precision (<code class="docutils literal notranslate"><span class="pre">precision=16</span></code>), Lightning will automatically handle the optimizers.</p></li>
+<li><p>If you use multiple optimizers, :meth:<code class="docutils literal notranslate"><span class="pre">training_step</span></code> will have an additional <code class="docutils literal notranslate"><span class="pre">optimizer_idx</span></code> parameter.</p></li>
+<li><p>If you use :class:<code class="docutils literal notranslate"><span class="pre">torch.optim.LBFGS</span></code>, Lightning handles the closure function automatically for you.</p></li>
+<li><p>If you use multiple optimizers, gradients will be calculated only for the parameters of current optimizer</p></li>
+</ul>
+<p>at each training step.
+* If you need to control how often those optimizers step or override the default <code class="docutils literal notranslate"><span class="pre">.step()</span></code> schedule,
+override the :meth:<code class="docutils literal notranslate"><span class="pre">optimizer_step</span></code> hook.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bemb_flex_lightning.LitBEMBFlex.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bemb.model.bemb_flex_lightning.LitBEMBFlex.forward" title="Permalink to this definition">#</a></dt>
+<dd><p>Calls the forward method of the wrapped BEMB model, please refer to the documentaton of the BEMB class
+for detailed definitions of the arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> (<em>type</em>) – arguments passed to the forward method of the wrapped BEMB model.</p></li>
+<li><p><strong>kwargs</strong> (<em>type</em>) – keyword arguments passed to the forward method of the wrapped BEMB model.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>returns whatever the wrapped BEMB model returns.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><em>type</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bemb_flex_lightning.LitBEMBFlex.test_step">
+<span class="sig-name descname"><span class="pre">test_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bemb.model.bemb_flex_lightning.LitBEMBFlex.test_step" title="Permalink to this definition">#</a></dt>
+<dd><p>Operates on a single batch of data from the test set.
+In this step you’d normally generate examples or calculate anything of interest
+such as accuracy.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># the pseudocode for these calls</span>
+<span class="n">test_outs</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">test_batch</span> <span class="ow">in</span> <span class="n">test_data</span><span class="p">:</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">test_step</span><span class="p">(</span><span class="n">test_batch</span><span class="p">)</span>
+    <span class="n">test_outs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+<span class="n">test_epoch_end</span><span class="p">(</span><span class="n">test_outs</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batch</strong> – The output of your :class:<code class="docutils literal notranslate"><span class="pre">~torch.utils.data.DataLoader</span></code>.</p></li>
+<li><p><strong>batch_idx</strong> – The index of this batch.</p></li>
+<li><p><strong>dataloader_id</strong> – The index of the dataloader that produced this batch.</p></li>
+</ul>
+</dd>
+</dl>
+<p>(only if multiple test dataloaders used).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Any of.
+
+ - Any object or value
+ - ``None`` - Testing will skip to the next batch
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># if you have one test dataloader:</span>
+<span class="k">def</span> <span class="nf">test_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">):</span>
+    <span class="o">...</span>
+
+
+<span class="c1"># if you have multiple test dataloaders:</span>
+<span class="k">def</span> <span class="nf">test_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">dataloader_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">..</span> <span class="n">code</span><span class="p">::</span>
+</pre></div>
+</div>
+<blockquote>
+<div><p># CASE 1: A single test dataset
+def test_step(self, batch, batch_idx):</p>
+<blockquote>
+<div><p>x, y = batch</p>
+<p># implement your own
+out = self(x)
+loss = self.loss(out, y)</p>
+<p># log 6 example images
+# or generated text… or whatever
+sample_imgs = x[:6]
+grid = torchvision.utils.make_grid(sample_imgs)
+self.logger.experiment.add_image(‘example_images’, grid, 0)</p>
+<p># calculate acc
+labels_hat = torch.argmax(out, dim=1)
+test_acc = torch.sum(y == labels_hat).item() / (len(y) * 1.0)</p>
+<p># log the outputs!
+self.log_dict({‘test_loss’: loss, ‘test_acc’: test_acc})</p>
+</div></blockquote>
+</div></blockquote>
+<p>If you pass in multiple test dataloaders, :meth:<code class="docutils literal notranslate"><span class="pre">test_step</span></code> will have an additional argument. We recommend
+setting the default value of 0 so that you can quickly switch between single and multiple dataloaders.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># CASE 2: multiple test dataloaders</span>
+<span class="k">def</span> <span class="nf">test_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">dataloader_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="c1"># dataloader_idx tells you which dataset this is.</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you don’t need to test you don’t need to implement this method.</p>
+</div>
+<p>When the :meth:<code class="docutils literal notranslate"><span class="pre">test_step</span></code> is called, the model has been put in eval mode and
+PyTorch gradients have been disabled. At the end of the test epoch, the model goes back
+to training mode and gradients are enabled.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bemb.model.bemb_flex_lightning.LitBEMBFlex.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#bemb.model.bemb_flex_lightning.LitBEMBFlex.training" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bemb_flex_lightning.LitBEMBFlex.training_step">
+<span class="sig-name descname"><span class="pre">training_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bemb.model.bemb_flex_lightning.LitBEMBFlex.training_step" title="Permalink to this definition">#</a></dt>
+<dd><p>Here you compute and return the training loss and some additional metrics for e.g.
+the progress bar or logger.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batch</strong> (:class:<code class="docutils literal notranslate"><span class="pre">~torch.Tensor</span></code> | (:class:<code class="docutils literal notranslate"><span class="pre">~torch.Tensor</span></code>, …) | [:class:<code class="docutils literal notranslate"><span class="pre">~torch.Tensor</span></code>, …]) – The output of your :class:<code class="docutils literal notranslate"><span class="pre">~torch.utils.data.DataLoader</span></code>. A tensor, tuple or list.</p></li>
+<li><p><strong>batch_idx</strong> (<code class="docutils literal notranslate"><span class="pre">int</span></code>) – Integer displaying index of this batch</p></li>
+<li><p><strong>optimizer_idx</strong> (<code class="docutils literal notranslate"><span class="pre">int</span></code>) – When using multiple optimizers, this argument will also be present.</p></li>
+<li><p><strong>hiddens</strong> – Passed in if</p></li>
+</ul>
+</dd>
+</dl>
+<p>:paramref:<code class="docutils literal notranslate"><span class="pre">~pytorch_lightning.core.lightning.LightningModule.truncated_bptt_steps</span></code> &gt; 0.
+:type hiddens: <code class="docutils literal notranslate"><span class="pre">Any</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Any of.</p>
+</dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>- :class:`~torch.Tensor` - The loss tensor
+- ``dict`` - A dictionary. Can include any keys, but must include the key ``&#39;loss&#39;``
+- ``None`` - Training will skip to the next batch. This is only for automatic optimization.
+    This is not supported for multi-GPU, TPU, IPU, or DeepSpeed.
+</pre></div>
+</div>
+<p>In this step you’d normally do the forward pass and calculate the loss for a batch.
+You can also do fancier things like multiple forward passes or something model specific.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">..</span> <span class="n">code</span><span class="p">::</span>
+</pre></div>
+</div>
+<blockquote>
+<div><dl class="simple">
+<dt>def training_step(self, batch, batch_idx):</dt><dd><p>x, y, z = batch
+out = self.encoder(x)
+loss = self.loss(out, x)
+return loss</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>If you define multiple optimizers, this step will be called with an additional
+<code class="docutils literal notranslate"><span class="pre">optimizer_idx</span></code> parameter.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Multiple optimizers (e.g.: GANs)</span>
+<span class="k">def</span> <span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">optimizer_idx</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">optimizer_idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># do training_step with encoder</span>
+        <span class="o">...</span>
+    <span class="k">if</span> <span class="n">optimizer_idx</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># do training_step with decoder</span>
+        <span class="o">...</span>
+</pre></div>
+</div>
+<p>If you add truncated back propagation through time you will also get an additional
+argument with the hidden states of the previous step.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Truncated back-propagation through time</span>
+<span class="k">def</span> <span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">hiddens</span><span class="p">):</span>
+    <span class="c1"># hiddens are the hidden states from the previous truncated backprop step</span>
+    <span class="n">out</span><span class="p">,</span> <span class="n">hiddens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lstm</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">hiddens</span><span class="p">)</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="o">...</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="n">loss</span><span class="p">,</span> <span class="s2">&quot;hiddens&quot;</span><span class="p">:</span> <span class="n">hiddens</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>The loss value shown in the progress bar is smoothed (averaged) over the last values,
+so it differs from the actual loss returned in train/validation step.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bemb.model.bemb_flex_lightning.LitBEMBFlex.validation_step">
+<span class="sig-name descname"><span class="pre">validation_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bemb.model.bemb_flex_lightning.LitBEMBFlex.validation_step" title="Permalink to this definition">#</a></dt>
+<dd><p>Operates on a single batch of data from the validation set.
+In this step you’d might generate examples or calculate anything of interest like accuracy.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># the pseudocode for these calls</span>
+<span class="n">val_outs</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">val_batch</span> <span class="ow">in</span> <span class="n">val_data</span><span class="p">:</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">validation_step</span><span class="p">(</span><span class="n">val_batch</span><span class="p">)</span>
+    <span class="n">val_outs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+<span class="n">validation_epoch_end</span><span class="p">(</span><span class="n">val_outs</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batch</strong> – The output of your :class:<code class="docutils literal notranslate"><span class="pre">~torch.utils.data.DataLoader</span></code>.</p></li>
+<li><p><strong>batch_idx</strong> – The index of this batch.</p></li>
+<li><p><strong>dataloader_idx</strong> – The index of the dataloader that produced this batch.</p></li>
+</ul>
+</dd>
+</dl>
+<p>(only if multiple val dataloaders used)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>- Any object or value
+- ``None`` - Validation will skip to the next batch
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># pseudocode of order</span>
+<span class="n">val_outs</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">val_batch</span> <span class="ow">in</span> <span class="n">val_data</span><span class="p">:</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">validation_step</span><span class="p">(</span><span class="n">val_batch</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">defined</span><span class="p">(</span><span class="s2">&quot;validation_step_end&quot;</span><span class="p">):</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">validation_step_end</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+    <span class="n">val_outs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+<span class="n">val_outs</span> <span class="o">=</span> <span class="n">validation_epoch_end</span><span class="p">(</span><span class="n">val_outs</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># if you have one val dataloader:</span>
+<span class="k">def</span> <span class="nf">validation_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">):</span>
+    <span class="o">...</span>
+
+
+<span class="c1"># if you have multiple val dataloaders:</span>
+<span class="k">def</span> <span class="nf">validation_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">dataloader_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">..</span> <span class="n">code</span><span class="p">::</span>
+</pre></div>
+</div>
+<blockquote>
+<div><p># CASE 1: A single validation dataset
+def validation_step(self, batch, batch_idx):</p>
+<blockquote>
+<div><p>x, y = batch</p>
+<p># implement your own
+out = self(x)
+loss = self.loss(out, y)</p>
+<p># log 6 example images
+# or generated text… or whatever
+sample_imgs = x[:6]
+grid = torchvision.utils.make_grid(sample_imgs)
+self.logger.experiment.add_image(‘example_images’, grid, 0)</p>
+<p># calculate acc
+labels_hat = torch.argmax(out, dim=1)
+val_acc = torch.sum(y == labels_hat).item() / (len(y) * 1.0)</p>
+<p># log the outputs!
+self.log_dict({‘val_loss’: loss, ‘val_acc’: val_acc})</p>
+</div></blockquote>
+</div></blockquote>
+<p>If you pass in multiple val dataloaders, :meth:<code class="docutils literal notranslate"><span class="pre">validation_step</span></code> will have an additional argument. We recommend
+setting the default value of 0 so that you can quickly switch between single and multiple dataloaders.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># CASE 2: multiple validation dataloaders</span>
+<span class="k">def</span> <span class="nf">validation_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">dataloader_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="c1"># dataloader_idx tells you which dataset this is.</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you don’t need to validate you don’t need to implement this method.</p>
+</div>
+<p>When the :meth:<code class="docutils literal notranslate"><span class="pre">validation_step</span></code> is called, the model has been put in eval mode
+and PyTorch gradients have been disabled. At the end of validation,
+the model goes back to training mode and gradients are enabled.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bemb.model">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-bemb.model" title="Permalink to this headline">#</a></h2>
+</section>
+</section>
+
+
+              </div>
+              
+              
+              <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="bemb.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">bemb package</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="test.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Compatibility Check List</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, Tianyu Du, Ayush Kanodia.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

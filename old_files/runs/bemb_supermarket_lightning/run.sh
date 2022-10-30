@@ -1,0 +1,1 @@
+python3 main_supermarket.py ./configs_supermarket.yaml

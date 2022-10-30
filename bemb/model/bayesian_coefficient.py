@@ -16,12 +16,19 @@ class BayesianCoefficient(nn.Module):
                  variation: str,
                  num_classes: int,
                  obs2prior: bool,
+<<<<<<< HEAD
                  H_zero_mask: Optional[torch.BoolTensor] = None,
                  is_H: bool = False,
                  num_obs: Optional[int] = None,
                  dim: int = 1,
                  prior_mean: float = 0.0,
                  prior_variance: Union[float, torch.Tensor] = 1.0
+=======
+                 num_obs: Optional[int] = None,
+                 dim: int = 1,
+                 prior_mean: float = 0.0,
+                 prior_variance: float = 1.0
+>>>>>>> supermarkets_old
                  ) -> None:
         """The Bayesian coefficient object represents a learnable tensor mu_i in R^k, where i is from a family (e.g., user, item)
             so there are num_classes * num_obs learnable weights in total.
@@ -35,11 +42,16 @@ class BayesianCoefficient(nn.Module):
 
         Args:
             variation (str): the variation # TODO: this will be removed in the next version, after we have a complete
+<<<<<<< HEAD
                 test pipeline.
+=======
+                test pipline.
+>>>>>>> supermarkets_old
             num_classes (int): number of classes in the coefficient. For example, if we have user-specific coefficients,
                 `theta_user`, the `num_classes` should be the number of users. If we have item-specific coefficients,
                 the the `num_classes` should be the number of items.
             obs2prior (bool): whether the mean of coefficient prior depends on the observable or not.
+<<<<<<< HEAD
             H_zero_mask (Optional[torch.BoolTensor]): to disable some of the learnable weights in the obs2prior term.
                 Recall that the prior is defined to be Normal(H*X_obs, sigma*I) when `obs2prior` is True.
                 The mask variable `H_zero_mask` will set `H[H_zero_mask]` to zeros and make them un-learnable.
@@ -48,6 +60,8 @@ class BayesianCoefficient(nn.Module):
                 Defaults to None.
             is_H (bool): whether this coefficient is the H variable in the obs2prior, do you set this argument yourself!
                 Defaults to False.
+=======
+>>>>>>> supermarkets_old
             num_obs (int, optional): the number of observables associated with each class. For example, if the coefficient
                 if item-specific, and we have `obs2prior` set to True, the `num_obs` should be the number of observables
                 for each item.
@@ -56,12 +70,16 @@ class BayesianCoefficient(nn.Module):
                 Defaults to 1.
             prior_mean (float): the mean of the prior distribution of coefficient.
                 Defaults to 0.0.
+<<<<<<< HEAD
             prior_variance (Union[float, torch.Tensor]): the variance of the prior distribution of coefficient.
                 Recall that the coefficient has shape (num_classes, dim), so there are num_classes * dim learnable entries.
                 No matter what prior_variance is provided, entires in the coefficient tensor are independent.
                 If a float or torch.scalar_tensor is provided, the variance is assumed to be the same for all entries.
                 If a tensor with shape (num_classes, dim) is supplied, supplying a (num_classes, dim) tensor is amount
                 to specifying a different prior variance for each entry in the coefficient.
+=======
+            prior_variance (float): the variance of the prior distribution of coefficient.
+>>>>>>> supermarkets_old
                 Defaults to 1.0.
         """
         super(BayesianCoefficient, self).__init__()
@@ -80,15 +98,19 @@ class BayesianCoefficient(nn.Module):
         self.prior_mean = prior_mean
         self.prior_variance = prior_variance
 
+<<<<<<< HEAD
         self.is_H = is_H
         self.H_zero_mask = H_zero_mask
 
+=======
+>>>>>>> supermarkets_old
         # assert self.prior_variance > 0
 
         # create prior distribution.
         if self.obs2prior:
             # the mean of prior distribution depends on observables.
             # initiate a Bayesian Coefficient with shape (dim, num_obs) standard Gaussian.
+<<<<<<< HEAD
             self.prior_H = BayesianCoefficient(variation='constant',
                                                num_classes=dim,
                                                obs2prior=False,
@@ -97,6 +119,10 @@ class BayesianCoefficient(nn.Module):
                                                H_zero_mask=self.H_zero_mask,
                                                is_H=True)  # this is a distribution responsible for the obs2prior H term.
 
+=======
+            self.prior_H = BayesianCoefficient(variation='constant', num_classes=dim, obs2prior=False,
+                                               dim=num_obs, prior_variance=1.0)
+>>>>>>> supermarkets_old
         else:
             self.register_buffer(
                 'prior_zero_mean', torch.zeros(num_classes, dim) + (self.prior_mean))
@@ -105,22 +131,28 @@ class BayesianCoefficient(nn.Module):
         # self.prior_cov_diag = nn.Parameter(torch.ones(num_classes, dim), requires_grad=False)
         self.register_buffer('prior_cov_factor',
                              torch.zeros(num_classes, dim, 1))
+<<<<<<< HEAD
 
         # if a tensor but not a scalar_tensor is provided, it must have shape (num_classes, dim)
         if torch.is_tensor(self.prior_variance) and len(self.prior_variance.shape) > 0:
             assert self.prior_variance.shape == (num_classes, dim), f"You supplied a tensor with shape {self.prior_variance.shape} to specify prior variances, it must have shape (num_classes, dim), which is ({num_classes}, {dim}) for this coefficient."
 
+=======
+>>>>>>> supermarkets_old
         self.register_buffer('prior_cov_diag', torch.ones(
             num_classes, dim) * self.prior_variance)
 
         # create variational distribution.
         self.variational_mean_flexible = nn.Parameter(
             torch.randn(num_classes, dim), requires_grad=True)
+<<<<<<< HEAD
 
         if self.is_H and self.H_zero_mask is not None:
             assert self.H_zero_mask.shape == self.variational_mean_flexible.shape, \
                 f"The H_zero_mask should have exactly the shape as the H variable, `H_zero_mask`.shape is {self.H_zero_mask.shape}, `H`.shape is {self.variational_mean_flexible.shape} "
 
+=======
+>>>>>>> supermarkets_old
         self.variational_logstd = nn.Parameter(
             torch.randn(num_classes, dim), requires_grad=True)
 
@@ -159,6 +191,7 @@ class BayesianCoefficient(nn.Module):
             torch.Tensor: the current mean of the variational distribution with shape (num_classes, dim).
         """
         if self.variational_mean_fixed is None:
+<<<<<<< HEAD
             M = self.variational_mean_flexible
         else:
             M = self.variational_mean_fixed + self.variational_mean_flexible
@@ -172,6 +205,11 @@ class BayesianCoefficient(nn.Module):
         else:
             # a H-variable without zero-entry restriction or just a coefficient.
             return M
+=======
+            return self.variational_mean_flexible
+        else:
+            return self.variational_mean_fixed + self.variational_mean_flexible
+>>>>>>> supermarkets_old
 
     def log_prior(self,
                   sample: torch.Tensor,

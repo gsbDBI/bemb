@@ -1,0 +1,858 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Tutorial: Data Management &#8212; torch-choice  documentation</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tutorial: Conditional Logit Model on ModeCanada Dataset" href="conditional_logit_model_mode_canada.html" />
+    <link rel="prev" title="Research Projects using this Package" href="projects.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+<a class="navbar-brand" href="index.html">
+<p class="title">torch-choice</p>
+</a>
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="intro.html">
+  Introduction
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="install.html">
+  Installation
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="projects.html">
+  Research Projects using this Package
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="current reference internal nav-link" href="#">
+  Tutorial: Data Management
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="conditional_logit_model_mode_canada.html">
+  Tutorial: Conditional Logit Model on ModeCanada Dataset
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="nested_logit_model_house_cooling.html">
+  Random Utility Model (RUM) Part II: Nested Logit Model
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="bemb.html">
+  bemb package
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="test.html">
+  Compatibility Check List
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar">
+              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+              </div>
+              <div class="sidebar-end-items">
+              </div>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#components-of-the-consumer-choice-modelling-problem">
+   Components of the Consumer Choice Modelling Problem
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#purchasing-record">
+     Purchasing Record
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#items-and-categories">
+     Items and Categories
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#users">
+     Users
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#sessions">
+     Sessions
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#item-availability">
+     Item Availability
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#observables">
+     Observables
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#basic-usage">
+       Basic Usage
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#advanced-usage-additional-observables">
+       Advanced Usage: Additional Observables
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#a-toy-example">
+   A Toy Example
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#creating-choicedataset-object">
+   Creating
+   <code class="docutils literal notranslate">
+    <span class="pre">
+     ChoiceDataset
+    </span>
+   </code>
+   Object
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#step-1-generate-some-random-purchase-records-and-observables">
+     Step 1: Generate some random purchase records and observables
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#step-2-initialize-the-choicedataset">
+     Step 2: Initialize the
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       ChoiceDataset
+      </span>
+     </code>
+     .
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#what-you-can-do-with-the-choicedataset">
+   What you can do with the
+   <code class="docutils literal notranslate">
+    <span class="pre">
+     ChoiceDataset
+    </span>
+   </code>
+   ?
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#print-dataset-and-dataset-str">
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       print(dataset)
+      </span>
+     </code>
+     and
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       dataset.__str__
+      </span>
+     </code>
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#dataset-num-users-items-sessions">
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       dataset.num_{users,
+      </span>
+      <span class="pre">
+       items,
+      </span>
+      <span class="pre">
+       sessions}
+      </span>
+     </code>
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#dataset-clone">
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       dataset.clone()
+      </span>
+     </code>
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#dataset-to-cuda-and-dataset-check-device-consistency">
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       dataset.to('cuda')
+      </span>
+     </code>
+     and
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       dataset._check_device_consistency()
+      </span>
+     </code>
+     .
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#subset-method">
+     Subset method
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#using-pytorch-dataloader-for-the-training-loop">
+   Using Pytorch dataloader for the training loop.
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#chaining-multiple-datasets-jointdataset-examples">
+   Chaining Multiple Datasets:
+   <code class="docutils literal notranslate">
+    <span class="pre">
+     JointDataset
+    </span>
+   </code>
+   Examples
+  </a>
+ </li>
+</ul>
+
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <section class="tex2jax_ignore mathjax_ignore" id="tutorial-data-management">
+<h1>Tutorial: Data Management<a class="headerlink" href="#tutorial-data-management" title="Permalink to this headline">#</a></h1>
+<p><strong>Author: Tianyu Du (tianyudu&#64;stanford.edu)</strong></p>
+<p>This notebook aims to help users understand the functionality of <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> object.
+The <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> is an instance of the more general PyTorch dataset object holding information of consumer choices. The <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> offers easy, clean and efficient data management.</p>
+<p><strong>Note</strong>: since this package was initially proposed for modelling consumer choices, attribute names of <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> are borrowed from the consumer choice literature.</p>
+<p>The BEMB model was initially designed for predicting consumers’ purchasing choices from the supermarket purchase dataset, we use the same setup in this tutorial as a running example. However, one can easily adopt the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> data structure to other use cases.</p>
+<p><strong>Note</strong>: the Jupyter-notebook version of this tutorial can be found <a class="reference external" href="https://github.com/gsbDBI/torch-choice/blob/main/tutorials/data_management.ipynb">here</a>.</p>
+<section id="components-of-the-consumer-choice-modelling-problem">
+<h2>Components of the Consumer Choice Modelling Problem<a class="headerlink" href="#components-of-the-consumer-choice-modelling-problem" title="Permalink to this headline">#</a></h2>
+<p>We begin with essential component of the consumer choice modelling problem. Walking through these components should help you understand what kind of data our models are working on.</p>
+<section id="purchasing-record">
+<h3>Purchasing Record<a class="headerlink" href="#purchasing-record" title="Permalink to this headline">#</a></h3>
+<p>Each row (record) of the dataset is called a <strong>purchasing record</strong>, which includes <em>who</em> bought <em>what</em> at <em>when</em> and <em>where</em>.
+Let <span class="math notranslate nohighlight">\(B\)</span> denote the number of <strong>purchasing records</strong> in the dataset (i.e., number of rows of the dataset). Each row <span class="math notranslate nohighlight">\(b \in \{1,2,\dots, B\}\)</span> corresponds to a purchase record (i.e., <em>who</em> bought <em>what</em> at <em>where and when</em>).</p>
+</section>
+<section id="items-and-categories">
+<h3>Items and Categories<a class="headerlink" href="#items-and-categories" title="Permalink to this headline">#</a></h3>
+<p>To begin with, there are <span class="math notranslate nohighlight">\(I\)</span> <strong>items</strong> indexed by <span class="math notranslate nohighlight">\(i \in \{1,2,\dots,I\}\)</span> under our consideration.</p>
+<p>Further, the researcher can optionally partition the set items into <span class="math notranslate nohighlight">\(C\)</span> <strong>categories</strong> indexed by <span class="math notranslate nohighlight">\(c \in \{1,2,\dots,C\}\)</span>. Let <span class="math notranslate nohighlight">\(I_c\)</span> denote the collection of items in category <span class="math notranslate nohighlight">\(c\)</span>, it is easy to verify that
+<span class="math notranslate nohighlight">\(
+\bigcup_{c \in \{1, 2, \dots, C\}} I_c = \{1, 2, \dots I\}
+\)</span>
+If the researcher does not wish to model different categories differently, the researcher can simply put all items in one single category: <span class="math notranslate nohighlight">\(I_1 = \{1, 2, \dots I\}\)</span>, so that all items belong to the same category.</p>
+<p><strong>Note</strong>: since we will be using PyTorch to train our model, we represent their identities with integer values instead of the raw human-readable names of items (e.g., Dell 24 inch LCD monitor).
+Raw item names can be encoded easily with <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OrdinalEncoder.html">sklearn.preprocessing.OrdinalEncoder</a>.</p>
+</section>
+<section id="users">
+<h3>Users<a class="headerlink" href="#users" title="Permalink to this headline">#</a></h3>
+<p>Each purchaing reocrd is naturally associated with an <strong>user</strong> indexed by <span class="math notranslate nohighlight">\(u \in \{1,2,\dots,U\}\)</span> (<em>who</em>) as well.</p>
+</section>
+<section id="sessions">
+<h3>Sessions<a class="headerlink" href="#sessions" title="Permalink to this headline">#</a></h3>
+<p>Our data structure encompasses <em>where and when</em> using a notion called <strong>session</strong> indexed by <span class="math notranslate nohighlight">\(s \in \{1,2,\dots, S\}\)</span>.
+For example, when the data came from a single store over the period of a year. In this case, the notion of <em>where</em> does not matter that much, and session <span class="math notranslate nohighlight">\(s\)</span> is simply the date of purchase.</p>
+<p>Another example is that we have the purchase record from different stores, the session <span class="math notranslate nohighlight">\(s\)</span> can be defined as a pair of <em>(date, store)</em> instead.</p>
+<p>If the researcher does not wish to handle records from different sessions differently, the researcher can assign the same session ID to all rows of the dataset.</p>
+<p>To summarize, each purchasing record <span class="math notranslate nohighlight">\(b\)</span> in the dataset is characterized by a user-session-item tuple <span class="math notranslate nohighlight">\((u, s, i)\)</span>.</p>
+<p>When there are multiple items bought by the same user in the same session, there will be multiple rows in the dataset with the same <span class="math notranslate nohighlight">\((u, s)\)</span> corresponding to the same receipt.</p>
+</section>
+<section id="item-availability">
+<h3>Item Availability<a class="headerlink" href="#item-availability" title="Permalink to this headline">#</a></h3>
+<p>It is not necessarily that all items are available in every session, items can get out-of-stock in particular sessions.</p>
+<p>To handle these cases, the researcher can <em>optionally</em> provide a boolean tensor <span class="math notranslate nohighlight">\(\in \{\texttt{True}, \texttt{False}\}^{S\times I}\)</span> to indicate which items are available for purchasing in each session.
+While predicting the purchase probabilities, the model sets the probability for these unavailable items to zero and normalizes probabilities among available items.
+If the item availability is not provided, the model assumes all items are available in all sessions.</p>
+</section>
+<section id="observables">
+<h3>Observables<a class="headerlink" href="#observables" title="Permalink to this headline">#</a></h3>
+<section id="basic-usage">
+<h4>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">#</a></h4>
+<p>Optionally, the researcher can incorporate observables of, for example, users and items. Currently, the package support the following types of observables, where <span class="math notranslate nohighlight">\(K_{...}\)</span> denote the number of observables.</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">user_obs</span></code> <span class="math notranslate nohighlight">\(\in \mathbb{R}^{U\times K_{user}}\)</span></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">item_obs</span></code> <span class="math notranslate nohighlight">\(\in \mathbb{R}^{I\times K_{item}}\)</span></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">session_obs</span></code> <span class="math notranslate nohighlight">\(\in \mathbb{R}^{S \times K_{session}}\)</span></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">price_obs</span></code> <span class="math notranslate nohighlight">\(\in \mathbb{R}^{S \times I \times K_{price}}\)</span>, price observables are values depending on <strong>both</strong> session and item.</p></li>
+</ol>
+<p>The researcher should supply them with as appropriate keyword arguments while constructing the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> object.</p>
+</section>
+<section id="advanced-usage-additional-observables">
+<h4>Advanced Usage: Additional Observables<a class="headerlink" href="#advanced-usage-additional-observables" title="Permalink to this headline">#</a></h4>
+<p>In some cases, the researcher may wish to handle different parts of <code class="docutils literal notranslate"><span class="pre">user_obs</span></code> (or other observable tensors) differently.
+For example, the researcher wishes to model the utility for user <span class="math notranslate nohighlight">\(u\)</span> to purchase item <span class="math notranslate nohighlight">\(i\)</span> in session <span class="math notranslate nohighlight">\(s\)</span> as the following:
+$<span class="math notranslate nohighlight">\(
+U_{usi} = \beta_{i} X^{(u)}_{user\ income} + \gamma X^{(u)}_{user\ market\ membership}
+\)</span>$
+The coefficient for user income is item-specific so that it captures the nature of the product (i.e., a luxury or an essential good). Additionally, the utility representation admits an user market membership becomes shoppers with active memberships tend to purchase more, and the coefficient of this term is constant across all items.
+As we will cover later in the modelling section, we need to supply two user observable tensors in this case for the model to build coefficient with different levels of variations (i.e., item-specific coefficients versus constant coefficients). In this case, the researcher needs to supply two tensors <code class="docutils literal notranslate"><span class="pre">user_income</span></code> and <code class="docutils literal notranslate"><span class="pre">user_market_membership</span></code> as keyword arguments to the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> constructor.
+The <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> handles multiple user/item/session/price observables internally, for example, every keyword arguments passed into <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> with name starting with <code class="docutils literal notranslate"><span class="pre">item_</span></code> (except for the reserved <code class="docutils literal notranslate"><span class="pre">item_availability</span></code>) will be treated as item observable tensors. All keywords with names starting <code class="docutils literal notranslate"><span class="pre">user_</span></code>, <code class="docutils literal notranslate"><span class="pre">session_</span></code> and <code class="docutils literal notranslate"><span class="pre">price_</span></code> (except for reserved names like <code class="docutils literal notranslate"><span class="pre">user_index</span></code> and <code class="docutils literal notranslate"><span class="pre">session_index</span></code> mentioned above) will be interpreted as user/session/price observable tensors.</p>
+</section>
+</section>
+</section>
+<section id="a-toy-example">
+<h2>A Toy Example<a class="headerlink" href="#a-toy-example" title="Permalink to this headline">#</a></h2>
+<p>Suppose we have a dataset of purchase history from two stores (Store A and B) on two dates (Sep 16 and 17), both stores sell {apple, banana, orange} (<code class="docutils literal notranslate"><span class="pre">num_items=3</span></code>) and there are three people came to those stores between Sep 16 and 17.</p>
+<table class="colwidths-auto table">
+<thead>
+<tr class="row-odd"><th class="head"><p>user_index</p></th>
+<th class="head"><p>session_index</p></th>
+<th class="head"><p>item_index</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Amy</p></td>
+<td><p>Sep-17-2021-Store-A</p></td>
+<td><p>banana</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ben</p></td>
+<td><p>Sep-17-2021-Store-B</p></td>
+<td><p>apple</p></td>
+</tr>
+<tr class="row-even"><td><p>Ben</p></td>
+<td><p>Sep-16-2021-Store-A</p></td>
+<td><p>orange</p></td>
+</tr>
+<tr class="row-odd"><td><p>Charlie</p></td>
+<td><p>Sep-16-2021-Store-B</p></td>
+<td><p>apple</p></td>
+</tr>
+<tr class="row-even"><td><p>Charlie</p></td>
+<td><p>Sep-16-2021-Store-B</p></td>
+<td><p>orange</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>NOTE</strong>: For demonstration purpose, the example dataset has <code class="docutils literal notranslate"><span class="pre">user_index</span></code>, <code class="docutils literal notranslate"><span class="pre">session_index</span></code> and <code class="docutils literal notranslate"><span class="pre">item_index</span></code> as strings, they should be consecutive integers in actual production. One can easily convert them to integers using <code class="docutils literal notranslate"><span class="pre">sklearn.preprocessing.LabelEncoder</span></code>.</p>
+<p>In the example above,</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">user_index=[0,1,1,2,2]</span></code> (with encoding <code class="docutils literal notranslate"><span class="pre">0=Amy,</span> <span class="pre">1=Ben,</span> <span class="pre">2=Charlie</span></code>),</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">session_index=[0,1,2,3,3]</span></code> (with encoding <code class="docutils literal notranslate"><span class="pre">0=Sep-17-2021-Store-A,</span> <span class="pre">1=Sep-17-2021-Store-B,</span> <span class="pre">2=Sep-16-2021-Store-A,</span> <span class="pre">3=Sep-16-2021-Store-B</span></code>),</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">item_index=[0,1,2,1,2]</span></code> (with encoding <code class="docutils literal notranslate"><span class="pre">0=banana,</span> <span class="pre">1=apple,</span> <span class="pre">2=orange</span></code>).</p></li>
+</ul>
+<p>Suppose we believe people’s purchasing decision depends on nutrition levels of these fruits, suppose apple has the highest nutrition level and banana has the lowest one, we can add</p>
+<p><code class="docutils literal notranslate"><span class="pre">item_obs=[[1.5],</span> <span class="pre">[12.0],</span> <span class="pre">[3.3]]</span></code> <span class="math notranslate nohighlight">\(\in \mathbb{R}^{3\times 1}\)</span>. The shape of this tensor is number-of-items by number-of-observable.</p>
+<p><strong>NOTE</strong>: If someone went to one store and bought multiple items (e.g., Charlie bought both apple and orange at Store B on Sep-16), we include them as separate rows in the dataset and model them independently.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># import required dependencies.</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch_choice.data</span> <span class="kn">import</span> <span class="n">ChoiceDataset</span><span class="p">,</span> <span class="n">JointDataset</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># let&#39;s get a helper</span>
+<span class="k">def</span> <span class="nf">print_dict_shape</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;dict.</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">.shape=</span><span class="si">{</span><span class="n">val</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="creating-choicedataset-object">
+<h2>Creating  <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> Object<a class="headerlink" href="#creating-choicedataset-object" title="Permalink to this headline">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Feel free to modify it as you want.</span>
+<span class="n">num_users</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">num_items</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">num_sessions</span> <span class="o">=</span> <span class="mi">500</span>
+
+<span class="n">length_of_dataset</span> <span class="o">=</span> <span class="mi">10000</span>
+</pre></div>
+</div>
+<section id="step-1-generate-some-random-purchase-records-and-observables">
+<h3>Step 1: Generate some random purchase records and observables<a class="headerlink" href="#step-1-generate-some-random-purchase-records-and-observables" title="Permalink to this headline">#</a></h3>
+<p>We will be creating a randomly generated dataset with 10000 purchase records from 10 users, 4 items and 500 sessions.</p>
+<p>The first step is to randomly generate the purchase records using the following code. For simplicity, we assume all items are available in all sessions.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># create observables/features, the number of parameters are arbitrarily chosen.</span>
+<span class="c1"># generate 128 features for each user, e.g., race, gender.</span>
+<span class="n">user_obs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">num_users</span><span class="p">,</span> <span class="mi">128</span><span class="p">)</span>
+<span class="c1"># generate 64 features for each user, e.g., quality.</span>
+<span class="n">item_obs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">num_items</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span>
+<span class="c1"># generate 10 features for each session, e.g., weekday indicator. </span>
+<span class="n">session_obs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">num_sessions</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="c1"># generate 12 features for each session user pair, e.g., the budget of that user at the shopping day.</span>
+<span class="n">price_obs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">num_sessions</span><span class="p">,</span> <span class="n">num_items</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We then generate random observable tensors for users, items, sessions and price observables, the size of observables of each type (i.e., the last dimension in the shape) is arbitrarily chosen.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">item_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">num_items</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">length_of_dataset</span><span class="p">))</span>
+<span class="n">user_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">num_users</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">length_of_dataset</span><span class="p">))</span>
+<span class="n">session_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">num_sessions</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">length_of_dataset</span><span class="p">))</span>
+
+<span class="c1"># assume all items are available in all sessions.</span>
+<span class="n">item_availability</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_sessions</span><span class="p">,</span> <span class="n">num_items</span><span class="p">)</span><span class="o">.</span><span class="n">bool</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-initialize-the-choicedataset">
+<h3>Step 2: Initialize the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code>.<a class="headerlink" href="#step-2-initialize-the-choicedataset" title="Permalink to this headline">#</a></h3>
+<p>You can construct a choice set using the following code, which manage all information for you.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span> <span class="o">=</span> <span class="n">ChoiceDataset</span><span class="p">(</span>
+    <span class="c1"># pre-specified keywords of __init__</span>
+    <span class="n">item_index</span><span class="o">=</span><span class="n">item_index</span><span class="p">,</span>  <span class="c1"># required.</span>
+    <span class="c1"># optional:</span>
+    <span class="n">user_index</span><span class="o">=</span><span class="n">user_index</span><span class="p">,</span>
+    <span class="n">session_index</span><span class="o">=</span><span class="n">session_index</span><span class="p">,</span>
+    <span class="n">item_availability</span><span class="o">=</span><span class="n">item_availability</span><span class="p">,</span>
+    <span class="c1"># additional keywords of __init__</span>
+    <span class="n">user_obs</span><span class="o">=</span><span class="n">user_obs</span><span class="p">,</span>
+    <span class="n">item_obs</span><span class="o">=</span><span class="n">item_obs</span><span class="p">,</span>
+    <span class="n">session_obs</span><span class="o">=</span><span class="n">session_obs</span><span class="p">,</span>
+    <span class="n">price_obs</span><span class="o">=</span><span class="n">price_obs</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="what-you-can-do-with-the-choicedataset">
+<h2>What you can do with the <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code>?<a class="headerlink" href="#what-you-can-do-with-the-choicedataset" title="Permalink to this headline">#</a></h2>
+<section id="print-dataset-and-dataset-str">
+<h3><code class="docutils literal notranslate"><span class="pre">print(dataset)</span></code> and <code class="docutils literal notranslate"><span class="pre">dataset.__str__</span></code><a class="headerlink" href="#print-dataset-and-dataset-str" title="Permalink to this headline">#</a></h3>
+<p>The command <code class="docutils literal notranslate"><span class="pre">print(dataset)</span></code> will provide a quick overview of shapes of tensors included in the object as well as where the dataset is located (i.e., host memory or GPU memory).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>ChoiceDataset(label=[], item_index=[10000], user_index=[10000], session_index=[10000], item_availability=[500, 4], user_obs=[10, 128], item_obs=[4, 64], session_obs=[500, 10], price_obs=[500, 4, 12], device=cpu)
+</pre></div>
+</div>
+</section>
+<section id="dataset-num-users-items-sessions">
+<h3><code class="docutils literal notranslate"><span class="pre">dataset.num_{users,</span> <span class="pre">items,</span> <span class="pre">sessions}</span></code><a class="headerlink" href="#dataset-num-users-items-sessions" title="Permalink to this headline">#</a></h3>
+<p>You can use the <code class="docutils literal notranslate"><span class="pre">num_{users,</span> <span class="pre">items,</span> <span class="pre">sessions}</span></code> attribute to obtain the number of users, items, and sessions, they are determined automatically from the <code class="docutils literal notranslate"><span class="pre">{user,</span> <span class="pre">item,</span> <span class="pre">session}_obs</span></code> tensors provided while initializing the dataset object.</p>
+<p><strong>Note</strong>: the print <code class="docutils literal notranslate"><span class="pre">=:</span></code> operator requires Python3.8 or higher, you can remove <code class="docutils literal notranslate"><span class="pre">=:</span></code> if you are using an earlier copy of Python.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">num_users</span><span class="si">=:}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">num_items</span><span class="si">=:}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">num_sessions</span><span class="si">=:}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span><span class="si">=:}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dataset.num_users=10
+dataset.num_items=4
+dataset.num_sessions=500
+len(dataset)=10000
+</pre></div>
+</div>
+</section>
+<section id="dataset-clone">
+<h3><code class="docutils literal notranslate"><span class="pre">dataset.clone()</span></code><a class="headerlink" href="#dataset-clone" title="Permalink to this headline">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> offers a <code class="docutils literal notranslate"><span class="pre">clone</span></code> method allow you to make copy of the dataset, you can modify the cloned dataset arbitrarily without changing the original dataset.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># clone</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">item_index</span><span class="p">[:</span><span class="mi">10</span><span class="p">])</span>
+<span class="n">dataset_cloned</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+<span class="n">dataset_cloned</span><span class="o">.</span><span class="n">item_index</span> <span class="o">=</span> <span class="mi">99</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_sessions</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">dataset_cloned</span><span class="o">.</span><span class="n">item_index</span><span class="p">[:</span><span class="mi">10</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">item_index</span><span class="p">[:</span><span class="mi">10</span><span class="p">])</span>  <span class="c1"># does not change the original dataset.</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>tensor([2, 2, 3, 1, 3, 2, 2, 1, 0, 1])
+tensor([99., 99., 99., 99., 99., 99., 99., 99., 99., 99.])
+tensor([2, 2, 3, 1, 3, 2, 2, 1, 0, 1])
+</pre></div>
+</div>
+</section>
+<section id="dataset-to-cuda-and-dataset-check-device-consistency">
+<h3><code class="docutils literal notranslate"><span class="pre">dataset.to('cuda')</span></code> and <code class="docutils literal notranslate"><span class="pre">dataset._check_device_consistency()</span></code>.<a class="headerlink" href="#dataset-to-cuda-and-dataset-check-device-consistency" title="Permalink to this headline">#</a></h3>
+<p>One key advantage of the <code class="docutils literal notranslate"><span class="pre">torch_choice</span></code> and <code class="docutils literal notranslate"><span class="pre">bemb</span></code> is their compatibility with GPUs, you can easily move tensors in a <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> object between host memory (i.e., cpu memory) and device memory (i.e., GPU memory) using <code class="docutils literal notranslate"><span class="pre">dataset.to()</span></code> method.
+Please note that the following code runs only if your machine has a compatible GPU and GPU-compatible version of PyTorch installed.</p>
+<p>Similarly, one can move data to host-memory using <code class="docutils literal notranslate"><span class="pre">dataset.to('cpu')</span></code>.
+The dataset also provides a <code class="docutils literal notranslate"><span class="pre">dataset._check_device_consistency()</span></code> method to check if all tensors are on the same device.
+If we only move the <code class="docutils literal notranslate"><span class="pre">label</span></code> to cpu without moving other tensors, this will result in an error message.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># move to device</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">device</span><span class="si">=:}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">device</span><span class="si">=:}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">user_index</span><span class="o">.</span><span class="n">device</span><span class="si">=:}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">session_index</span><span class="o">.</span><span class="n">device</span><span class="si">=:}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">device</span><span class="si">=:}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">item_index</span><span class="o">.</span><span class="n">device</span><span class="si">=:}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">user_index</span><span class="o">.</span><span class="n">device</span><span class="si">=:}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">session_index</span><span class="o">.</span><span class="n">device</span><span class="si">=:}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dataset.device=cpu
+dataset.device=cpu
+dataset.user_index.device=cpu
+dataset.session_index.device=cpu
+dataset.device=cuda:0
+dataset.item_index.device=cuda:0
+dataset.user_index.device=cuda:0
+dataset.session_index.device=cuda:0
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">_check_device_consistency</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># # NOTE: this cell will result errors, this is intentional.</span>
+<span class="n">dataset</span><span class="o">.</span><span class="n">item_index</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">item_index</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<span class="n">dataset</span><span class="o">.</span><span class="n">_check_device_consistency</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>---------------------------------------------------------------------------
+
+Exception                                 Traceback (most recent call last)
+
+&lt;ipython-input-56-40d626c6d436&gt; in &lt;module&gt;
+      1 # # NOTE: this cell will result errors, this is intentional.
+      2 dataset.item_index = dataset.item_index.to(&#39;cpu&#39;)
+----&gt; 3 dataset._check_device_consistency()
+
+
+~/Development/torch-choice/torch_choice/data/choice_dataset.py in _check_device_consistency(self)
+    180                 devices.append(val.device)
+    181         if len(set(devices)) &gt; 1:
+--&gt; 182             raise Exception(f&#39;Found tensors on different devices: {set(devices)}.&#39;,
+    183                             &#39;Use dataset.to() method to align devices.&#39;)
+    184 
+
+
+Exception: (&quot;Found tensors on different devices: {device(type=&#39;cuda&#39;, index=0), device(type=&#39;cpu&#39;)}.&quot;, &#39;Use dataset.to() method to align devices.&#39;)
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># create dictionary inputs for model.forward()</span>
+<span class="c1"># collapse to a dictionary object.</span>
+<span class="n">print_dict_shape</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">x_dict</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dict.user_obs.shape=torch.Size([10000, 4, 128])
+dict.item_obs.shape=torch.Size([10000, 4, 64])
+dict.session_obs.shape=torch.Size([10000, 4, 10])
+dict.price_obs.shape=torch.Size([10000, 4, 12])
+</pre></div>
+</div>
+</section>
+<section id="subset-method">
+<h3>Subset method<a class="headerlink" href="#subset-method" title="Permalink to this headline">#</a></h3>
+<p>One can use <code class="docutils literal notranslate"><span class="pre">dataset[indices]</span></code> with <code class="docutils literal notranslate"><span class="pre">indices</span></code> as an integer-valued tensor or array to get the corresponding rows of the dataset.
+The example code block below queries the 6256-th, 4119-th, 453-th, 5520-th, and 1877-th row of the dataset object.
+The <code class="docutils literal notranslate"><span class="pre">item_index</span></code>, <code class="docutils literal notranslate"><span class="pre">user_index</span></code>, <code class="docutils literal notranslate"><span class="pre">session_index</span></code> of the resulted subset will be different from the original dataset, but other tensors will be the same.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># __getitem__ to get batch.</span>
+<span class="c1"># pick 5 random sessions as the mini-batch.</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<span class="n">indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+<span class="n">subset</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">subset</span><span class="p">)</span>
+<span class="c1"># print_dict_shape(subset.x_dict)</span>
+
+<span class="c1"># assert torch.all(dataset.x_dict[&#39;price_obs&#39;][indices, :, :] == subset.x_dict[&#39;price_obs&#39;])</span>
+<span class="c1"># assert torch.all(dataset.item_index[indices] == subset.item_index)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>tensor([1118,  976, 1956,  290, 8283])
+ChoiceDataset(label=[], item_index=[10000], user_index=[10000], session_index=[10000], item_availability=[500, 4], user_obs=[10, 128], item_obs=[4, 64], session_obs=[500, 10], price_obs=[500, 4, 12], device=cpu)
+ChoiceDataset(label=[], item_index=[5], user_index=[5], session_index=[5], item_availability=[500, 4], user_obs=[10, 128], item_obs=[4, 64], session_obs=[500, 10], price_obs=[500, 4, 12], device=cpu)
+</pre></div>
+</div>
+<p>The subset method internally creates a copy of the datasets so that any modification applied on the subset will <strong>not</strong> be reflected on the original dataset.
+The researcher can feel free to do in-place modification to the subset.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">subset</span><span class="o">.</span><span class="n">item_index</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">item_index</span><span class="p">[</span><span class="n">indices</span><span class="p">])</span>
+
+<span class="n">subset</span><span class="o">.</span><span class="n">item_index</span> <span class="o">+=</span> <span class="mi">1</span>  <span class="c1"># modifying the batch does not change the original dataset.</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">subset</span><span class="o">.</span><span class="n">item_index</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">item_index</span><span class="p">[</span><span class="n">indices</span><span class="p">])</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>tensor([0, 1, 0, 0, 0])
+tensor([0, 1, 0, 0, 0])
+tensor([1, 2, 1, 1, 1])
+tensor([0, 1, 0, 0, 0])
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">subset</span><span class="o">.</span><span class="n">item_obs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">item_obs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">subset</span><span class="o">.</span><span class="n">item_obs</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">subset</span><span class="o">.</span><span class="n">item_obs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">item_obs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>tensor(-1.5811)
+tensor(-1.5811)
+tensor(-0.5811)
+tensor(-1.5811)
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">subset</span><span class="o">.</span><span class="n">item_index</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">item_index</span><span class="p">[</span><span class="n">indices</span><span class="p">]))</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>140339656298640
+140339656150528
+</pre></div>
+</div>
+</section>
+</section>
+<section id="using-pytorch-dataloader-for-the-training-loop">
+<h2>Using Pytorch dataloader for the training loop.<a class="headerlink" href="#using-pytorch-dataloader-for-the-training-loop" title="Permalink to this headline">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">ChoiceDataset</span></code> object natively support batch samplers from PyTorch. For demonstration purpose, we turned off the shuffling option.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torch.utils.data.sampler</span> <span class="kn">import</span> <span class="n">BatchSampler</span><span class="p">,</span> <span class="n">SequentialSampler</span><span class="p">,</span> <span class="n">RandomSampler</span>
+<span class="n">shuffle</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># for demonstration purpose.</span>
+<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">32</span>
+
+<span class="c1"># Create sampler.</span>
+<span class="n">sampler</span> <span class="o">=</span> <span class="n">BatchSampler</span><span class="p">(</span>
+    <span class="n">RandomSampler</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span> <span class="k">if</span> <span class="n">shuffle</span> <span class="k">else</span> <span class="n">SequentialSampler</span><span class="p">(</span><span class="n">dataset</span><span class="p">),</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+    <span class="n">drop_last</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">dataloader</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span>
+                                         <span class="n">sampler</span><span class="o">=</span><span class="n">sampler</span><span class="p">,</span>
+                                         <span class="n">num_workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                         <span class="n">collate_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                         <span class="n">pin_memory</span><span class="o">=</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">device</span> <span class="o">==</span> <span class="s1">&#39;cpu&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">item_obs</span><span class="o">.</span><span class="n">shape</span><span class="si">=:}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="n">item_obs_all</span> <span class="o">=</span> <span class="n">item_obs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_items</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">item_obs_all</span> <span class="o">=</span> <span class="n">item_obs_all</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+<span class="n">item_index_all</span> <span class="o">=</span> <span class="n">item_index</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">item_obs_all</span><span class="o">.</span><span class="n">shape</span><span class="si">=:}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>item_obs.shape=torch.Size([4, 64])
+item_obs_all.shape=torch.Size([10000, 4, 64])
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dataloader</span><span class="p">):</span>
+    <span class="n">first</span><span class="p">,</span> <span class="n">last</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">batch_size</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">),</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">batch_size</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">item_obs_all</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">==</span> <span class="n">batch</span><span class="o">.</span><span class="n">x_dict</span><span class="p">[</span><span class="s1">&#39;item_obs&#39;</span><span class="p">])</span>
+    <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">item_index_all</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">==</span> <span class="n">batch</span><span class="o">.</span><span class="n">item_index</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">batch</span><span class="o">.</span><span class="n">x_dict</span><span class="p">[</span><span class="s1">&#39;item_obs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>torch.Size([16, 4, 64])
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">print_dict_shape</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">x_dict</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dict.user_obs.shape=torch.Size([10000, 4, 128])
+dict.item_obs.shape=torch.Size([10000, 4, 64])
+dict.session_obs.shape=torch.Size([10000, 4, 10])
+dict.price_obs.shape=torch.Size([10000, 4, 12])
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="fm">__len__</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>10000
+</pre></div>
+</div>
+</section>
+<section id="chaining-multiple-datasets-jointdataset-examples">
+<h2>Chaining Multiple Datasets: <code class="docutils literal notranslate"><span class="pre">JointDataset</span></code> Examples<a class="headerlink" href="#chaining-multiple-datasets-jointdataset-examples" title="Permalink to this headline">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dataset1</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+<span class="n">dataset2</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+<span class="n">joint_dataset</span> <span class="o">=</span> <span class="n">JointDataset</span><span class="p">(</span><span class="n">the_dataset</span><span class="o">=</span><span class="n">dataset1</span><span class="p">,</span> <span class="n">another_dataset</span><span class="o">=</span><span class="n">dataset2</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">joint_dataset</span>
+</pre></div>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>JointDataset with 2 sub-datasets: (
+	the_dataset: ChoiceDataset(label=[], item_index=[10000], user_index=[10000], session_index=[10000], item_availability=[500, 4], user_obs=[10, 128], item_obs=[4, 64], session_obs=[500, 10], price_obs=[500, 4, 12], device=cpu)
+	another_dataset: ChoiceDataset(label=[], item_index=[10000], user_index=[10000], session_index=[10000], item_availability=[500, 4], user_obs=[10, 128], item_obs=[4, 64], session_obs=[500, 10], price_obs=[500, 4, 12], device=cpu)
+)
+</pre></div>
+</div>
+</section>
+</section>
+
+
+              </div>
+              
+              
+              <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="projects.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">Research Projects using this Package</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="conditional_logit_model_mode_canada.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Tutorial: Conditional Logit Model on ModeCanada Dataset</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, Tianyu Du, Ayush Kanodia.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

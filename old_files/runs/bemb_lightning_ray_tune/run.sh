@@ -1,0 +1,1 @@
+python3 main_bemb_lightning.py ./configs.yaml
