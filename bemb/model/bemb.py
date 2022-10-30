@@ -8,6 +8,8 @@ import warnings
 from pprint import pprint
 import warnings
 from typing import Dict, List, Optional, Tuple, Union
+from pprint import pprint
+from typing import Dict, List, Optional, Union, Tuple
 
 import numpy as np
 import torch
@@ -107,7 +109,6 @@ class BEMBFlex(nn.Module):
                  num_classes: int = 2,
                  H_zero_mask_dict: Optional[Dict[str, torch.BoolTensor]] = None,
                  prior_mean: Union[float, Dict[str, float]] = 0.0,
-                 default_prior_mean: float = 0.0,
                  prior_variance: Union[float, Dict[str, float]] = 1.0,
                  num_users: Optional[int] = None,
                  num_sessions: Optional[int] = None,
@@ -120,7 +121,8 @@ class BEMBFlex(nn.Module):
                  num_price_obs: Optional[int] = None,
                  num_taste_obs: Optional[int] = None,
                  # additional modules.
-                 additional_modules: Optional[List[nn.Module]] = None
+                 additional_modules: Optional[List[nn.Module]] = None,
+                 deterministic_variational: bool = False,
                  ) -> None:
         """
         Args:
@@ -163,9 +165,6 @@ class BEMBFlex(nn.Module):
                     object needs to contain a separate label.
                     NOTE: for now, we only support binary labels.
 
-            default_prior_mean (float): the default prior mean for coefficients,
-            if it is not specified in the prior_mean; defaults to 0.0.
-
             prior_mean (Union[float, Dict[str, float]]): the mean of prior
                 distribution for coefficients. If a float is provided, all prior
                 mean will be diagonal matrix with the provided value.  If a
@@ -173,6 +172,13 @@ class BEMBFlex(nn.Module):
                 names, and the mean of prior of coef_name would the provided
                 value Defaults to 0.0, which means all prior means are
                 initialized to 0.0
+
+                If a dictionary prior_mean is supplied, for coefficient names not in the prior_mean.keys(), the
+                user can add a `prior_mean['default']` value to specify the mean for those coefficients.
+                If no `prior_mean['default']` is provided, the default prior mean will be 0.0 for those coefficients
+                not in the prior_mean.keys().
+
+                Defaults to 0.0.
 
             prior_variance (Union[float, Dict[str, float]], Dict[str, torch. Tensor]): the variance of prior distribution
                 for coefficients.
@@ -187,11 +193,11 @@ class BEMBFlex(nn.Module):
                 `prior_variance['beta_user'][i, j]`. Moreover, `beta_user[i, j]`'s are independent for different `i, j`.
 
                 If a dictionary prior_variance is supplied, for coefficient names not in the prior_variance.keys(), the
-                can add a `prior_variance['default']` value to specify the variance for those coefficients.
+                user can add a `prior_variance['default']` value to specify the variance for those coefficients.
                 If no `prior_variance['default']` is provided, the default prior variance will be 1.0 for those coefficients
                 not in the prior_variance.keys().
 
-                Defaults to 1.0, which means all prior have identity matrix as the covariance matrix.
+                Defaults to 1.0, which means all priors have identity matrix as the covariance matrix.
 
             num_users (int, optional): number of users, required only if coefficient or observable
                 depending on user is in utility. Defaults to None.
@@ -212,6 +218,8 @@ class BEMBFlex(nn.Module):
                 NOTE: currently we only allow coefficient to depend on either user or item, thus only
                 user and item observables can enter the prior of coefficient. Hence session, price,
                 and taste observables are never required, we include it here for completeness.
+
+            deterministic_variational (bool, optional): if True, the variational posterior is equivalent to frequentist MLE estimates of parameters
         """
         super(BEMBFlex, self).__init__()
         self.utility_formula = utility_formula
@@ -222,9 +230,7 @@ class BEMBFlex(nn.Module):
         else:
             self.H_zero_mask_dict = dict()
         self.prior_variance = prior_variance
-        self.default_prior_mean = default_prior_mean
         self.prior_mean = prior_mean
-
         self.pred_item = pred_item
         if not self.pred_item:
             assert isinstance(num_classes, int) and num_classes > 0, \
@@ -237,6 +243,7 @@ class BEMBFlex(nn.Module):
         self.num_items = num_items
         self.num_users = num_users
         self.num_sessions = num_sessions
+        self.deterministic_variational = deterministic_variational
 
         self.trace_log_q = trace_log_q
         self.category_to_item = category_to_item
@@ -313,8 +320,19 @@ class BEMBFlex(nn.Module):
         for additive_term in self.formula:
             for coef_name in additive_term['coefficient']:
                 variation = coef_name.split('_')[-1]
+                if isinstance(self.prior_mean, dict):
+                    # the user didn't specify prior mean for this coefficient.
+                    if coef_name not in self.prior_mean.keys():
+                        # the user may specify 'default' prior variance through the prior_variance dictionary.
+                        if 'default' in self.prior_mean.keys():
+                            warnings.warn(f"You provided a dictionary of prior mean, but coefficient {coef_name} is not a key in it. We found a key 'default' in the dictionary, so we use the value of 'default' as the prior mean for coefficient {coef_name}.")
+                            self.prior_mean[coef_name] = self.prior_mean['default']
+                        else:
+                            warnings.warn(f"You provided a dictionary of prior mean, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the prior_mean dictionary to use that as default value (e.g., prior_mean['default'] = 0.1); now using mean=0.0 since this is not supplied.")
+                            self.prior_variance[coef_name] = 0.0
+
                 mean = self.prior_mean[coef_name] if isinstance(
-                    self.prior_mean, dict) else self.default_prior_mean
+                    self.prior_mean, dict) else self.prior_mean
 
                 if isinstance(self.prior_variance, dict):
                     # the user didn't specify prior variance for this coefficient.
@@ -1298,7 +1316,17 @@ class BEMBFlex(nn.Module):
         # ==============================================================================================================
         # 1. sample latent variables from their variational distributions.
         # ==============================================================================================================
-        sample_dict = self.sample_coefficient_dictionary(num_seeds)
+        if self.deterministic_variational:
+            num_seeds = 1
+            # Use the means of variational distributions as the sole deterministic MC sample.
+            # NOTE: here we don't need to sample the obs2prior weight H since we only compute the log-likelihood.
+            # TODO: is this correct?
+            sample_dict = dict()
+            for coef_name, coef in self.coef_dict.items():
+                sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(
+                    dim=0)  # (1, num_*, dim)
+        else:
+            sample_dict = self.sample_coefficient_dictionary(num_seeds)
 
         # ==============================================================================================================
         # 2. compute log p(latent) prior.
@@ -1313,18 +1341,21 @@ class BEMBFlex(nn.Module):
         # ==============================================================================================================
         if self.pred_item:
             # the prediction target is item_index.
-            elbo += self.forward(batch,
+            elbo_expanded = self.forward(batch,
                                  return_type='log_prob',
                                  return_scope='item_index',
-                                 deterministic=False,
-                                 sample_dict=sample_dict).sum(dim=1).mean(dim=0)  # (num_seeds, len(batch)) --> scalar.
+                                 deterministic=self.deterministic_variational,
+                                 sample_dict=sample_dict)
+            if self.deterministic_variational:
+                elbo_expanded = elbo_expanded.unsqueeze(dim=0)
+            elbo += elbo_expanded.sum(dim=1).mean(dim=0)  # (num_seeds, len(batch)) --> scalar.
         else:
             # the prediction target is binary.
             # TODO: update the prediction function.
             utility = self.forward(batch,
                                    return_type='utility',
                                    return_scope='item_index',
-                                   deterministic=False,
+                                   deterministic=self.deterministic_variational,
                                    sample_dict=sample_dict)  # (num_seeds, len(batch))
 
             # compute the log-likelihood for binary label.
@@ -1341,6 +1372,7 @@ class BEMBFlex(nn.Module):
         # 4. optionally add log likelihood under variational distributions q(latent).
         # ==============================================================================================================
         if self.trace_log_q:
+            assert not self.deterministic_variational, "deterministic_variational is not compatible with trace_log_q."
             elbo -= self.log_variational(sample_dict).mean(dim=0)
 
         return elbo
