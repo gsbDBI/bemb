@@ -40,23 +40,14 @@ class LitBEMBFlex(pl.LightningModule):
         # use kwargs to pass parameter to BEMB Torch.
         super().__init__()
         self.model = BEMBFlex(**kwargs)
-<<<<<<< HEAD
         self.num_seeds = num_seeds
-=======
-        self.num_needs = num_seeds
->>>>>>> supermarkets_old
         self.learning_rate = learning_rate
 
     def __str__(self) -> str:
         return str(self.model)
 
-<<<<<<< HEAD
     def forward(self, *args, **kwargs):
         """Calls the forward method of the wrapped BEMB model, please refer to the documentation of the BEMB class
-=======
-    def forward(self, args, kwargs):
-        """Calls the forward method of the wrapped BEMB model, please refer to the documentaton of the BEMB class
->>>>>>> supermarkets_old
             for detailed definitions of the arguments.
 
         Args:
@@ -69,11 +60,7 @@ class LitBEMBFlex(pl.LightningModule):
         return self.model(*args, **kwargs)
 
     def training_step(self, batch, batch_idx):
-<<<<<<< HEAD
         elbo = self.model.elbo(batch, num_seeds=self.num_seeds)
-=======
-        elbo = self.model.elbo(batch, num_seeds=self.num_needs)
->>>>>>> supermarkets_old
         self.log('train_elbo', elbo)
         loss = - elbo
         return loss
@@ -88,7 +75,6 @@ class LitBEMBFlex(pl.LightningModule):
             performance = {'acc': metrics.accuracy_score(y_true=y_true, y_pred=y_pred),
                            'll': - metrics.log_loss(y_true=y_true, y_pred=np.exp(log_p), labels=np.arange(num_classes))}
         else:
-<<<<<<< HEAD
             # making binary station, more performance metrics will be reported in this case.
             pred = self.model(batch, return_type='utility',
                               return_scope='item_index', deterministic=True)
@@ -103,17 +89,6 @@ class LitBEMBFlex(pl.LightningModule):
                            'recall': metrics.recall_score(y_true=y_true, y_pred=y_pred_binary),
                            'f1': metrics.f1_score(y_true=y_true, y_pred=y_pred_binary),
                            'auc': metrics.roc_auc_score(y_true=y_true, y_score=y_pred)
-=======
-            # making binary station.
-            pred = self.model(batch, return_type='utility',
-                              return_scope='item_index', deterministic=True)
-            y_pred = torch.sigmoid(pred).cpu().numpy()
-            y_true = batch.label.cpu().numpy()
-            performance = {'acc': metrics.accuracy_score(y_true=y_true, y_pred=(y_pred >= 0.5).astype(int)),
-                           'll': - metrics.log_loss(y_true=y_true, y_pred=y_pred, eps=1E-5, labels=[0, 1]),
-                           #    'auc': metrics.roc_auc_score(y_true=y_true, y_score=y_pred),
-                           #    'f1': metrics.f1_score(y_true=y_true, y_pred=(y_pred >= 0.5).astype(int))
->>>>>>> supermarkets_old
                            }
         return performance
 
@@ -149,7 +124,6 @@ class LitBEMBFlex(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer
-<<<<<<< HEAD
 
     def fit_model(self, dataset_list: List[ChoiceDataset], batch_size: int=-1, num_epochs: int=10, num_workers: int=8, **kwargs) -> "LitBEMBFlex":
         """A standard pipeline of model training and evaluation.
@@ -197,5 +171,3 @@ class LitBEMBFlex(pl.LightningModule):
         section_print('test performance')
         trainer.test(self, dataloaders=test)
         return self
-=======
->>>>>>> supermarkets_old

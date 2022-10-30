@@ -4,25 +4,18 @@ The core class of the Bayesian EMBedding (BEMB) model.
 Author: Tianyu Du
 Update: Apr. 28, 2022
 """
-<<<<<<< HEAD
 import warnings
 from pprint import pprint
 import warnings
 from typing import Dict, List, Optional, Tuple, Union
-=======
 from pprint import pprint
 from typing import Dict, List, Optional, Union, Tuple
->>>>>>> supermarkets_old
 
 import numpy as np
 import torch
 import torch.nn as nn
 from torch_choice.data import ChoiceDataset
-<<<<<<< HEAD
 from torch_scatter import scatter_logsumexp, scatter_max
-=======
-from torch_scatter import scatter_max, scatter_logsumexp
->>>>>>> supermarkets_old
 from torch_scatter.composite import scatter_log_softmax
 
 from bemb.model.bayesian_coefficient import BayesianCoefficient
@@ -78,7 +71,6 @@ def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]
         atom = {'coefficient': [], 'observable': None}
         # split multiplicative terms.
         for x in term.split(' * '):
-<<<<<<< HEAD
             # Programmers can specify itemsession for price observables, this brings better intuition.
             if x.startswith('itemsession_'):
                 # case 1: special observable name.
@@ -96,14 +88,6 @@ def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]
                 warnings.warn(f'{x} term has no appropriate coefficient suffix or observable prefix, it is assumed to be a coefficient constant across all items, users, and sessions. If this is the desired behavior, you can also specify `{x}_constant` in the utility formula to avoid this warning message. The utility parser has replaced {x} term with `{x}_constant`.')
                 atom['coefficient'].append(f'{x}_constant')
 
-=======
-            if is_coefficient(x):
-                atom['coefficient'].append(x)
-            elif is_observable(x):
-                atom['observable'] = x
-            else:
-                raise ValueError(f'{x} term cannot be classified.')
->>>>>>> supermarkets_old
         additive_decomposition.append(atom)
     return additive_decomposition
 
@@ -122,18 +106,11 @@ class BEMBFlex(nn.Module):
                  coef_dim_dict: Dict[str, int],
                  num_items: int,
                  pred_item: bool,
-<<<<<<< HEAD
                  num_classes: int = 2,
                  H_zero_mask_dict: Optional[Dict[str, torch.BoolTensor]] = None,
+                 default_prior_mean: float = 0.0,
                  prior_mean: Union[float, Dict[str, float]] = 0.0,
-                 default_prior_mean: float = 0.0,
                  prior_variance: Union[float, Dict[str, float]] = 1.0,
-=======
-                 prior_mean: Dict[str, float] = {},
-                 default_prior_mean: float = 0.0,
-                 prior_variance: Dict[str, float] = {},
-                 default_prior_variance: float = 1.0,
->>>>>>> supermarkets_old
                  num_users: Optional[int] = None,
                  num_sessions: Optional[int] = None,
                  trace_log_q: bool = False,
@@ -145,12 +122,8 @@ class BEMBFlex(nn.Module):
                  num_price_obs: Optional[int] = None,
                  num_taste_obs: Optional[int] = None,
                  # additional modules.
-<<<<<<< HEAD
-                 additional_modules: Optional[List[nn.Module]] = None
-=======
                  additional_modules: Optional[List[nn.Module]] = None,
                  deterministic_variational: bool = False,
->>>>>>> supermarkets_old
                  ) -> None:
         """
         Args:
@@ -175,7 +148,6 @@ class BEMBFlex(nn.Module):
                 For factorized coefficient multiplied with observables like U = gamma_user * beta_item * price_obs,
                     the dim should be the latent dim multiplied by number of observables in price_obs.
 
-<<<<<<< HEAD
             H_zero_mask_dict (Dict[str, torch.BoolTensor]): A dictionary maps coefficient names to a boolean tensor,
                 you should only specify the H_zero_mask for coefficients with obs2prior turned on.
                 Recall that with obs2prior on, the prior of coefficient looks like N(H*X_obs, sigma * I), the H_zero_mask
@@ -183,8 +155,6 @@ class BEMBFlex(nn.Module):
                 and non-learnable during the training.
                 Defaults to None.
 
-=======
->>>>>>> supermarkets_old
             num_items (int): number of items.
 
             pred_item (bool): there are two use cases of this model, suppose we have `user_index[i]` and `item_index[i]`
@@ -197,7 +167,6 @@ class BEMBFlex(nn.Module):
                     NOTE: for now, we only support binary labels.
 
             default_prior_mean (float): the default prior mean for coefficients,
-<<<<<<< HEAD
             if it is not specified in the prior_mean; defaults to 0.0.
 
             prior_mean (Union[float, Dict[str, float]]): the mean of prior
@@ -221,27 +190,11 @@ class BEMBFlex(nn.Module):
                 `prior_variance['beta_user'][i, j]`. Moreover, `beta_user[i, j]`'s are independent for different `i, j`.
 
                 If a dictionary prior_variance is supplied, for coefficient names not in the prior_variance.keys(), the
-                can add a `prior_variance['default']` value to specify the variance for those coefficients.
+                user can add a `prior_variance['default']` value to specify the variance for those coefficients.
                 If no `prior_variance['default']` is provided, the default prior variance will be 1.0 for those coefficients
                 not in the prior_variance.keys().
 
-                Defaults to 1.0, which means all prior have identity matrix as the covariance matrix.
-=======
-                if it is not specified in the prior_mean; defaults to 0.0.
-
-            prior_mean (Dict[str, float]): the mean of prior distribution for
-                specific coefficients, provided as dict of pairs of coefficient_name ->
-                prior_mean (float). When not provided for a coefficient,
-                default_prior_mean is used.
-
-            default_prior_variance (float): the default prior variance for coefficients,
-                if it is not specified in the prior_variance; defaults to 1.0.
-
-            prior_variance (Dict[str, float]): the variance of prior
-                distribution for specific coefficients, provided as dict of pairs of
-                coefficient_name -> prior_variance (float). When not provided
-                for a coefficient, default_prior_variance is used.
->>>>>>> supermarkets_old
+                Defaults to 1.0, which means all priors have identity matrix as the covariance matrix.
 
             num_users (int, optional): number of users, required only if coefficient or observable
                 depending on user is in utility. Defaults to None.
@@ -262,30 +215,20 @@ class BEMBFlex(nn.Module):
                 NOTE: currently we only allow coefficient to depend on either user or item, thus only
                 user and item observables can enter the prior of coefficient. Hence session, price,
                 and taste observables are never required, we include it here for completeness.
-<<<<<<< HEAD
-=======
 
             deterministic_variational (bool, optional): if True, the variational posterior is equivalent to frequentist MLE estimates of parameters
->>>>>>> supermarkets_old
         """
         super(BEMBFlex, self).__init__()
         self.utility_formula = utility_formula
         self.obs2prior_dict = obs2prior_dict
         self.coef_dim_dict = coef_dim_dict
-<<<<<<< HEAD
         if H_zero_mask_dict is not None:
             self.H_zero_mask_dict = H_zero_mask_dict
         else:
             self.H_zero_mask_dict = dict()
-=======
-        self.default_prior_variance = default_prior_variance
->>>>>>> supermarkets_old
         self.prior_variance = prior_variance
-        self.default_prior_mean = default_prior_mean
         self.prior_mean = prior_mean
-
         self.pred_item = pred_item
-<<<<<<< HEAD
         if not self.pred_item:
             assert isinstance(num_classes, int) and num_classes > 0, \
                 f"With pred_item being False, the num_classes should be a positive integer, received {num_classes} instead."
@@ -293,16 +236,11 @@ class BEMBFlex(nn.Module):
             if self.num_classes != 2:
                 raise NotImplementedError('Multi-class classification is not supported yet.')
             # we don't set the num_classes attribute when pred_item == False to avoid calling it accidentally.
-=======
->>>>>>> supermarkets_old
 
         self.num_items = num_items
         self.num_users = num_users
         self.num_sessions = num_sessions
-<<<<<<< HEAD
-=======
         self.deterministic_variational = deterministic_variational
->>>>>>> supermarkets_old
 
         self.trace_log_q = trace_log_q
         self.category_to_item = category_to_item
@@ -379,7 +317,6 @@ class BEMBFlex(nn.Module):
         for additive_term in self.formula:
             for coef_name in additive_term['coefficient']:
                 variation = coef_name.split('_')[-1]
-<<<<<<< HEAD
                 mean = self.prior_mean[coef_name] if isinstance(
                     self.prior_mean, dict) else self.default_prior_mean
 
@@ -405,23 +342,15 @@ class BEMBFlex(nn.Module):
                 if (not self.obs2prior_dict[coef_name]) and (H_zero_mask is not None):
                     raise ValueError(f'You specified H_zero_mask for {coef_name}, but obs2prior is False for this coefficient.')
 
-=======
-                mean = self.prior_mean[coef_name] if coef_name in self.prior_mean.keys() else self.default_prior_mean
-                s2 = self.prior_variance[coef_name] if coef_name in self.prior_variance.keys() else self.default_prior_variance
->>>>>>> supermarkets_old
                 coef_dict[coef_name] = BayesianCoefficient(variation=variation,
                                                            num_classes=variation_to_num_classes[variation],
                                                            obs2prior=self.obs2prior_dict[coef_name],
                                                            num_obs=self.num_obs_dict[variation],
                                                            dim=self.coef_dim_dict[coef_name],
                                                            prior_mean=mean,
-<<<<<<< HEAD
                                                            prior_variance=s2,
                                                            H_zero_mask=H_zero_mask,
                                                            is_H=False)
-=======
-                                                           prior_variance=s2)
->>>>>>> supermarkets_old
         self.coef_dict = nn.ModuleDict(coef_dict)
 
         # ==============================================================================================================
@@ -455,7 +384,6 @@ class BEMBFlex(nn.Module):
         else:
             raise KeyError(f'{coef_name} is not a valid coefficient name in {self.utility_formula}.')
 
-<<<<<<< HEAD
     def posterior_distribution(self, coef_name: str) -> torch.distributions.lowrank_multivariate_normal.LowRankMultivariateNormal:
         """Returns the posterior distribution of coefficient `coef_name`.
 
@@ -470,8 +398,6 @@ class BEMBFlex(nn.Module):
         else:
             raise KeyError(f'{coef_name} is not a valid coefficient name in {self.utility_formula}.')
 
-=======
->>>>>>> supermarkets_old
     def ivs(self, batch) -> torch.Tensor:
         """The combined method of computing utilities and log probability.
 
@@ -513,11 +439,7 @@ class BEMBFlex(nn.Module):
         return maxes.squeeze(), out.squeeze()
 
     def sample_log_likelihoods(self, batch:ChoiceDataset, sample_dict: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
-<<<<<<< HEAD
         """Samples log likelihoods given model parameters and trips
-=======
-        """Samples log likelihoods given model paramaters and trips
->>>>>>> supermarkets_old
 
         Args:
         batch(ChoiceDataset): batch data containing trip information; item choice information is discarded
@@ -546,7 +468,6 @@ class BEMBFlex(nn.Module):
 
         return log_likelihoods, log_likelihoods
 
-<<<<<<< HEAD
     @torch.no_grad()
     def predict_proba(self, batch: ChoiceDataset) -> torch.Tensor:
         """
@@ -583,8 +504,6 @@ class BEMBFlex(nn.Module):
 
         return p
 
-=======
->>>>>>> supermarkets_old
     def forward(self, batch: ChoiceDataset,
                 return_type: str,
                 return_scope: str,
@@ -940,11 +859,7 @@ class BEMBFlex(nn.Module):
             return obs
 
         # ==============================================================================================================
-<<<<<<< HEAD
         # Compute the Utility Term by Term.
-=======
-        # Copmute the Utility Term by Term.
->>>>>>> supermarkets_old
         # ==============================================================================================================
         # P is the number of unique (user, session) pairs.
         # (random_seeds, P, num_items).
@@ -1046,17 +961,13 @@ class BEMBFlex(nn.Module):
 
         if return_logit:
             # output shape: (num_seeds, len(batch), num_items)
-<<<<<<< HEAD
             assert utility.shape == (num_seeds, len(batch), self.num_items)
-=======
->>>>>>> supermarkets_old
             return utility
         else:
             # compute log likelihood log p(choosing item i | user, item latents)
             # compute log softmax separately within each category.
             if self.pred_item:
                 # output shape: (num_seeds, len(batch), num_items)
-<<<<<<< HEAD
                 log_p = scatter_log_softmax(utility, self.item_to_category_tensor, dim=-1)
             else:
                 label_expanded = batch.label.to(torch.float32).view(1, len(batch), 1).expand(num_seeds, -1, self.num_items)
@@ -1064,12 +975,6 @@ class BEMBFlex(nn.Module):
                 bce = nn.BCELoss(reduction='none')
                 log_p = - bce(torch.sigmoid(utility), label_expanded)
             assert log_p.shape == (num_seeds, len(batch), self.num_items)
-=======
-                log_p = scatter_log_softmax(
-                    utility, self.item_to_category_tensor, dim=-1)
-            else:
-                log_p = torch.nn.functional.logsigmoid(utility)
->>>>>>> supermarkets_old
             return log_p
 
     def log_likelihood_item_index(self, batch: ChoiceDataset, return_logit: bool, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
@@ -1087,11 +992,7 @@ class BEMBFlex(nn.Module):
 
         Args:
             batch (ChoiceDataset): a ChoiceDataset object containing relevant information.
-<<<<<<< HEAD
             return_logit(bool): if set to True, return the logit/utility, otherwise return the log-probability.
-=======
-            return_logit(bool): if set to True, return the log-probability, otherwise return the logit/utility.
->>>>>>> supermarkets_old
             sample_dict(Dict[str, torch.Tensor]): Monte Carlo samples for model coefficients
                 (i.e., those Greek letters).
                 sample_dict.keys() should be the same as keys of self.obs2prior_dict, i.e., those
@@ -1288,7 +1189,6 @@ class BEMBFlex(nn.Module):
             additive_term = additive_term[:, reverse_indices]
             assert additive_term.shape == (R, total_computation)
 
-<<<<<<< HEAD
         if return_logit:
             # (num_seeds, len(batch))
             u = utility[:, item_index_expanded == relevant_item_index]
@@ -1315,23 +1215,6 @@ class BEMBFlex(nn.Module):
             log_p = - bce(torch.sigmoid(utility), label_expanded)
             assert log_p.shape == (R, len(batch))
             return log_p
-=======
-        # compute log likelihood log p(choosing item i | user, item latents)
-        if return_logit:
-            log_p = utility
-        else:
-            if self.pred_item:
-                # compute the log probability from logits/utilities.
-                # output shape: (num_seeds, len(batch), num_items)
-                log_p = scatter_log_softmax(utility, reverse_indices, dim=-1)
-                # select the log-P of the item actually bought.
-                log_p = log_p[:, item_index_expanded == relevant_item_index]
-            else:
-                # This is the binomial choice situation in which case we just report sigmoid log likelihood
-                bce = nn.BCELoss(reduction='none')
-                log_p = - bce(torch.sigmoid(utility.view(-1)), batch.label.to(torch.float32))
-        return log_p
->>>>>>> supermarkets_old
 
     def log_prior(self, batch: ChoiceDataset, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
         """Calculates the log-likelihood of Monte Carlo samples of Bayesian coefficients under their
@@ -1419,16 +1302,6 @@ class BEMBFlex(nn.Module):
         # ==============================================================================================================
         # 1. sample latent variables from their variational distributions.
         # ==============================================================================================================
-<<<<<<< HEAD
-        sample_dict = self.sample_coefficient_dictionary(num_seeds)
-=======
->>>>>>> supermarkets_old
-
-        # ==============================================================================================================
-        # 2. compute log p(latent) prior.
-        # (num_seeds,) --mean--> scalar.
-<<<<<<< HEAD
-=======
         if self.deterministic_variational:
             num_seeds = 1
             # Use the means of variational distributions as the sole deterministic MC sample.
@@ -1440,7 +1313,10 @@ class BEMBFlex(nn.Module):
                     dim=0)  # (1, num_*, dim)
         else:
             sample_dict = self.sample_coefficient_dictionary(num_seeds)
->>>>>>> supermarkets_old
+
+        # ==============================================================================================================
+        # 2. compute log p(latent) prior.
+        # (num_seeds,) --mean--> scalar.
         elbo = self.log_prior(batch, sample_dict).mean(dim=0)
         # ==============================================================================================================
 
@@ -1451,33 +1327,21 @@ class BEMBFlex(nn.Module):
         # ==============================================================================================================
         if self.pred_item:
             # the prediction target is item_index.
-<<<<<<< HEAD
-            elbo += self.forward(batch,
-                                 return_type='log_prob',
-                                 return_scope='item_index',
-                                 deterministic=False,
-                                 sample_dict=sample_dict).sum(dim=1).mean(dim=0)  # (num_seeds, len(batch)) --> scalar.
-=======
-            elbo_t = self.forward(batch,
+            elbo_expanded = self.forward(batch,
                                  return_type='log_prob',
                                  return_scope='item_index',
                                  deterministic=self.deterministic_variational,
                                  sample_dict=sample_dict)
             if self.deterministic_variational:
-                elbo_t = elbo_t.unsqueeze(dim=0)
-            elbo += elbo_t.sum(dim=1).mean(dim=0)  # (num_seeds, len(batch)) --> scalar.
->>>>>>> supermarkets_old
+                elbo_expanded = elbo_expanded.unsqueeze(dim=0)
+            elbo += elbo_expanded.sum(dim=1).mean(dim=0)  # (num_seeds, len(batch)) --> scalar.
         else:
             # the prediction target is binary.
             # TODO: update the prediction function.
             utility = self.forward(batch,
                                    return_type='utility',
                                    return_scope='item_index',
-<<<<<<< HEAD
-                                   deterministic=False,
-=======
                                    deterministic=self.deterministic_variational,
->>>>>>> supermarkets_old
                                    sample_dict=sample_dict)  # (num_seeds, len(batch))
 
             # compute the log-likelihood for binary label.
@@ -1494,10 +1358,7 @@ class BEMBFlex(nn.Module):
         # 4. optionally add log likelihood under variational distributions q(latent).
         # ==============================================================================================================
         if self.trace_log_q:
-<<<<<<< HEAD
-=======
             assert not self.deterministic_variational, "deterministic_variational is not compatible with trace_log_q."
->>>>>>> supermarkets_old
             elbo -= self.log_variational(sample_dict).mean(dim=0)
 
         return elbo
