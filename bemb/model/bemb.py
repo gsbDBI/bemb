@@ -108,7 +108,6 @@ class BEMBFlex(nn.Module):
                  pred_item: bool,
                  num_classes: int = 2,
                  H_zero_mask_dict: Optional[Dict[str, torch.BoolTensor]] = None,
-                 default_prior_mean: float = 0.0,
                  prior_mean: Union[float, Dict[str, float]] = 0.0,
                  prior_variance: Union[float, Dict[str, float]] = 1.0,
                  num_users: Optional[int] = None,
@@ -166,9 +165,6 @@ class BEMBFlex(nn.Module):
                     object needs to contain a separate label.
                     NOTE: for now, we only support binary labels.
 
-            default_prior_mean (float): the default prior mean for coefficients,
-            if it is not specified in the prior_mean; defaults to 0.0.
-
             prior_mean (Union[float, Dict[str, float]]): the mean of prior
                 distribution for coefficients. If a float is provided, all prior
                 mean will be diagonal matrix with the provided value.  If a
@@ -176,6 +172,13 @@ class BEMBFlex(nn.Module):
                 names, and the mean of prior of coef_name would the provided
                 value Defaults to 0.0, which means all prior means are
                 initialized to 0.0
+
+                If a dictionary prior_mean is supplied, for coefficient names not in the prior_mean.keys(), the
+                user can add a `prior_mean['default']` value to specify the mean for those coefficients.
+                If no `prior_mean['default']` is provided, the default prior mean will be 0.0 for those coefficients
+                not in the prior_mean.keys().
+
+                Defaults to 0.0.
 
             prior_variance (Union[float, Dict[str, float]], Dict[str, torch. Tensor]): the variance of prior distribution
                 for coefficients.
@@ -317,8 +320,19 @@ class BEMBFlex(nn.Module):
         for additive_term in self.formula:
             for coef_name in additive_term['coefficient']:
                 variation = coef_name.split('_')[-1]
+                if isinstance(self.prior_mean, dict):
+                    # the user didn't specify prior mean for this coefficient.
+                    if coef_name not in self.prior_mean.keys():
+                        # the user may specify 'default' prior variance through the prior_variance dictionary.
+                        if 'default' in self.prior_mean.keys():
+                            warnings.warn(f"You provided a dictionary of prior mean, but coefficient {coef_name} is not a key in it. We found a key 'default' in the dictionary, so we use the value of 'default' as the prior mean for coefficient {coef_name}.")
+                            self.prior_mean[coef_name] = self.prior_mean['default']
+                        else:
+                            warnings.warn(f"You provided a dictionary of prior mean, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the prior_mean dictionary to use that as default value (e.g., prior_mean['default'] = 0.1); now using mean=0.0 since this is not supplied.")
+                            self.prior_variance[coef_name] = 0.0
+
                 mean = self.prior_mean[coef_name] if isinstance(
-                    self.prior_mean, dict) else self.default_prior_mean
+                    self.prior_mean, dict) else self.prior_mean
 
                 if isinstance(self.prior_variance, dict):
                     # the user didn't specify prior variance for this coefficient.
