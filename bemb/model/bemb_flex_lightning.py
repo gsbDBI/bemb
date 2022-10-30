@@ -32,14 +32,14 @@ class LitBEMBFlex(pl.LightningModule):
         # use kwargs to pass parameter to BEMB Torch.
         super().__init__()
         self.model = BEMBFlex(**kwargs)
-        self.num_needs = num_seeds
+        self.num_seeds = num_seeds
         self.learning_rate = learning_rate
 
     def __str__(self) -> str:
         return str(self.model)
 
     def forward(self, *args, **kwargs):
-        """Calls the forward method of the wrapped BEMB model, please refer to the documentaton of the BEMB class
+        """Calls the forward method of the wrapped BEMB model, please refer to the documentation of the BEMB class
             for detailed definitions of the arguments.
 
         Args:
@@ -52,7 +52,7 @@ class LitBEMBFlex(pl.LightningModule):
         return self.model(*args, **kwargs)
 
     def training_step(self, batch, batch_idx):
-        elbo = self.model.elbo(batch, num_seeds=self.num_needs)
+        elbo = self.model.elbo(batch, num_seeds=self.num_seeds)
         self.log('train_elbo', elbo)
         loss = - elbo
         return loss
