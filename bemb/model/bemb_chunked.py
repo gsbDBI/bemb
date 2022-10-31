@@ -24,15 +24,13 @@ from bemb.model.bayesian_coefficient import BayesianCoefficient
 # helper functions.
 # ======================================================================================================================
 
-
+from bemb.model.bemb import PositiveInteger, parse_utility
+positive_integer = PositiveInteger()
+'''
 class PositiveInteger(object):
     # A helper wildcard class for shape matching.
     def __eq__(self, other):
         return isinstance(other, int) and other > 0
-
-
-positive_integer = PositiveInteger()
-
 
 def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]]:
     """
@@ -90,13 +88,14 @@ def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]
 
         additive_decomposition.append(atom)
     return additive_decomposition
+'''
 
 # ======================================================================================================================
 # core class of the BEMB model.
 # ======================================================================================================================
 
 
-class BEMBFlex(nn.Module):
+class BEMBFlexChunked(nn.Module):
     # ==================================================================================================================
     # core function as a PyTorch module.
     # ==================================================================================================================
@@ -123,6 +122,7 @@ class BEMBFlex(nn.Module):
                  # additional modules.
                  additional_modules: Optional[List[nn.Module]] = None,
                  deterministic_variational: bool = False,
+                 chunk_info: Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor] = None,
                  ) -> None:
         """
         Args:
@@ -220,8 +220,14 @@ class BEMBFlex(nn.Module):
                 and taste observables are never required, we include it here for completeness.
 
             deterministic_variational (bool, optional): if True, the variational posterior is equivalent to frequentist MLE estimates of parameters
+
+            chunk_info (Tuple[torch.LongTensor, torch.LongTensor, torch.LongTensor, torch.LongTensor], optional): a tuple of four tensors
+                The first tensor specifies a chunk id for each user
+                The second tensor specifies a chunk id for each item
+                The third tensor specifies a chunk id for each category
+                The fourth tensor specifies a chunk id for each session
         """
-        super(BEMBFlex, self).__init__()
+        super(BEMBFlexChunked, self).__init__()
         self.utility_formula = utility_formula
         self.obs2prior_dict = obs2prior_dict
         self.coef_dim_dict = coef_dim_dict
@@ -286,6 +292,16 @@ class BEMBFlex(nn.Module):
         self.register_buffer('item_to_category_tensor',
                              item_to_category_tensor.long())
 
+        # ==============================================================================================================
+        # Chunk Information
+        self.num_user_chunks = chunk_info[0].max().item() + 1
+        self.num_item_chunks = chunk_info[1].max().item() + 1
+        self.num_category_chunks = chunk_info[2].max().item() + 1
+        self.num_session_chunks = chunk_info[3].max().item() + 1
+        self.register_buffer('user_chunks', chunk_info[0])
+        self.register_buffer('item_chunks', chunk_info[1])
+        self.register_buffer('category_chunks', chunk_info[2])
+        self.register_buffer('session_chunks', chunk_info[3])
         # ==============================================================================================================
         # Create Bayesian Coefficient Objects
         # ==============================================================================================================
