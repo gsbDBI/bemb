@@ -553,7 +553,7 @@ class BEMBFlex(nn.Module):
             'item_index', 'all_items'], "return_scope must be either 'item_index' or 'all_items'."
         assert deterministic in [True, False]
         if (not deterministic) and (sample_dict is None):
-            assert num_seeds >= 1, "A positive interger `num_seeds` is required if `deterministic` is False and no `sample_dict` is provided."
+            assert num_seeds >= 1, "A positive integer `num_seeds` is required if `deterministic` is False and no `sample_dict` is provided."
 
         # when pred_item is true, the model is predicting which item is bought (specified by item_index).
         if self.pred_item:
