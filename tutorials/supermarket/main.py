@@ -22,6 +22,8 @@ def load_configs(yaml_file: str):
         'num_verify_val': 10,
         'early_stopping': {'validation_llh_flat': -1},
         'write_best_model': True
+        'write_best_model': True,
+        'pred_item' : True,
     }
     defaults.update(data_loaded)
     configs = argparse.Namespace(**defaults)
@@ -151,7 +153,7 @@ if __name__ == '__main__':
         # example day of week, random example.
         session_day_of_week = torch.LongTensor(np.random.randint(0, 7, configs.num_sessions))
 
-        choice_dataset = ChoiceDataset(label=label,
+        choice_dataset = ChoiceDataset(item_index=label,
                                        user_index=user_index,
                                        session_index=session_index,
                                        item_availability=item_availability,
@@ -195,6 +197,7 @@ if __name__ == '__main__':
     # ==============================================================================================
     bemb = LitBEMBFlex(
         # trainings args.
+        pred_item = configs.pred_item,
         learning_rate=configs.learning_rate,
         num_seeds=configs.num_mc_seeds,
         # model args, will be passed to BEMB constructor.
@@ -209,7 +212,7 @@ if __name__ == '__main__':
         num_user_obs=configs.num_user_obs,
         num_item_obs=configs.num_item_obs,
         # num_price_obs=configs.num_price_obs,
-        additional_modules=[ExampleCustomizedModule()]
+        # additional_modules=[ExampleCustomizedModule()]
     )
 
     bemb = bemb.to(configs.device)
@@ -220,6 +223,6 @@ if __name__ == '__main__':
     # ==============================================================================================
     with torch.no_grad():
         # disable gradient tracking to save computational cost.
-        utility_chosen = bemb.model(dataset_list[2], return_logit=True, all_items=False)
+        utility_chosen = bemb.model(dataset_list[2], return_type='utility', return_scope='item_index')
         # uses much higher memory!
-        utility_all = bemb.model(dataset_list[2], return_logit=True, all_items=True)
+        # utility_all = bemb.model(dataset_list[2], return_logit=True, all_items=True)
