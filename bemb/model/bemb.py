@@ -1334,21 +1334,18 @@ class BEMBFlex(nn.Module):
         # ==============================================================================================================
         if self.pred_item:
             # the prediction target is item_index.
-            elbo_expanded = self.forward(batch,
+            elbo += self.forward(batch,
                                  return_type='log_prob',
                                  return_scope='item_index',
                                  deterministic=False,
-                                 sample_dict=sample_dict)
-            if self.deterministic_variational:
-                elbo_expanded = elbo_expanded.unsqueeze(dim=0)
-            elbo += elbo_expanded.sum(dim=1).mean(dim=0)  # (num_seeds, len(batch)) --> scalar.
+                                 sample_dict=sample_dict).sum(dim=1).mean(dim=0)
         else:
             # the prediction target is binary.
             # TODO: update the prediction function.
             utility = self.forward(batch,
                                    return_type='utility',
                                    return_scope='item_index',
-                                   deterministic=self.deterministic_variational,
+                                   deterministic=False,
                                    sample_dict=sample_dict)  # (num_seeds, len(batch))
 
             # compute the log-likelihood for binary label.
