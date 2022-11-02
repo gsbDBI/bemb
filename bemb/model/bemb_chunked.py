@@ -1082,30 +1082,53 @@ class BEMBFlexChunked(nn.Module):
         def reshape_coef_sample(sample, name):
             # reshape the monte carlo sample of coefficients to (R, P, I, *).
             if name.endswith('_user'):
-                # (R, U, *) --> (R, total_computation, *)
-                temp = sample[:, user_index, :, :, :]
-                stemp = session_chunk_ids.reshape(1, -1, 1, 1, 1)
-                stemp = stemp.repeat(1, 1, temp.shape[2], temp.shape[3], 1)
-                ctemp = category_chunk_ids.reshape(1, -1, 1, 1)
-                ctemp = ctemp.repeat(1, 1, temp.shape[2], 1)
-                gathered1 = torch.gather(temp, 4, stemp).squeeze(4)
-                gathered2 = torch.gather(gathered1, 3, ctemp).squeeze(3)
-                return gathered2
-                # return sample[:, user_index, :, category_chunk_ids, session_chunk_ids]
+                # (R, total_computation, dim, chunk_size_1, chunk_size_2)
+                all_chunks_sample = sample[:, user_index, :, :, :]
+                # (total_computation) --> (1, total_computation, 1, 1, 1)
+                second_chunk_index = session_chunk_ids.reshape(1, -1, 1, 1, 1)
+                # (1, total_computation, 1, 1, 1) --> (R, total_computation, dim, chunk_size_1, 1)
+                second_chunk_index = second_chunk_index.repeat(R, 1, all_chunks_sample.shape[2], all_chunks_sample.shape[3], 1)
+                # (total_computation) --> (1, total_computation, 1, 1)
+                first_chunk_index = category_chunk_ids.reshape(1, -1, 1, 1)
+                # (1, total_computation, 1, 1) --> (R, total_computation, dim, 1)
+                first_chunk_index = first_chunk_index.repeat(R, 1, all_chunks_sample.shape[2], 1)
+                # select the first chunk.
+                second_chunk_selected = torch.gather(all_chunks_sample, -1, second_chunk_index).squeeze(-1)
+                # select the second chunk.
+                first_chunk_selected = torch.gather(second_chunk_selected, -1, first_chunk_index).squeeze(-1)
+                return first_chunk_selected
             elif name.endswith('_item'):
-                # (R, I, *) --> (R, total_computation, *)
-                temp = sample[:, relevant_item_index, :, :, :]
-                utemp = user_chunk_ids.reshape(1, -1, 1, 1, 1)
-                utemp = utemp.repeat(1, 1, temp.shape[2], temp.shape[3], 1)
-                stemp = session_chunk_ids.reshape(1, -1, 1, 1)
-                stemp = stemp.repeat(1, 1, temp.shape[2], 1)
-                gathered1 = torch.gather(temp, 4, utemp).squeeze(4)
-                gathered2 = torch.gather(gathered1, 3, stemp).squeeze(3)
-                return gathered2
-                # return sample[:, relevant_item_index, :, session_chunk_ids, user_chunk_ids]
+                # (R, total_computation, dim, chunk_size_1, chunk_size_2)
+                all_chunks_sample = sample[:, relevant_item_index, :, :, :]
+                # (total_computation) --> (1, total_computation, 1, 1, 1)
+                second_chunk_index = user_chunk_ids.reshape(1, -1, 1, 1, 1)
+                # (1, total_computation, 1, 1, 1) --> (R, total_computation, dim, chunk_size_1, 1)
+                second_chunk_index = second_chunk_index.repeat(R, 1, all_chunks_sample.shape[2], all_chunks_sample.shape[3], 1)
+                # (total_computation) --> (1, total_computation, 1, 1)
+                first_chunk_index = session_chunk_ids.reshape(1, -1, 1, 1)
+                # (1, total_computation, 1, 1) --> (R, total_computation, dim, 1)
+                first_chunk_index = first_chunk_index.repeat(R, 1, all_chunks_sample.shape[2], 1)
+                # select the first chunk.
+                second_chunk_selected = torch.gather(all_chunks_sample, -1, second_chunk_index).squeeze(-1)
+                # select the second chunk.
+                first_chunk_selected = torch.gather(second_chunk_selected, -1, first_chunk_index).squeeze(-1)
+                return first_chunk_selected
             elif name.endswith('_category'):
-                # (R, NC, *) --> (R, total_computation, *)
-                return sample[:, repeat_category_index, :, session_chunk_ids, user_chunk_ids]
+                # (R, total_computation, dim, chunk_size_1, chunk_size_2)
+                all_chunks_sample = sample[:, repeat_category_index, :, :, :]
+                # (total_computation) --> (1, total_computation, 1, 1, 1)
+                second_chunk_index = user_chunk_ids.reshape(1, -1, 1, 1, 1)
+                # (1, total_computation, 1, 1, 1) --> (R, total_computation, dim, chunk_size_1, 1)
+                second_chunk_index = second_chunk_index.repeat(R, 1, all_chunks_sample.shape[2], all_chunks_sample.shape[3], 1)
+                # (total_computation) --> (1, total_computation, 1, 1)
+                first_chunk_index = session_chunk_ids.reshape(1, -1, 1, 1)
+                # (1, total_computation, 1, 1) --> (R, total_computation, dim, 1)
+                first_chunk_index = first_chunk_index.repeat(R, 1, all_chunks_sample.shape[2], 1)
+                # select the first chunk.
+                second_chunk_selected = torch.gather(all_chunks_sample, -1, second_chunk_index).squeeze(-1)
+                # select the second chunk.
+                first_chunk_selected = torch.gather(second_chunk_selected, -1, first_chunk_index).squeeze(-1)
+                return first_chunk_selected
             elif name.endswith('_constant'):
                 # (R, *) --> (R, total_computation, *)
                 return sample[:, 0, 0].view(R, 1, -1).expand(-1, total_computation, -1)
@@ -1173,6 +1196,7 @@ class BEMBFlexChunked(nn.Module):
                 coef_name = term['coefficient'][0]
                 coef_sample = reshape_coef_sample(
                     sample_dict[coef_name], coef_name)
+                # breakpoint()
                 assert coef_sample.shape == (
                     R, total_computation, positive_integer)
 
