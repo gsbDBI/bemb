@@ -219,7 +219,9 @@ class BEMBFlex(nn.Module):
                 user and item observables can enter the prior of coefficient. Hence session, price,
                 and taste observables are never required, we include it here for completeness.
 
-            deterministic_variational (bool, optional): if True, the variational posterior is equivalent to frequentist MLE estimates of parameters
+            deterministic_variational (bool, optional): if True, the variational posterior is equivalent to frequentist MLE estimates of parameters.
+                Note that this is equivalent to having a point mass with zero variance for the variational posterior.
+                Defaults to False.
         """
         super(BEMBFlex, self).__init__()
         self.utility_formula = utility_formula
@@ -325,11 +327,10 @@ class BEMBFlex(nn.Module):
                     if coef_name not in self.prior_mean.keys():
                         # the user may specify 'default' prior variance through the prior_variance dictionary.
                         if 'default' in self.prior_mean.keys():
-                            warnings.warn(f"You provided a dictionary of prior mean, but coefficient {coef_name} is not a key in it. We found a key 'default' in the dictionary, so we use the value of 'default' as the prior mean for coefficient {coef_name}.")
                             self.prior_mean[coef_name] = self.prior_mean['default']
                         else:
                             warnings.warn(f"You provided a dictionary of prior mean, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the prior_mean dictionary to use that as default value (e.g., prior_mean['default'] = 0.1); now using mean=0.0 since this is not supplied.")
-                            self.prior_variance[coef_name] = 0.0
+                            self.prior_mean[coef_name] = 0.0
 
                 mean = self.prior_mean[coef_name] if isinstance(
                     self.prior_mean, dict) else self.prior_mean
@@ -339,7 +340,6 @@ class BEMBFlex(nn.Module):
                     if coef_name not in self.prior_variance.keys():
                         # the user may specify 'default' prior variance through the prior_variance dictionary.
                         if 'default' in self.prior_variance.keys():
-                            warnings.warn(f"You provided a dictionary of prior variance, but coefficient {coef_name} is not a key in it. We found a key 'default' in the dictionary, so we use the value of 'default' as the prior variance for coefficient {coef_name}.")
                             self.prior_variance[coef_name] = self.prior_variance['default']
                         else:
                             warnings.warn(f"You provided a dictionary of prior variance, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the prior_variance dictionary to use that as default value (e.g., prior_variance['default'] = 0.3); now using variance=1.0 since this is not supplied.")
@@ -585,10 +585,7 @@ class BEMBFlex(nn.Module):
             # Use the means of variational distributions as the sole deterministic MC sample.
             # NOTE: here we don't need to sample the obs2prior weight H since we only compute the log-likelihood.
             # TODO: is this correct?
-            sample_dict = dict()
-            for coef_name, coef in self.coef_dict.items():
-                sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(
-                    dim=0)  # (1, num_*, dim)
+            sample_dict = self.sample_coefficient_dictionary(num_seeds, deterministic=True)
         else:
             if sample_dict is None:
                 # sample stochastic parameters.
@@ -637,11 +634,12 @@ class BEMBFlex(nn.Module):
     # ==================================================================================================================
     # helper functions.
     # ==================================================================================================================
-    def sample_coefficient_dictionary(self, num_seeds: int) -> Dict[str, torch.Tensor]:
+    def sample_coefficient_dictionary(self, num_seeds: int, deterministic: bool = False) -> Dict[str, torch.Tensor]:
         """A helper function to sample parameters from coefficients.
 
         Args:
             num_seeds (int): number of random samples.
+            deterministic (bool, optional): whether to use the mean of variational distributions as the sole sample.
 
         Returns:
             Dict[str, torch.Tensor]: a dictionary maps coefficient names to tensor of sampled coefficient parameters,
@@ -650,16 +648,21 @@ class BEMBFlex(nn.Module):
         """
         sample_dict = dict()
         for coef_name, coef in self.coef_dict.items():
-            s = coef.rsample(num_seeds)
-            if coef.obs2prior:
-                # sample both obs2prior weight and realization of variable.
-                assert isinstance(s, tuple) and len(s) == 2
-                sample_dict[coef_name] = s[0]
-                sample_dict[coef_name + '.H'] = s[1]
+            if deterministic:
+                sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+                if coef.obs2prior:
+                    sample_dict[coef_name + '.H'] = coef.prior_H.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
             else:
-                # only sample the realization of variable.
-                assert torch.is_tensor(s)
-                sample_dict[coef_name] = s
+                s = coef.rsample(num_seeds)
+                if coef.obs2prior:
+                    # sample both obs2prior weight and realization of variable.
+                    assert isinstance(s, tuple) and len(s) == 2
+                    sample_dict[coef_name] = s[0]
+                    sample_dict[coef_name + '.H'] = s[1]
+                else:
+                    # only sample the realization of variable.
+                    assert torch.is_tensor(s)
+                    sample_dict[coef_name] = s
         return sample_dict
 
     @torch.no_grad()
@@ -1302,7 +1305,7 @@ class BEMBFlex(nn.Module):
         return total
 
     def elbo(self, batch: ChoiceDataset, num_seeds: int = 1) -> torch.Tensor:
-        """A combined method to computes the current ELBO given a batch, this method is used for training the model.
+        """A combined method to compute the current ELBO given a batch, this method is used for training the model.
 
         Args:
             batch (ChoiceDataset): a ChoiceDataset containing necessary information.
@@ -1316,17 +1319,7 @@ class BEMBFlex(nn.Module):
         # ==============================================================================================================
         # 1. sample latent variables from their variational distributions.
         # ==============================================================================================================
-        if self.deterministic_variational:
-            num_seeds = 1
-            # Use the means of variational distributions as the sole deterministic MC sample.
-            # NOTE: here we don't need to sample the obs2prior weight H since we only compute the log-likelihood.
-            # TODO: is this correct?
-            sample_dict = dict()
-            for coef_name, coef in self.coef_dict.items():
-                sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(
-                    dim=0)  # (1, num_*, dim)
-        else:
-            sample_dict = self.sample_coefficient_dictionary(num_seeds)
+        sample_dict = self.sample_coefficient_dictionary(num_seeds, self.deterministic_variational)
 
         # ==============================================================================================================
         # 2. compute log p(latent) prior.
@@ -1344,7 +1337,7 @@ class BEMBFlex(nn.Module):
             elbo_expanded = self.forward(batch,
                                  return_type='log_prob',
                                  return_scope='item_index',
-                                 deterministic=self.deterministic_variational,
+                                 deterministic=False,
                                  sample_dict=sample_dict)
             if self.deterministic_variational:
                 elbo_expanded = elbo_expanded.unsqueeze(dim=0)
