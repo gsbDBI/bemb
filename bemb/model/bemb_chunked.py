@@ -397,19 +397,14 @@ class BEMBFlexChunked(nn.Module):
             Returns:
                 torch.Tensor: the combined utility and log probability.
             """
-        # TODO(akanodia): disallow this for now
-        raise NotImplementedError()
-
         # Use the means of variational distributions as the sole MC sample.
-        sample_dict = dict()
-        for coef_name, coef in self.coef_dict.items():
-            sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
-
+        sample_dict = self.sample_coefficient_dictionary(1, deterministic=True)
         # there is 1 random seed in this case.
         # (num_seeds=1, len(batch), num_items)
         out = self.log_likelihood_all_items(batch, return_logit=True, sample_dict=sample_dict)
         out = out.squeeze(0)
         # import pdb; pdb.set_trace()
+        out = out.view(-1, self.num_items)
         ivs = scatter_logsumexp(out, self.item_to_category_tensor, dim=-1)
         return ivs # (len(batch), num_categories)
 
@@ -562,6 +557,8 @@ class BEMBFlexChunked(nn.Module):
         # get sample_dict ready.
         # ==============================================================================================================
         if deterministic:
+            sample_dict = self.sample_coefficient_dictionary(num_seeds, deterministic=True)
+            '''
             num_seeds = 1
             # Use the means of variational distributions as the sole deterministic MC sample.
             # NOTE: here we don't need to sample the obs2prior weight H since we only compute the log-likelihood.
@@ -580,6 +577,7 @@ class BEMBFlexChunked(nn.Module):
                         # inner_list.append(coef.variational_distribution.mean.unsqueeze(dim=0)) # (1, num_*, dim)
                     # outer_list.append(inner_list)
                 sample_dict[coef_name] = this_sample
+            '''
         else:
             if sample_dict is None:
                 # sample stochastic parameters.
@@ -630,7 +628,7 @@ class BEMBFlexChunked(nn.Module):
     # ==================================================================================================================
     # helper functions.
     # ==================================================================================================================
-    def sample_coefficient_dictionary(self, num_seeds: int) -> Dict[str, torch.Tensor]:
+    def sample_coefficient_dictionary(self, num_seeds: int, deterministic: bool=False) -> Dict[str, torch.Tensor]:
         """A helper function to sample parameters from coefficients.
 
         Args:
@@ -642,42 +640,62 @@ class BEMBFlexChunked(nn.Module):
                 Each sample tensor has shape (num_seeds, num_classes, dim).
         """
         sample_dict = dict()
-        for coef_name, bayesian_coeffs in self.coef_dict.items():
-            # outer_list = []
-            num_classes = bayesian_coeffs[0][0].num_classes
-            dim = bayesian_coeffs[0][0].dim
-            this_sample = torch.FloatTensor(num_seeds, num_classes, dim, len(bayesian_coeffs), len(bayesian_coeffs[0])).to(self.device)
-            obs2prior = self.obs2prior_dict[coef_name]
-            if obs2prior:
-                num_obs = bayesian_coeffs[0][0].num_obs
-                this_sample_H = torch.FloatTensor(num_seeds, dim, num_obs, len(bayesian_coeffs), len(bayesian_coeffs[0])).to(self.device)
-                # outer_list_H = []
-            for ii, bayesian_coeffs_inner in enumerate(bayesian_coeffs):
-                # inner_list = []
-                # if obs2prior:
-                    # inner_list_H = []
-                for jj, coef in enumerate(bayesian_coeffs_inner):
-                    s = coef.rsample(num_seeds)
-                    if coef.obs2prior:
-                        # sample both obs2prior weight and realization of variable.
-                        assert isinstance(s, tuple) and len(s) == 2
-                        this_sample[:, :, :, ii, jj] = s[0]
-                        this_sample_H[:, :, :, ii, jj] = s[1]
-                        # inner_list.append(s[0])
-                        # inner_list_H.append(s[1])
-                    else:
-                        # only sample the realization of variable.
-                        assert torch.is_tensor(s)
-                        this_sample[:, :, :, ii, jj] = s
-                        # inner_list.append(s)
-                # outer_list.append(inner_list)
-                # if obs2prior:
-                        # outer_list_H.append(inner_list_H)
-            sample_dict[coef_name] = this_sample
-            # sample_dict[coef_name] = outer_list
-            if obs2prior:
-                sample_dict[coef_name + '.H'] = this_sample_H
-                # sample_dict[coef_name + '.H'] = outer_list_H
+        if deterministic:
+            num_seeds = 1
+            # Use the means of variational distributions as the sole deterministic MC sample.
+            # NOTE: here we don't need to sample the obs2prior weight H since we only compute the log-likelihood.
+            # TODO: is this correct?
+            sample_dict = dict()
+            for coef_name, bayesian_coeffs in self.coef_dict.items():
+                num_classes = bayesian_coeffs[0][0].num_classes
+                dim = bayesian_coeffs[0][0].dim
+                this_sample = torch.FloatTensor(num_seeds, num_classes, dim, len(bayesian_coeffs), len(bayesian_coeffs[0])).to(self.device)
+                # outer_list = []
+                for ii, bayesian_coeffs_inner in enumerate(bayesian_coeffs):
+                    # inner_list = []
+                    for jj, coef in enumerate(bayesian_coeffs_inner):
+                        this_sample[:, :, :, ii, jj] = coef.variational_distribution.mean.unsqueeze(dim=0) # (1, num_*, dim)
+                        # inner_list.append(coef.variational_distribution.mean.unsqueeze(dim=0)) # (1, num_*, dim)
+                        # inner_list.append(coef.variational_distribution.mean.unsqueeze(dim=0)) # (1, num_*, dim)
+                    # outer_list.append(inner_list)
+                sample_dict[coef_name] = this_sample
+        else:
+            for coef_name, bayesian_coeffs in self.coef_dict.items():
+                # outer_list = []
+                num_classes = bayesian_coeffs[0][0].num_classes
+                dim = bayesian_coeffs[0][0].dim
+                this_sample = torch.FloatTensor(num_seeds, num_classes, dim, len(bayesian_coeffs), len(bayesian_coeffs[0])).to(self.device)
+                obs2prior = self.obs2prior_dict[coef_name]
+                if obs2prior:
+                    num_obs = bayesian_coeffs[0][0].num_obs
+                    this_sample_H = torch.FloatTensor(num_seeds, dim, num_obs, len(bayesian_coeffs), len(bayesian_coeffs[0])).to(self.device)
+                    # outer_list_H = []
+                for ii, bayesian_coeffs_inner in enumerate(bayesian_coeffs):
+                    # inner_list = []
+                    # if obs2prior:
+                        # inner_list_H = []
+                    for jj, coef in enumerate(bayesian_coeffs_inner):
+                        s = coef.rsample(num_seeds)
+                        if coef.obs2prior:
+                            # sample both obs2prior weight and realization of variable.
+                            assert isinstance(s, tuple) and len(s) == 2
+                            this_sample[:, :, :, ii, jj] = s[0]
+                            this_sample_H[:, :, :, ii, jj] = s[1]
+                            # inner_list.append(s[0])
+                            # inner_list_H.append(s[1])
+                        else:
+                            # only sample the realization of variable.
+                            assert torch.is_tensor(s)
+                            this_sample[:, :, :, ii, jj] = s
+                            # inner_list.append(s)
+                    # outer_list.append(inner_list)
+                    # if obs2prior:
+                            # outer_list_H.append(inner_list_H)
+                sample_dict[coef_name] = this_sample
+                # sample_dict[coef_name] = outer_list
+                if obs2prior:
+                    sample_dict[coef_name + '.H'] = this_sample_H
+                    # sample_dict[coef_name + '.H'] = outer_list_H
 
         return sample_dict
 
@@ -793,9 +811,23 @@ class BEMBFlexChunked(nn.Module):
                 out[x, y, z] is the probability of choosing item z in session y conditioned on
                 latents to be the x-th Monte Carlo sample.
         """
-        # TODO: (akanodia) disallow this for now.
-        raise NotImplementedError()
-        num_seeds = next(iter(sample_dict.values())).shape[0]
+        batch.item_index = torch.arange(self.num_items, device=batch.device)
+        batch.item_index = batch.item_index.repeat(batch.user_index.shape[0])
+        batch.user_index = batch.user_index.repeat_interleave(self.num_items)
+        batch.session_index = batch.session_index.repeat_interleave(self.num_items)
+        # batch.user_obs = batch.user_obs.repeat_interleave(self.num_items)
+        # batch.item_obs = batch.user_obs.repeat_interleave(self.num_items)
+        # batch.user_obs = batch.user_obs.repeat_interleave(self.num_items)
+                                               # user_obs=user_obs,
+                                               # item_obs=item_obs,
+                                               # price_obs=price_obs,
+                                               # session_obs_d=session_obs_d,
+                                               # session_obs_s=session_obs_s,
+                                               # session_obs_w=session_obs_w,
+                                               # session_week_id=session_week_id,
+        return self.log_likelihood_item_index(batch, return_logit, sample_dict, all_items=True)
+        # num_seeds = next(iter(sample_dict.values())).shape[0]
+        num_seeds = list(sample_dict.values())[0].shape[0]
 
         # avoid repeated work when user purchased several items in the same session.
         user_session_index = torch.stack(
@@ -817,6 +849,10 @@ class BEMBFlexChunked(nn.Module):
         I = self.num_items
         NC = self.num_categories
 
+        user_chunk_ids = torch.repeat_interleave(self.user_chunk_ids[batch.user_index], repeats)
+        item_chunk_ids = torch.repeat_interleave(self.item_chunk_ids[batch.item_index], repeats)
+        session_chunk_ids = torch.repeat_interleave(self.session_chunk_ids[batch.session_index], repeats)
+        category_chunk_ids = torch.repeat_interleave(self.category_chunk_ids[cate_index], repeats)
         # ==============================================================================================================
         # Helper Functions for Reshaping.
         # ==============================================================================================================
@@ -885,6 +921,7 @@ class BEMBFlexChunked(nn.Module):
                 obs = obs[session_index, :, :]  # (P, I, O)
                 return obs.view(1, P, I, O).expand(R, -1, -1, -1)
             elif name.startswith('taste_'):
+                raise NotImplementedError
                 assert obs.shape == (U, I, O)
                 obs = obs[user_index, :, :]  # (P, I, O)
                 return obs.view(1, P, I, O).expand(R, -1, -1, -1)
@@ -1012,7 +1049,7 @@ class BEMBFlexChunked(nn.Module):
             assert log_p.shape == (num_seeds, len(batch), self.num_items)
             return log_p
 
-    def log_likelihood_item_index(self, batch: ChoiceDataset, return_logit: bool, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def log_likelihood_item_index(self, batch: ChoiceDataset, return_logit: bool, sample_dict: Dict[str, torch.Tensor], all_items: bool=False) -> torch.Tensor:
         """
         NOTE for developers:
         This method is more efficient and only computes log-likelihood/logit(utility) for item in item_index[i] for each
@@ -1042,9 +1079,18 @@ class BEMBFlexChunked(nn.Module):
                 conditioned on latents to be the x-th Monte Carlo sample.
         """
         num_seeds = list(sample_dict.values())[0].shape[0]
+        # if all_items:
+        #     buser_index = batch.user_index.repeat_interleave(self.num_items)
+        #     bsession_index = batch.session_index.repeat_interleave(self.num_items)
+        #     bitem_index = torch.arange(self.num_items, device=batch.device)
+        #     bitem_index = bitem_index.repeat(batch.user_index.shape[0])
+        # else:
+        bitem_index = batch.item_index
+        buser_index = batch.user_index
+        bsession_index = batch.session_index
 
         # get category id of the item bought in each row of batch.
-        cate_index = self.item_to_category_tensor[batch.item_index]
+        cate_index = self.item_to_category_tensor[bitem_index]
 
         # get item ids of all items from the same category of each item bought.
         relevant_item_index = self.category_to_item_tensor[cate_index, :]
@@ -1058,12 +1104,14 @@ class BEMBFlexChunked(nn.Module):
         reverse_indices = torch.repeat_interleave(
             torch.arange(len(batch), device=self.device), repeats)
         # expand the user_index and session_index.
-        user_index = torch.repeat_interleave(batch.user_index, repeats)
+        # if all_items:
+        #     breakpoint()
+        user_index = torch.repeat_interleave(buser_index, repeats)
         repeat_category_index = torch.repeat_interleave(cate_index, repeats)
-        session_index = torch.repeat_interleave(batch.session_index, repeats)
+        session_index = torch.repeat_interleave(bsession_index, repeats)
         # duplicate the item focused to match.
         item_index_expanded = torch.repeat_interleave(
-            batch.item_index, repeats)
+            bitem_index, repeats)
 
         # short-hands for easier shape check.
         R = num_seeds
@@ -1074,9 +1122,9 @@ class BEMBFlexChunked(nn.Module):
         I = self.num_items
         NC = self.num_categories
 
-        user_chunk_ids = torch.repeat_interleave(self.user_chunk_ids[batch.user_index], repeats)
-        item_chunk_ids = torch.repeat_interleave(self.item_chunk_ids[batch.item_index], repeats)
-        session_chunk_ids = torch.repeat_interleave(self.session_chunk_ids[batch.session_index], repeats)
+        user_chunk_ids = torch.repeat_interleave(self.user_chunk_ids[buser_index], repeats)
+        item_chunk_ids = torch.repeat_interleave(self.item_chunk_ids[bitem_index], repeats)
+        session_chunk_ids = torch.repeat_interleave(self.session_chunk_ids[bsession_index], repeats)
         category_chunk_ids = torch.repeat_interleave(self.category_chunk_ids[cate_index], repeats)
 
         # ==========================================================================================
