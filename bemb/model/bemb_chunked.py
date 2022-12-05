@@ -1,8 +1,11 @@
 """
-The core class of the Bayesian EMBedding (BEMB) model.
+A chunked version of BEMB.
 
-Author: Tianyu Du
-Update: Apr. 28, 2022
+We divide users, items(categories) and sessions into u, i and s chunks.
+Then for each user, there are i*s parameters, for each item there are u*s parameters and for each session there are u*i parameters.
+
+Author: Ayush Kanodia
+Update: Dec 04, 2022
 """
 import warnings
 from pprint import pprint
@@ -25,6 +28,7 @@ from bemb.model.bayesian_coefficient import BayesianCoefficient
 # ======================================================================================================================
 
 from bemb.model.bemb import PositiveInteger, parse_utility
+
 positive_integer = PositiveInteger()
 
 # ======================================================================================================================
@@ -1372,6 +1376,8 @@ class BEMBFlexChunked(nn.Module):
                         # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
                         total += coef.log_prior(
                             sample=sample_dict[coef_name][:, :, :, ii, jj], H_sample=None, x_obs=None).sum(dim=-1)
+                    # break
+                # break
 
         for module in self.additional_modules:
             raise NotImplementedError()
@@ -1435,7 +1441,10 @@ class BEMBFlexChunked(nn.Module):
         # ==============================================================================================================
         # 2. compute log p(latent) prior.
         # (num_seeds,) --mean--> scalar.
-        elbo = self.log_prior(batch, sample_dict).mean(dim=0)
+        # with torch.no_grad():
+        #     while True:
+        #         elbo = self.log_prior(batch, sample_dict).mean(dim=0)
+        elbo = torch.tensor(0.0, device=self.device)
         # ==============================================================================================================
 
         # ==============================================================================================================
