@@ -8,7 +8,10 @@ import torch
 from torch_choice.data import ChoiceDataset
 
 
-def simulate_dataset(num_users: int, num_items: int, data_size: int) -> List[ChoiceDataset]:
+def simulate_dataset(
+        num_users: int,
+        num_items: int,
+        data_size: int) -> List[ChoiceDataset]:
     user_index = torch.LongTensor(np.random.choice(num_users, size=data_size))
     Us = np.arange(num_users)
     Is = np.sin(np.arange(num_users) / num_users * 4 * np.pi)
@@ -29,7 +32,11 @@ def simulate_dataset(num_users: int, num_items: int, data_size: int) -> List[Cho
 
     item_obs = torch.eye(num_items)
 
-    dataset = ChoiceDataset(user_index=user_index, item_index=item_index, user_obs=user_obs, item_obs=item_obs)
+    dataset = ChoiceDataset(
+        user_index=user_index,
+        item_index=item_index,
+        user_obs=user_obs,
+        item_obs=item_obs)
 
     idx = np.random.permutation(len(dataset))
     train_size = int(0.8 * len(dataset))
