@@ -815,239 +815,7 @@ class BEMBFlexChunked(nn.Module):
         batch.item_index = batch.item_index.repeat(batch.user_index.shape[0])
         batch.user_index = batch.user_index.repeat_interleave(self.num_items)
         batch.session_index = batch.session_index.repeat_interleave(self.num_items)
-        # batch.user_obs = batch.user_obs.repeat_interleave(self.num_items)
-        # batch.item_obs = batch.user_obs.repeat_interleave(self.num_items)
-        # batch.user_obs = batch.user_obs.repeat_interleave(self.num_items)
-                                               # user_obs=user_obs,
-                                               # item_obs=item_obs,
-                                               # price_obs=price_obs,
-                                               # session_obs_d=session_obs_d,
-                                               # session_obs_s=session_obs_s,
-                                               # session_obs_w=session_obs_w,
-                                               # session_week_id=session_week_id,
         return self.log_likelihood_item_index(batch, return_logit, sample_dict, all_items=True)
-        # num_seeds = next(iter(sample_dict.values())).shape[0]
-        num_seeds = list(sample_dict.values())[0].shape[0]
-
-        # avoid repeated work when user purchased several items in the same session.
-        user_session_index = torch.stack(
-            [batch.user_index, batch.session_index])
-        assert user_session_index.shape == (2, len(batch))
-        unique_user_sess, inverse_indices = torch.unique(
-            user_session_index, dim=1, return_inverse=True)
-
-        user_index = unique_user_sess[0, :]
-        session_index = unique_user_sess[1, :]
-        assert len(user_index) == len(session_index)
-
-        # short-hands for easier shape check.
-        R = num_seeds
-        # P = len(batch)  # num_purchases.
-        P = unique_user_sess.shape[1]
-        S = self.num_sessions
-        U = self.num_users
-        I = self.num_items
-        NC = self.num_categories
-
-        user_chunk_ids = torch.repeat_interleave(self.user_chunk_ids[batch.user_index], repeats)
-        item_chunk_ids = torch.repeat_interleave(self.item_chunk_ids[batch.item_index], repeats)
-        session_chunk_ids = torch.repeat_interleave(self.session_chunk_ids[batch.session_index], repeats)
-        category_chunk_ids = torch.repeat_interleave(self.category_chunk_ids[cate_index], repeats)
-        # ==============================================================================================================
-        # Helper Functions for Reshaping.
-        # ==============================================================================================================
-        def reshape_user_coef_sample(C):
-            # input shape (R, U, *)
-            C = C.view(R, U, 1, -1).expand(-1, -1, I, -1)  # (R, U, I, *)
-            C = C[:, user_index, :, :]
-            assert C.shape == (R, P, I, positive_integer)
-            return C
-
-        def reshape_item_coef_sample(C):
-            # input shape (R, I, *)
-            C = C.view(R, 1, I, -1).expand(-1, P, -1, -1)
-            assert C.shape == (R, P, I, positive_integer)
-            return C
-
-        def reshape_category_coef_sample(C):
-            # input shape (R, NC, *)
-            C = torch.repeat_interleave(C, self.category_to_size_tensor, dim=1)
-            # input shape (R, I, *)
-            C = C.view(R, 1, I, -1).expand(-1, P, -1, -1)
-            assert C.shape == (R, P, I, positive_integer)
-            return C
-
-        def reshape_constant_coef_sample(C):
-            # input shape (R, *)
-            C = C.view(R, 1, 1, -1).expand(-1, P, I, -1)
-            assert C.shape == (R, P, I, positive_integer)
-            return C
-
-        def reshape_coef_sample(sample, name):
-            # reshape the monte carlo sample of coefficients to (R, P, I, *).
-            if name.endswith('_user'):
-                # (R, U, *) --> (R, P, I, *)
-                return reshape_user_coef_sample(sample)
-            elif name.endswith('_item'):
-                # (R, I, *) --> (R, P, I, *)
-                return reshape_item_coef_sample(sample)
-            elif name.endswith('_category'):
-                # (R, NC, *) --> (R, P, NC, *)
-                return reshape_category_coef_sample(sample)
-            elif name.endswith('_constant'):
-                # (R, *) --> (R, P, I, *)
-                return reshape_constant_coef_sample(sample)
-            else:
-                raise ValueError
-
-        def reshape_observable(obs, name):
-            # reshape observable to (R, P, I, *) so that it can be multiplied with monte carlo
-            # samples of coefficients.
-            O = obs.shape[-1]  # number of observables.
-            assert O == positive_integer
-            if name.startswith('item_'):
-                assert obs.shape == (I, O)
-                obs = obs.view(1, 1, I, O).expand(R, P, -1, -1)
-            elif name.startswith('user_'):
-                assert obs.shape == (U, O)
-                obs = obs[user_index, :]  # (P, O)
-                obs = obs.view(1, P, 1, O).expand(R, -1, I, -1)
-            elif name.startswith('session_'):
-                assert obs.shape == (S, O)
-                obs = obs[session_index, :]  # (P, O)
-                return obs.view(1, P, 1, O).expand(R, -1, I, -1)
-            elif name.startswith('price_'):
-                assert obs.shape == (S, I, O)
-                obs = obs[session_index, :, :]  # (P, I, O)
-                return obs.view(1, P, I, O).expand(R, -1, -1, -1)
-            elif name.startswith('taste_'):
-                raise NotImplementedError
-                assert obs.shape == (U, I, O)
-                obs = obs[user_index, :, :]  # (P, I, O)
-                return obs.view(1, P, I, O).expand(R, -1, -1, -1)
-            else:
-                raise ValueError
-            assert obs.shape == (R, P, I, O)
-            return obs
-
-        # ==============================================================================================================
-        # Compute the Utility Term by Term.
-        # ==============================================================================================================
-        # P is the number of unique (user, session) pairs.
-        # (random_seeds, P, num_items).
-        utility = torch.zeros(R, P, I, device=self.device)
-
-        # loop over additive term to utility
-        for term in self.formula:
-            # Type I: single coefficient, e.g., lambda_item or lambda_user.
-            if len(term['coefficient']) == 1 and term['observable'] is None:
-                # E.g., lambda_item or lambda_user
-                coef_name = term['coefficient'][0]
-                coef_sample = reshape_coef_sample(
-                    sample_dict[coef_name], coef_name)
-                assert coef_sample.shape == (R, P, I, 1)
-                additive_term = coef_sample.view(R, P, I)
-
-            # Type II: factorized coefficient, e.g., <theta_user, lambda_item>.
-            elif len(term['coefficient']) == 2 and term['observable'] is None:
-                coef_name_0 = term['coefficient'][0]
-                coef_name_1 = term['coefficient'][1]
-
-                coef_sample_0 = reshape_coef_sample(
-                    sample_dict[coef_name_0], coef_name_0)
-                coef_sample_1 = reshape_coef_sample(
-                    sample_dict[coef_name_1], coef_name_1)
-
-                assert coef_sample_0.shape == coef_sample_1.shape == (
-                    R, P, I, positive_integer)
-
-                additive_term = (coef_sample_0 * coef_sample_1).sum(dim=-1)
-
-            # Type III: single coefficient multiplied by observable, e.g., theta_user * x_obs_item.
-            elif len(term['coefficient']) == 1 and term['observable'] is not None:
-                coef_name = term['coefficient'][0]
-                coef_sample = reshape_coef_sample(
-                    sample_dict[coef_name], coef_name)
-                assert coef_sample.shape == (R, P, I, positive_integer)
-
-                obs_name = term['observable']
-                obs = reshape_observable(getattr(batch, obs_name), obs_name)
-                assert obs.shape == (R, P, I, positive_integer)
-
-                additive_term = (coef_sample * obs).sum(dim=-1)
-
-            # Type IV: factorized coefficient multiplied by observable.
-            # e.g., gamma_user * beta_item * price_obs.
-            elif len(term['coefficient']) == 2 and term['observable'] is not None:
-                coef_name_0, coef_name_1 = term['coefficient'][0], term['coefficient'][1]
-
-                coef_sample_0 = reshape_coef_sample(
-                    sample_dict[coef_name_0], coef_name_0)
-                coef_sample_1 = reshape_coef_sample(
-                    sample_dict[coef_name_1], coef_name_1)
-                assert coef_sample_0.shape == coef_sample_1.shape == (
-                    R, P, I, positive_integer)
-                num_obs_times_latent_dim = coef_sample_0.shape[-1]
-
-                obs_name = term['observable']
-                obs = reshape_observable(getattr(batch, obs_name), obs_name)
-                assert obs.shape == (R, P, I, positive_integer)
-                num_obs = obs.shape[-1]  # number of observables.
-
-                assert (num_obs_times_latent_dim % num_obs) == 0
-                latent_dim = num_obs_times_latent_dim // num_obs
-
-                coef_sample_0 = coef_sample_0.view(
-                    R, P, I, num_obs, latent_dim)
-                coef_sample_1 = coef_sample_1.view(
-                    R, P, I, num_obs, latent_dim)
-                # compute the factorized coefficient with shape (R, P, I, O).
-                coef = (coef_sample_0 * coef_sample_1).sum(dim=-1)
-
-                additive_term = (coef * obs).sum(dim=-1)
-
-            else:
-                raise ValueError(f'Undefined term type: {term}')
-
-            assert additive_term.shape == (R, P, I)
-            utility += additive_term
-
-        # ==============================================================================================================
-        # Mask Out Unavailable Items in Each Session.
-        # ==============================================================================================================
-
-        if batch.item_availability is not None:
-            # expand to the Monte Carlo sample dimension.
-            # (S, I) -> (P, I) -> (1, P, I) -> (R, P, I)
-            A = batch.item_availability[session_index, :].unsqueeze(
-                dim=0).expand(R, -1, -1)
-            utility[~A] = - (torch.finfo(utility.dtype).max / 2)
-
-        utility = utility[:, inverse_indices, :]
-        assert utility.shape == (R, len(batch), I)
-
-        for module in self.additional_modules:
-            additive_term = module(batch)
-            assert additive_term.shape == (R, len(batch), 1)
-            utility += additive_term.expand(-1, -1, I)
-
-        if return_logit:
-            # output shape: (num_seeds, len(batch), num_items)
-            assert utility.shape == (num_seeds, len(batch), self.num_items)
-            return utility
-        else:
-            # compute log likelihood log p(choosing item i | user, item latents)
-            # compute log softmax separately within each category.
-            if self.pred_item:
-                # output shape: (num_seeds, len(batch), num_items)
-                log_p = scatter_log_softmax(utility, self.item_to_category_tensor, dim=-1)
-            else:
-                label_expanded = batch.label.to(torch.float32).view(1, len(batch), 1).expand(num_seeds, -1, self.num_items)
-                assert label_expanded.shape == (num_seeds, len(batch), self.num_items)
-                bce = nn.BCELoss(reduction='none')
-                log_p = - bce(torch.sigmoid(utility), label_expanded)
-            assert log_p.shape == (num_seeds, len(batch), self.num_items)
-            return log_p
 
     def log_likelihood_item_index(self, batch: ChoiceDataset, return_logit: bool, sample_dict: Dict[str, torch.Tensor], all_items: bool=False) -> torch.Tensor:
         """
@@ -1079,18 +847,9 @@ class BEMBFlexChunked(nn.Module):
                 conditioned on latents to be the x-th Monte Carlo sample.
         """
         num_seeds = list(sample_dict.values())[0].shape[0]
-        # if all_items:
-        #     buser_index = batch.user_index.repeat_interleave(self.num_items)
-        #     bsession_index = batch.session_index.repeat_interleave(self.num_items)
-        #     bitem_index = torch.arange(self.num_items, device=batch.device)
-        #     bitem_index = bitem_index.repeat(batch.user_index.shape[0])
-        # else:
-        bitem_index = batch.item_index
-        buser_index = batch.user_index
-        bsession_index = batch.session_index
 
         # get category id of the item bought in each row of batch.
-        cate_index = self.item_to_category_tensor[bitem_index]
+        cate_index = self.item_to_category_tensor[batch.item_index]
 
         # get item ids of all items from the same category of each item bought.
         relevant_item_index = self.category_to_item_tensor[cate_index, :]
@@ -1106,12 +865,12 @@ class BEMBFlexChunked(nn.Module):
         # expand the user_index and session_index.
         # if all_items:
         #     breakpoint()
-        user_index = torch.repeat_interleave(buser_index, repeats)
+        user_index = torch.repeat_interleave(batch.user_index, repeats)
         repeat_category_index = torch.repeat_interleave(cate_index, repeats)
-        session_index = torch.repeat_interleave(bsession_index, repeats)
+        session_index = torch.repeat_interleave(batch.session_index, repeats)
         # duplicate the item focused to match.
         item_index_expanded = torch.repeat_interleave(
-            bitem_index, repeats)
+            batch.item_index, repeats)
 
         # short-hands for easier shape check.
         R = num_seeds
@@ -1122,9 +881,9 @@ class BEMBFlexChunked(nn.Module):
         I = self.num_items
         NC = self.num_categories
 
-        user_chunk_ids = torch.repeat_interleave(self.user_chunk_ids[buser_index], repeats)
-        item_chunk_ids = torch.repeat_interleave(self.item_chunk_ids[bitem_index], repeats)
-        session_chunk_ids = torch.repeat_interleave(self.session_chunk_ids[bsession_index], repeats)
+        user_chunk_ids = torch.repeat_interleave(self.user_chunk_ids[batch.user_index], repeats)
+        item_chunk_ids = torch.repeat_interleave(self.item_chunk_ids[batch.item_index], repeats)
+        session_chunk_ids = torch.repeat_interleave(self.session_chunk_ids[batch.session_index], repeats)
         category_chunk_ids = torch.repeat_interleave(self.category_chunk_ids[cate_index], repeats)
 
         # ==========================================================================================
