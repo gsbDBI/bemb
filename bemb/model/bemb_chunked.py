@@ -47,7 +47,8 @@ class BEMBFlexChunked(nn.Module):
                  num_items: int,
                  pred_item: bool,
                  num_classes: int = 2,
-                 H_zero_mask_dict: Optional[Dict[str, torch.BoolTensor]] = None,
+                 H_zero_mask_dict: Optional[Dict[str,
+                                                 torch.BoolTensor]] = None,
                  prior_mean: Union[float, Dict[str, float]] = 0.0,
                  prior_variance: Union[float, Dict[str, float]] = 1.0,
                  num_users: Optional[int] = None,
@@ -63,7 +64,8 @@ class BEMBFlexChunked(nn.Module):
                  # additional modules.
                  additional_modules: Optional[List[nn.Module]] = None,
                  deterministic_variational: bool = False,
-                 chunk_info: Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor] = None,
+                 chunk_info: Tuple[torch.Tensor, torch.Tensor,
+                                   torch.Tensor, torch.Tensor] = None,
                  ) -> None:
         """
         Args:
@@ -184,8 +186,10 @@ class BEMBFlexChunked(nn.Module):
                 f"With pred_item being False, the num_classes should be a positive integer, received {num_classes} instead."
             self.num_classes = num_classes
             if self.num_classes != 2:
-                raise NotImplementedError('Multi-class classification is not supported yet.')
-            # we don't set the num_classes attribute when pred_item == False to avoid calling it accidentally.
+                raise NotImplementedError(
+                    'Multi-class classification is not supported yet.')
+            # we don't set the num_classes attribute when pred_item == False to
+            # avoid calling it accidentally.
 
         self.num_items = num_items
         self.num_users = num_users
@@ -257,7 +261,7 @@ class BEMBFlexChunked(nn.Module):
         self.num_obs_dict = {
             'user': num_user_obs,
             'item': num_item_obs,
-            'category' : 0,
+            'category': 0,
             'session': num_session_obs,
             'price': num_price_obs,
             'taste': num_taste_obs,
@@ -265,21 +269,22 @@ class BEMBFlexChunked(nn.Module):
         }
 
         # how many classes for the variational distribution.
-        # for example, beta_item would be `num_items` 10-dimensional gaussian if latent dim = 10.
+        # for example, beta_item would be `num_items` 10-dimensional gaussian
+        # if latent dim = 10.
         variation_to_num_classes = {
             'user': self.num_users,
             'item': self.num_items,
             'constant': 1,
-            'category' : self.num_categories,
+            'category': self.num_categories,
         }
 
         variation_to_num_chunks = {
-            'user':(self.num_category_chunks, self.num_session_chunks),
-            'item':(self.num_session_chunks, self.num_user_chunks),
-            'category':(self.num_session_chunks, self.num_user_chunks),
-            'session':(self.num_user_chunks, self.num_category_chunks),
+            'user': (self.num_category_chunks, self.num_session_chunks),
+            'item': (self.num_session_chunks, self.num_user_chunks),
+            'category': (self.num_session_chunks, self.num_user_chunks),
+            'session': (self.num_user_chunks, self.num_category_chunks),
             'constant': (1, 1),
-            }
+        }
 
         coef_dict = dict()
         for additive_term in self.formula:
@@ -288,7 +293,8 @@ class BEMBFlexChunked(nn.Module):
                 if isinstance(self.prior_mean, dict):
                     # the user didn't specify prior mean for this coefficient.
                     if coef_name not in self.prior_mean.keys():
-                        # the user may specify 'default' prior variance through the prior_variance dictionary.
+                        # the user may specify 'default' prior variance through
+                        # the prior_variance dictionary.
                         if 'default' in self.prior_mean.keys():
                             # warnings.warn(f"You provided a dictionary of prior mean, but coefficient {coef_name} is not a key in it. We found a key 'default' in the dictionary, so we use the value of 'default' as the prior mean for coefficient {coef_name}.")
                             self.prior_mean[coef_name] = self.prior_mean['default']
@@ -300,9 +306,11 @@ class BEMBFlexChunked(nn.Module):
                     self.prior_mean, dict) else self.prior_mean
 
                 if isinstance(self.prior_variance, dict):
-                    # the user didn't specify prior variance for this coefficient.
+                    # the user didn't specify prior variance for this
+                    # coefficient.
                     if coef_name not in self.prior_variance.keys():
-                        # the user may specify 'default' prior variance through the prior_variance dictionary.
+                        # the user may specify 'default' prior variance through
+                        # the prior_variance dictionary.
                         if 'default' in self.prior_variance.keys():
                             # warnings.warn(f"You provided a dictionary of prior variance, but coefficient {coef_name} is not a key in it. We found a key 'default' in the dictionary, so we use the value of 'default' as the prior variance for coefficient {coef_name}.")
                             self.prior_variance[coef_name] = self.prior_variance['default']
@@ -318,25 +326,27 @@ class BEMBFlexChunked(nn.Module):
                 else:
                     H_zero_mask = None
 
-                if (not self.obs2prior_dict[coef_name]) and (H_zero_mask is not None):
-                    raise ValueError(f'You specified H_zero_mask for {coef_name}, but obs2prior is False for this coefficient.')
+                if (not self.obs2prior_dict[coef_name]) and (
+                        H_zero_mask is not None):
+                    raise ValueError(
+                        f'You specified H_zero_mask for {coef_name}, but obs2prior is False for this coefficient.')
 
                 chunk_sizes = variation_to_num_chunks[variation]
                 bayesian_coefs = [] * chunk_sizes[0]
                 for ii in range(chunk_sizes[0]):
                     bayesian_coefs_inner = []
                     for jj in range(chunk_sizes[1]):
-                        bayesian_coefs_inner.append(BayesianCoefficient(variation=variation,
-                                                                        num_classes=variation_to_num_classes[variation],
-                                                                        obs2prior=self.obs2prior_dict[coef_name],
-                                                                        num_obs=self.num_obs_dict[variation],
-                                                                        dim=self.coef_dim_dict[coef_name],
-                                                                        prior_mean=mean,
-                                                                        prior_variance=s2,
-                                                                        H_zero_mask=H_zero_mask,
-                                                                        is_H=False
-                                                                        )
-                                                    )
+                        bayesian_coefs_inner.append(
+                            BayesianCoefficient(
+                                variation=variation,
+                                num_classes=variation_to_num_classes[variation],
+                                obs2prior=self.obs2prior_dict[coef_name],
+                                num_obs=self.num_obs_dict[variation],
+                                dim=self.coef_dim_dict[coef_name],
+                                prior_mean=mean,
+                                prior_variance=s2,
+                                H_zero_mask=H_zero_mask,
+                                is_H=False))
                     bayesian_coefs_inner = nn.ModuleList(bayesian_coefs_inner)
                     bayesian_coefs.append(bayesian_coefs_inner)
                 coef_dict[coef_name] = nn.ModuleList(bayesian_coefs)
@@ -372,9 +382,12 @@ class BEMBFlexChunked(nn.Module):
         if coef_name in self.coef_dict.keys():
             return self.coef_dict[coef_name].variational_mean
         else:
-            raise KeyError(f'{coef_name} is not a valid coefficient name in {self.utility_formula}.')
+            raise KeyError(
+                f'{coef_name} is not a valid coefficient name in {self.utility_formula}.')
 
-    def posterior_distribution(self, coef_name: str) -> torch.distributions.lowrank_multivariate_normal.LowRankMultivariateNormal:
+    def posterior_distribution(
+            self,
+            coef_name: str) -> torch.distributions.lowrank_multivariate_normal.LowRankMultivariateNormal:
         """Returns the posterior distribution of coefficient `coef_name`.
 
         Args:
@@ -386,7 +399,8 @@ class BEMBFlexChunked(nn.Module):
         if coef_name in self.coef_dict.keys():
             return self.coef_dict[coef_name].variational_distribution
         else:
-            raise KeyError(f'{coef_name} is not a valid coefficient name in {self.utility_formula}.')
+            raise KeyError(
+                f'{coef_name} is not a valid coefficient name in {self.utility_formula}.')
 
     def ivs(self, batch) -> torch.Tensor:
         """The combined method of computing utilities and log probability.
@@ -401,14 +415,19 @@ class BEMBFlexChunked(nn.Module):
         sample_dict = self.sample_coefficient_dictionary(1, deterministic=True)
         # there is 1 random seed in this case.
         # (num_seeds=1, len(batch), num_items)
-        out = self.log_likelihood_all_items(batch, return_logit=True, sample_dict=sample_dict)
+        out = self.log_likelihood_all_items(
+            batch, return_logit=True, sample_dict=sample_dict)
         out = out.squeeze(0)
         # import pdb; pdb.set_trace()
         out = out.view(-1, self.num_items)
         ivs = scatter_logsumexp(out, self.item_to_category_tensor, dim=-1)
-        return ivs # (len(batch), num_categories)
+        return ivs  # (len(batch), num_categories)
 
-    def sample_choices(self, batch:ChoiceDataset, debug: bool = False, num_seeds: int = 1, **kwargs) -> Tuple[torch.Tensor]:
+    def sample_choices(self,
+                       batch: ChoiceDataset,
+                       debug: bool = False,
+                       num_seeds: int = 1,
+                       **kwargs) -> Tuple[torch.Tensor]:
         """Samples choices given model paramaters and trips
 
         Args:
@@ -421,12 +440,17 @@ class BEMBFlexChunked(nn.Module):
         # Use the means of variational distributions as the sole MC sample.
         sample_dict = dict()
         for coef_name, coef in self.coef_dict.items():
-            sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+            sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(
+                dim=0)  # (1, num_*, dim)
         # sample_dict = self.sample_coefficient_dictionary(num_seeds)
         maxes, out = self.sample_log_likelihoods(batch, sample_dict)
         return maxes.squeeze(), out.squeeze()
 
-    def sample_log_likelihoods(self, batch:ChoiceDataset, sample_dict: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
+    def sample_log_likelihoods(self,
+                               batch: ChoiceDataset,
+                               sample_dict: Dict[str,
+                                                 torch.Tensor]) -> Tuple[torch.Tensor,
+                                                                         torch.Tensor]:
         """Samples log likelihoods given model parameters and trips
 
         Args:
@@ -439,19 +463,26 @@ class BEMBFlexChunked(nn.Module):
         # TODO(akanodia): disallow this for now
         raise NotImplementedError()
         # get the log likelihoods for all items for all categories
-        utility = self.log_likelihood_all_items(batch, return_logit=True, sample_dict=sample_dict)
+        utility = self.log_likelihood_all_items(
+            batch, return_logit=True, sample_dict=sample_dict)
         mu_gumbel = 0.0
         beta_gumbel = 1.0
         EUL_MAS_CONST = 0.5772156649
-        mean_gumbel = torch.tensor([mu_gumbel + beta_gumbel * EUL_MAS_CONST], device=self.device)
-        m = torch.distributions.gumbel.Gumbel(torch.tensor([0.0], device=self.device), torch.tensor([1.0], device=self.device))
+        mean_gumbel = torch.tensor(
+            [mu_gumbel + beta_gumbel * EUL_MAS_CONST], device=self.device)
+        m = torch.distributions.gumbel.Gumbel(
+            torch.tensor(
+                [0.0], device=self.device), torch.tensor(
+                [1.0], device=self.device))
         # m = torch.distributions.gumbel.Gumbel(0.0, 1.0)
         gumbel_samples = m.sample(utility.shape).squeeze(-1)
         gumbel_samples -= mean_gumbel
         utility += gumbel_samples
-        max_by_category, argmax_by_category = scatter_max(utility, self.item_to_category_tensor, dim=-1)
+        max_by_category, argmax_by_category = scatter_max(
+            utility, self.item_to_category_tensor, dim=-1)
         return max_by_category, argmax_by_category
-        log_likelihoods = self.sample_log_likelihoods_per_category(batch, sample_dict)
+        log_likelihoods = self.sample_log_likelihoods_per_category(
+            batch, sample_dict)
 
         # sum over all categories.
         log_likelihoods = log_likelihoods.sum(dim=1)
@@ -475,14 +506,24 @@ class BEMBFlexChunked(nn.Module):
         """
         if self.pred_item:
             # (len(batch), num_items)
-            log_p = self.forward(batch, return_type='log_prob', return_scope='all_items', deterministic=True)
+            log_p = self.forward(
+                batch,
+                return_type='log_prob',
+                return_scope='all_items',
+                deterministic=True)
             p = log_p.exp()
         else:
             # (len(batch), num_items)
             # probability of getting label = 1.
-            p_1 = torch.nn.functional.sigmoid(self.forward(batch, return_type='utility', return_scope='all_items', deterministic=True))
+            p_1 = torch.nn.functional.sigmoid(
+                self.forward(
+                    batch,
+                    return_type='utility',
+                    return_scope='all_items',
+                    deterministic=True))
             # (len(batch), 1)
-            p_1 = p_1[torch.arange(len(batch)), batch.item_index].view(len(batch), 1)
+            p_1 = p_1[torch.arange(len(batch)), batch.item_index].view(
+                len(batch), 1)
             p_0 = 1 - p_1
             # (len(batch), 2)
             p = torch.cat([p_0, p_1], dim=1)
@@ -549,7 +590,8 @@ class BEMBFlexChunked(nn.Module):
         if (not deterministic) and (sample_dict is None):
             assert num_seeds >= 1, "A positive interger `num_seeds` is required if `deterministic` is False and no `sample_dict` is provided."
 
-        # when pred_item is true, the model is predicting which item is bought (specified by item_index).
+        # when pred_item is true, the model is predicting which item is bought
+        # (specified by item_index).
         if self.pred_item:
             batch.label = batch.item_index
 
@@ -557,7 +599,8 @@ class BEMBFlexChunked(nn.Module):
         # get sample_dict ready.
         # ==============================================================================================================
         if deterministic:
-            sample_dict = self.sample_coefficient_dictionary(num_seeds, deterministic=True)
+            sample_dict = self.sample_coefficient_dictionary(
+                num_seeds, deterministic=True)
             '''
             num_seeds = 1
             # Use the means of variational distributions as the sole deterministic MC sample.
@@ -628,7 +671,8 @@ class BEMBFlexChunked(nn.Module):
     # ==================================================================================================================
     # helper functions.
     # ==================================================================================================================
-    def sample_coefficient_dictionary(self, num_seeds: int, deterministic: bool=False) -> Dict[str, torch.Tensor]:
+    def sample_coefficient_dictionary(
+            self, num_seeds: int, deterministic: bool = False) -> Dict[str, torch.Tensor]:
         """A helper function to sample parameters from coefficients.
 
         Args:
@@ -649,12 +693,16 @@ class BEMBFlexChunked(nn.Module):
             for coef_name, bayesian_coeffs in self.coef_dict.items():
                 num_classes = bayesian_coeffs[0][0].num_classes
                 dim = bayesian_coeffs[0][0].dim
-                this_sample = torch.FloatTensor(num_seeds, num_classes, dim, len(bayesian_coeffs), len(bayesian_coeffs[0])).to(self.device)
+                this_sample = torch.FloatTensor(
+                    num_seeds, num_classes, dim, len(bayesian_coeffs), len(
+                        bayesian_coeffs[0])).to(
+                    self.device)
                 # outer_list = []
                 for ii, bayesian_coeffs_inner in enumerate(bayesian_coeffs):
                     # inner_list = []
                     for jj, coef in enumerate(bayesian_coeffs_inner):
-                        this_sample[:, :, :, ii, jj] = coef.variational_distribution.mean.unsqueeze(dim=0) # (1, num_*, dim)
+                        this_sample[:, :, :, ii, jj] = coef.variational_distribution.mean.unsqueeze(
+                            dim=0)  # (1, num_*, dim)
                         # inner_list.append(coef.variational_distribution.mean.unsqueeze(dim=0)) # (1, num_*, dim)
                         # inner_list.append(coef.variational_distribution.mean.unsqueeze(dim=0)) # (1, num_*, dim)
                     # outer_list.append(inner_list)
@@ -664,20 +712,27 @@ class BEMBFlexChunked(nn.Module):
                 # outer_list = []
                 num_classes = bayesian_coeffs[0][0].num_classes
                 dim = bayesian_coeffs[0][0].dim
-                this_sample = torch.FloatTensor(num_seeds, num_classes, dim, len(bayesian_coeffs), len(bayesian_coeffs[0])).to(self.device)
+                this_sample = torch.FloatTensor(
+                    num_seeds, num_classes, dim, len(bayesian_coeffs), len(
+                        bayesian_coeffs[0])).to(
+                    self.device)
                 obs2prior = self.obs2prior_dict[coef_name]
                 if obs2prior:
                     num_obs = bayesian_coeffs[0][0].num_obs
-                    this_sample_H = torch.FloatTensor(num_seeds, dim, num_obs, len(bayesian_coeffs), len(bayesian_coeffs[0])).to(self.device)
+                    this_sample_H = torch.FloatTensor(
+                        num_seeds, dim, num_obs, len(bayesian_coeffs), len(
+                            bayesian_coeffs[0])).to(
+                        self.device)
                     # outer_list_H = []
                 for ii, bayesian_coeffs_inner in enumerate(bayesian_coeffs):
                     # inner_list = []
                     # if obs2prior:
-                        # inner_list_H = []
+                    # inner_list_H = []
                     for jj, coef in enumerate(bayesian_coeffs_inner):
                         s = coef.rsample(num_seeds)
                         if coef.obs2prior:
-                            # sample both obs2prior weight and realization of variable.
+                            # sample both obs2prior weight and realization of
+                            # variable.
                             assert isinstance(s, tuple) and len(s) == 2
                             this_sample[:, :, :, ii, jj] = s[0]
                             this_sample_H[:, :, :, ii, jj] = s[1]
@@ -700,7 +755,10 @@ class BEMBFlexChunked(nn.Module):
         return sample_dict
 
     @torch.no_grad()
-    def get_within_category_accuracy(self, log_p_all_items: torch.Tensor, label: torch.LongTensor) -> Dict[str, float]:
+    def get_within_category_accuracy(self,
+                                     log_p_all_items: torch.Tensor,
+                                     label: torch.LongTensor) -> Dict[str,
+                                                                      float]:
         """A helper function for computing prediction accuracy (i.e., all non-differential metrics)
         within category.
         In particular, this method calculates the accuracy, precision, recall and F1 score.
@@ -731,7 +789,8 @@ class BEMBFlexChunked(nn.Module):
             [Dict[str, float]]: A dictionary containing performance metrics.
         """
         # argmax: (num_sessions, num_categories), within category argmax.
-        # item IDs are consecutive, thus argmax is the same as IDs of the item with highest P.
+        # item IDs are consecutive, thus argmax is the same as IDs of the item
+        # with highest P.
         _, argmax_by_category = scatter_max(
             log_p_all_items, self.item_to_category_tensor, dim=-1)
 
@@ -753,7 +812,9 @@ class BEMBFlexChunked(nn.Module):
         recall = list()
         for i in range(self.num_items):
             correct_i = torch.sum(
-                (torch.logical_and(pred_from_category == i, label == i)).float())
+                (torch.logical_and(
+                    pred_from_category == i,
+                    label == i)).float())
             precision_i = correct_i / \
                 torch.sum((pred_from_category == i).float())
             recall_i = correct_i / torch.sum((label == i).float())
@@ -780,7 +841,11 @@ class BEMBFlexChunked(nn.Module):
     # ==================================================================================================================
     # Methods for terms in the ELBO: prior, likelihood, and variational.
     # ==================================================================================================================
-    def log_likelihood_all_items(self, batch: ChoiceDataset, return_logit: bool, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def log_likelihood_all_items(self,
+                                 batch: ChoiceDataset,
+                                 return_logit: bool,
+                                 sample_dict: Dict[str,
+                                                   torch.Tensor]) -> torch.Tensor:
         """
         NOTE to developers:
         NOTE (akanodia to tianyudu): Is this really slow; even with log_likelihood you need log_prob which depends on logits of all items?
@@ -814,10 +879,17 @@ class BEMBFlexChunked(nn.Module):
         batch.item_index = torch.arange(self.num_items, device=batch.device)
         batch.item_index = batch.item_index.repeat(batch.user_index.shape[0])
         batch.user_index = batch.user_index.repeat_interleave(self.num_items)
-        batch.session_index = batch.session_index.repeat_interleave(self.num_items)
-        return self.log_likelihood_item_index(batch, return_logit, sample_dict, all_items=True)
+        batch.session_index = batch.session_index.repeat_interleave(
+            self.num_items)
+        return self.log_likelihood_item_index(
+            batch, return_logit, sample_dict, all_items=True)
 
-    def log_likelihood_item_index(self, batch: ChoiceDataset, return_logit: bool, sample_dict: Dict[str, torch.Tensor], all_items: bool=False) -> torch.Tensor:
+    def log_likelihood_item_index(self,
+                                  batch: ChoiceDataset,
+                                  return_logit: bool,
+                                  sample_dict: Dict[str,
+                                                    torch.Tensor],
+                                  all_items: bool = False) -> torch.Tensor:
         """
         NOTE for developers:
         This method is more efficient and only computes log-likelihood/logit(utility) for item in item_index[i] for each
@@ -857,9 +929,11 @@ class BEMBFlexChunked(nn.Module):
         # index were padded with -1's, drop those dummy entries.
         relevant_item_index = relevant_item_index[relevant_item_index != -1]
 
-        # the first repeats[0] entries in relevant_item_index are for the category of item_index[0]
+        # the first repeats[0] entries in relevant_item_index are for the
+        # category of item_index[0]
         repeats = self.category_to_size_tensor[cate_index]
-        # argwhere(reverse_indices == k) are positions in relevant_item_index for the category of item_index[k].
+        # argwhere(reverse_indices == k) are positions in relevant_item_index
+        # for the category of item_index[k].
         reverse_indices = torch.repeat_interleave(
             torch.arange(len(batch), device=self.device), repeats)
         # expand the user_index and session_index.
@@ -881,10 +955,14 @@ class BEMBFlexChunked(nn.Module):
         I = self.num_items
         NC = self.num_categories
 
-        user_chunk_ids = torch.repeat_interleave(self.user_chunk_ids[batch.user_index], repeats)
-        item_chunk_ids = torch.repeat_interleave(self.item_chunk_ids[batch.item_index], repeats)
-        session_chunk_ids = torch.repeat_interleave(self.session_chunk_ids[batch.session_index], repeats)
-        category_chunk_ids = torch.repeat_interleave(self.category_chunk_ids[cate_index], repeats)
+        user_chunk_ids = torch.repeat_interleave(
+            self.user_chunk_ids[batch.user_index], repeats)
+        item_chunk_ids = torch.repeat_interleave(
+            self.item_chunk_ids[batch.item_index], repeats)
+        session_chunk_ids = torch.repeat_interleave(
+            self.session_chunk_ids[batch.session_index], repeats)
+        category_chunk_ids = torch.repeat_interleave(
+            self.category_chunk_ids[cate_index], repeats)
 
         # ==========================================================================================
         # Helper Functions for Reshaping.
@@ -898,15 +976,19 @@ class BEMBFlexChunked(nn.Module):
                 # (total_computation) --> (1, total_computation, 1, 1, 1)
                 second_chunk_index = session_chunk_ids.reshape(1, -1, 1, 1, 1)
                 # (1, total_computation, 1, 1, 1) --> (R, total_computation, dim, chunk_size_1, 1)
-                second_chunk_index = second_chunk_index.repeat(R, 1, all_chunks_sample.shape[2], all_chunks_sample.shape[3], 1)
+                second_chunk_index = second_chunk_index.repeat(
+                    R, 1, all_chunks_sample.shape[2], all_chunks_sample.shape[3], 1)
                 # (total_computation) --> (1, total_computation, 1, 1)
                 first_chunk_index = category_chunk_ids.reshape(1, -1, 1, 1)
                 # (1, total_computation, 1, 1) --> (R, total_computation, dim, 1)
-                first_chunk_index = first_chunk_index.repeat(R, 1, all_chunks_sample.shape[2], 1)
+                first_chunk_index = first_chunk_index.repeat(
+                    R, 1, all_chunks_sample.shape[2], 1)
                 # select the first chunk.
-                second_chunk_selected = torch.gather(all_chunks_sample, -1, second_chunk_index).squeeze(-1)
+                second_chunk_selected = torch.gather(
+                    all_chunks_sample, -1, second_chunk_index).squeeze(-1)
                 # select the second chunk.
-                first_chunk_selected = torch.gather(second_chunk_selected, -1, first_chunk_index).squeeze(-1)
+                first_chunk_selected = torch.gather(
+                    second_chunk_selected, -1, first_chunk_index).squeeze(-1)
                 return first_chunk_selected
             elif name.endswith('_item'):
                 # (R, total_computation, dim, chunk_size_1, chunk_size_2)
@@ -914,15 +996,19 @@ class BEMBFlexChunked(nn.Module):
                 # (total_computation) --> (1, total_computation, 1, 1, 1)
                 second_chunk_index = user_chunk_ids.reshape(1, -1, 1, 1, 1)
                 # (1, total_computation, 1, 1, 1) --> (R, total_computation, dim, chunk_size_1, 1)
-                second_chunk_index = second_chunk_index.repeat(R, 1, all_chunks_sample.shape[2], all_chunks_sample.shape[3], 1)
+                second_chunk_index = second_chunk_index.repeat(
+                    R, 1, all_chunks_sample.shape[2], all_chunks_sample.shape[3], 1)
                 # (total_computation) --> (1, total_computation, 1, 1)
                 first_chunk_index = session_chunk_ids.reshape(1, -1, 1, 1)
                 # (1, total_computation, 1, 1) --> (R, total_computation, dim, 1)
-                first_chunk_index = first_chunk_index.repeat(R, 1, all_chunks_sample.shape[2], 1)
+                first_chunk_index = first_chunk_index.repeat(
+                    R, 1, all_chunks_sample.shape[2], 1)
                 # select the first chunk.
-                second_chunk_selected = torch.gather(all_chunks_sample, -1, second_chunk_index).squeeze(-1)
+                second_chunk_selected = torch.gather(
+                    all_chunks_sample, -1, second_chunk_index).squeeze(-1)
                 # select the second chunk.
-                first_chunk_selected = torch.gather(second_chunk_selected, -1, first_chunk_index).squeeze(-1)
+                first_chunk_selected = torch.gather(
+                    second_chunk_selected, -1, first_chunk_index).squeeze(-1)
                 return first_chunk_selected
             elif name.endswith('_category'):
                 # (R, total_computation, dim, chunk_size_1, chunk_size_2)
@@ -930,19 +1016,24 @@ class BEMBFlexChunked(nn.Module):
                 # (total_computation) --> (1, total_computation, 1, 1, 1)
                 second_chunk_index = user_chunk_ids.reshape(1, -1, 1, 1, 1)
                 # (1, total_computation, 1, 1, 1) --> (R, total_computation, dim, chunk_size_1, 1)
-                second_chunk_index = second_chunk_index.repeat(R, 1, all_chunks_sample.shape[2], all_chunks_sample.shape[3], 1)
+                second_chunk_index = second_chunk_index.repeat(
+                    R, 1, all_chunks_sample.shape[2], all_chunks_sample.shape[3], 1)
                 # (total_computation) --> (1, total_computation, 1, 1)
                 first_chunk_index = session_chunk_ids.reshape(1, -1, 1, 1)
                 # (1, total_computation, 1, 1) --> (R, total_computation, dim, 1)
-                first_chunk_index = first_chunk_index.repeat(R, 1, all_chunks_sample.shape[2], 1)
+                first_chunk_index = first_chunk_index.repeat(
+                    R, 1, all_chunks_sample.shape[2], 1)
                 # select the first chunk.
-                second_chunk_selected = torch.gather(all_chunks_sample, -1, second_chunk_index).squeeze(-1)
+                second_chunk_selected = torch.gather(
+                    all_chunks_sample, -1, second_chunk_index).squeeze(-1)
                 # select the second chunk.
-                first_chunk_selected = torch.gather(second_chunk_selected, -1, first_chunk_index).squeeze(-1)
+                first_chunk_selected = torch.gather(
+                    second_chunk_selected, -1, first_chunk_index).squeeze(-1)
                 return first_chunk_selected
             elif name.endswith('_constant'):
                 # (R, *) --> (R, total_computation, *)
-                return sample[:, 0, 0].view(R, 1, -1).expand(-1, total_computation, -1)
+                return sample[:, 0, 0].view(
+                    R, 1, -1).expand(-1, total_computation, -1)
             else:
                 raise ValueError
 
@@ -1002,7 +1093,8 @@ class BEMBFlexChunked(nn.Module):
 
                 additive_term = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
-            # Type III: single coefficient multiplied by observable, e.g., theta_user * x_obs_item.
+            # Type III: single coefficient multiplied by observable, e.g.,
+            # theta_user * x_obs_item.
             elif len(term['coefficient']) == 1 and term['observable'] is not None:
                 coef_name = term['coefficient'][0]
                 coef_sample = reshape_coef_sample(
@@ -1069,7 +1161,8 @@ class BEMBFlexChunked(nn.Module):
                 R, len(batch)) or additive_term.shape == (R, len(batch), 1)
             if additive_term.shape == (R, len(batch), 1):
                 # TODO: need to make this consistent with log_likelihood_all.
-                # be tolerant for some customized module with BayesianLinear that returns (R, len(batch), 1).
+                # be tolerant for some customized module with BayesianLinear
+                # that returns (R, len(batch), 1).
                 additive_term = additive_term.view(R, len(batch))
             # expand to total number of computation, query by reverse_indices.
             # reverse_indices has length total_computation, and reverse_indices[i] correspond to the row-id that this
@@ -1093,18 +1186,25 @@ class BEMBFlexChunked(nn.Module):
             assert log_p.shape == (R, len(batch))
             return log_p
         else:
-            # This is the binomial choice situation in which case we just report sigmoid log likelihood
+            # This is the binomial choice situation in which case we just
+            # report sigmoid log likelihood
             utility = utility[:, item_index_expanded == relevant_item_index]
             assert utility.shape == (R, len(batch))
             bce = nn.BCELoss(reduction='none')
             # make num_seeds copies of the label, expand to (R, len(batch))
-            label_expanded = batch.label.to(torch.float32).view(1, len(batch)).expand(R, -1)
+            label_expanded = batch.label.to(
+                torch.float32).view(
+                1, len(batch)).expand(
+                R, -1)
             assert label_expanded.shape == (R, len(batch))
             log_p = - bce(torch.sigmoid(utility), label_expanded)
             assert log_p.shape == (R, len(batch))
             return log_p
 
-    def log_prior(self, batch: ChoiceDataset, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def log_prior(self,
+                  batch: ChoiceDataset,
+                  sample_dict: Dict[str,
+                                    torch.Tensor]) -> torch.Tensor:
         """Calculates the log-likelihood of Monte Carlo samples of Bayesian coefficients under their
         prior distribution. This method assume coefficients are statistically independent.
 
@@ -1142,7 +1242,8 @@ class BEMBFlexChunked(nn.Module):
                 gathered1 = torch.gather(temp, 4, stemp).squeeze(4)
                 gathered2 = torch.gather(gathered1, 3, ctemp).squeeze(3)
                 return gathered2
-                # return sample[:, user_index, :, category_chunk_ids, session_chunk_ids]
+                # return sample[:, user_index, :, category_chunk_ids,
+                # session_chunk_ids]
             elif name.endswith('_item'):
                 # (R, I, *) --> (R, total_computation, *)
                 temp = sample[:, :, :, :, :]
@@ -1153,13 +1254,16 @@ class BEMBFlexChunked(nn.Module):
                 gathered1 = torch.gather(temp, 4, utemp).squeeze(4)
                 gathered2 = torch.gather(gathered1, 3, stemp).squeeze(3)
                 return gathered2
-                # return sample[:, relevant_item_index, :, session_chunk_ids, user_chunk_ids]
+                # return sample[:, relevant_item_index, :, session_chunk_ids,
+                # user_chunk_ids]
             elif name.endswith('_category'):
                 # (R, NC, *) --> (R, total_computation, *)
-                return sample[:, repeat_category_index, :, session_chunk_ids, user_chunk_ids]
+                return sample[:, repeat_category_index,
+                              :, session_chunk_ids, user_chunk_ids]
             elif name.endswith('_constant'):
                 # (R, *) --> (R, total_computation, *)
-                return sample[:, 0, 0].view(R, 1, -1).expand(-1, total_computation, -1)
+                return sample[:, 0, 0].view(
+                    R, 1, -1).expand(-1, total_computation, -1)
             else:
                 raise ValueError
 
@@ -1180,7 +1284,8 @@ class BEMBFlexChunked(nn.Module):
                                                 H_sample=sample_dict[coef_name + '.H'][:, :, :, ii, jj],
                                                 x_obs=x_obs).sum(dim=-1)
                     else:
-                        # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
+                        # log_prob outputs (num_seeds, num_{items, users}), sum
+                        # to (num_seeds).
                         total += coef.log_prior(
                             sample=sample_dict[coef_name][:, :, :, ii, jj], H_sample=None, x_obs=None).sum(dim=-1)
                     # break
@@ -1192,7 +1297,9 @@ class BEMBFlexChunked(nn.Module):
 
         return total
 
-    def log_variational(self, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def log_variational(self,
+                        sample_dict: Dict[str,
+                                          torch.Tensor]) -> torch.Tensor:
         """Calculate the log-likelihood of samples in sample_dict under the current variational
         distribution.
 
@@ -1208,7 +1315,8 @@ class BEMBFlexChunked(nn.Module):
         total = torch.zeros(num_seeds, device=self.device)
 
         for coef_name, coef in self.coef_dict.items():
-            # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
+            # log_prob outputs (num_seeds, num_{items, users}), sum to
+            # (num_seeds).
             total += coef.log_variational(sample_dict[coef_name]).sum(dim=-1)
 
         for module in self.additional_modules:
@@ -1261,22 +1369,25 @@ class BEMBFlexChunked(nn.Module):
         # ==============================================================================================================
         if self.pred_item:
             # the prediction target is item_index.
-            elbo_expanded = self.forward(batch,
-                                 return_type='log_prob',
-                                 return_scope='item_index',
-                                 deterministic=self.deterministic_variational,
-                                 sample_dict=sample_dict)
+            elbo_expanded = self.forward(
+                batch,
+                return_type='log_prob',
+                return_scope='item_index',
+                deterministic=self.deterministic_variational,
+                sample_dict=sample_dict)
             if self.deterministic_variational:
                 elbo_expanded = elbo_expanded.unsqueeze(dim=0)
-            elbo += elbo_expanded.sum(dim=1).mean(dim=0)  # (num_seeds, len(batch)) --> scalar.
+            # (num_seeds, len(batch)) --> scalar.
+            elbo += elbo_expanded.sum(dim=1).mean(dim=0)
         else:
             # the prediction target is binary.
             # TODO: update the prediction function.
-            utility = self.forward(batch,
-                                   return_type='utility',
-                                   return_scope='item_index',
-                                   deterministic=self.deterministic_variational,
-                                   sample_dict=sample_dict)  # (num_seeds, len(batch))
+            utility = self.forward(
+                batch,
+                return_type='utility',
+                return_scope='item_index',
+                deterministic=self.deterministic_variational,
+                sample_dict=sample_dict)  # (num_seeds, len(batch))
 
             # compute the log-likelihood for binary label.
             # (num_seeds, len(batch))
@@ -1292,7 +1403,7 @@ class BEMBFlexChunked(nn.Module):
         # 4. optionally add log likelihood under variational distributions q(latent).
         # ==============================================================================================================
         if self.trace_log_q:
-            #TODO(akanodia): do not allow at this time
+            # TODO(akanodia): do not allow at this time
             raise NotImplementedError()
             assert not self.deterministic_variational, "deterministic_variational is not compatible with trace_log_q."
             elbo -= self.log_variational(sample_dict).mean(dim=0)

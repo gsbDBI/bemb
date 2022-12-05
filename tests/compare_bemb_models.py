@@ -38,7 +38,13 @@ def scale(x):
 
 
 def load_cpp_tsv(file):
-    df = pd.read_csv(os.path.join(cpp_path, file), sep='\t', index_col=0, header=None)
+    df = pd.read_csv(
+        os.path.join(
+            cpp_path,
+            file),
+        sep='\t',
+        index_col=0,
+        header=None)
     return torch.Tensor(df.values[:, 1:])
 
 
@@ -60,7 +66,9 @@ def describe_diff(A, B):
 
 
 if __name__ == '__main__':
-    it = ''  # set empty string to use the last result. set to 100_ to load the params after 100 iterations.
+    # set empty string to use the last result. set to 100_ to load the params
+    # after 100 iterations.
+    it = ''
 
     # theta_u for users
     # alpha_i for items
@@ -84,11 +92,20 @@ if __name__ == '__main__':
     # assert torch_theta_mean.shape[1] == cpp_theta_mean.shape[1]
 
     # group information.
-    item_to_category = torch.load(os.path.join(torch_path, 'category_idx.pt')).cpu()
+    item_to_category = torch.load(
+        os.path.join(
+            torch_path,
+            'category_idx.pt')).cpu()
 
     # inner product.
-    cpp_ip = compute_inner_product(cpp_theta_mean, cpp_alpha_mean, item_to_category)
-    torch_ip = compute_inner_product(torch_theta_mean, torch_alpha_mean, item_to_category)
+    cpp_ip = compute_inner_product(
+        cpp_theta_mean,
+        cpp_alpha_mean,
+        item_to_category)
+    torch_ip = compute_inner_product(
+        torch_theta_mean,
+        torch_alpha_mean,
+        item_to_category)
 
     # ==============================================================================================
     # get the top prediction from each category.
