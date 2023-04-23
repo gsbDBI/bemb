@@ -56,10 +56,21 @@ class LitBEMBFlex(pl.LightningModule):
         """
         return self.model(*args, **kwargs)
 
+    def mse_loss_on_binary_label(self, batch, batch_index):
+        utility = self.model.forward(self.model, return_type="utility", return_scope="item_index", deterministic=True)
+        assert utility.shape == (len(batch),)
+        pred_binary = torch.nn.functional.sigmoid(utility)
+        # you need to add the label attribute to batch.
+        assert hasattr(batch, "label")
+        loss = torch.nn.functional.mse_loss(pred_binary, batch.label)
+        return loss
+
     def training_step(self, batch, batch_idx):
-        elbo = self.model.elbo(batch, num_seeds=self.num_seeds)
-        self.log('train_elbo', elbo)
-        loss = - elbo
+        # elbo = self.model.elbo(batch, num_seeds=self.num_seeds)
+        # self.log('train_elbo', elbo)
+        # loss = - elbo
+        loss = self.mse_loss_on_binary_label(batch, batch_idx)
+        self.log('train_mse', loss)
         return loss
 
     def _get_performance_dict(self, batch):
