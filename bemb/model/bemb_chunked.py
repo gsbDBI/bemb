@@ -294,7 +294,7 @@ class BEMBFlexChunked(nn.Module):
                             self.prior_mean[coef_name] = self.prior_mean['default']
                         else:
                             # warnings.warn(f"You provided a dictionary of prior mean, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the prior_mean dictionary to use that as default value (e.g., prior_mean['default'] = 0.1); now using mean=0.0 since this is not supplied.")
-                            self.prior_variance[coef_name] = 0.0
+                            self.prior_mean[coef_name] = 0.0
 
                 mean = self.prior_mean[coef_name] if isinstance(
                     self.prior_mean, dict) else self.prior_mean
@@ -1251,7 +1251,8 @@ class BEMBFlexChunked(nn.Module):
         # with torch.no_grad():
         #     while True:
         #         elbo = self.log_prior(batch, sample_dict).mean(dim=0)
-        elbo = torch.tensor(0.0, device=self.device)
+        # elbo = torch.tensor(0.0, device=self.device)
+        elbo = self.log_prior(batch, sample_dict).mean(dim=0)
         # ==============================================================================================================
 
         # ==============================================================================================================
