@@ -25,13 +25,18 @@ from sklearn import metrics
 
 class LitBEMBFlex(pl.LightningModule):
 
-    def __init__(self, learning_rate: float = 0.3, num_seeds: int = 1, **kwargs):
+    def __init__(self,
+                 learning_rate: float = 0.3,
+                 num_seeds: int = 1,
+                 model_optimizer: str = "Adam",
+                 **kwargs):
         """The initialization method of the wrapper model.
 
         Args:
             learning_rate (float, optional): the learning rate of optimization. Defaults to 0.3.
             num_seeds (int, optional): number of random seeds for the Monte Carlo estimation in the variational inference.
                 Defaults to 1.
+            model_optimizer (str, optional): the optimizer used for training the model. Defaults to "Adam".
             **kwargs: all keyword arguments used for constructing the wrapped BEMB model.
         """
         # use kwargs to pass parameter to BEMB Torch.
@@ -39,9 +44,13 @@ class LitBEMBFlex(pl.LightningModule):
         self.model = BEMBFlex(**kwargs)
         self.num_seeds = num_seeds
         self.learning_rate = learning_rate
+        self.optimizer_class_string = model_optimizer
 
     def __str__(self) -> str:
-        return str(self.model)
+        return str(self.model) + '\nOptimizer: ' + str(self.optimizer_class_string) + ', Learning rate: ' + str(self.learning_rate)
+
+    def __repr__(self) -> str:
+        return str(self)
 
     def forward(self, *args, **kwargs):
         """Calls the forward method of the wrapped BEMB model, please refer to the documentation of the BEMB class
@@ -119,8 +128,7 @@ class LitBEMBFlex(pl.LightningModule):
             self.log('test_' + key, val, prog_bar=True, batch_size=len(batch))
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-        return optimizer
+        return getattr(torch.optim, self.optimizer_class_string)(self.parameters(), lr=self.learning_rate)
 
     def fit_model(self, dataset_list: List[ChoiceDataset], batch_size: int=-1, num_epochs: int=10, num_workers: int=8, **kwargs) -> "LitBEMBFlex":
         """A standard pipeline of model training and evaluation.
