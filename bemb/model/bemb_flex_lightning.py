@@ -172,6 +172,7 @@ class LitBEMBFlex(pl.LightningModule):
         test = create_data_loader(dataset_list[2], batch_size=batch_size // 10, shuffle=False, num_workers=num_workers)
 
         section_print('train the model')
+        # TODO: need to change this.
         trainer = pl.Trainer(gpus=1 if ('cuda' in str(self)) else 0,  # use GPU if the model is currently on the GPU.
                             max_epochs=num_epochs,
                             check_val_every_n_epoch=1,
