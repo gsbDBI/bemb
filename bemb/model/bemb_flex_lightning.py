@@ -52,6 +52,14 @@ class LitBEMBFlex(pl.LightningModule):
     def __repr__(self) -> str:
         return str(self)
 
+    def state_dict(self) -> dict:
+        # syntax sugar for easily assessing state dict of the model.
+        return self.model.state_dict()
+
+    def load_state_dict(self, state_dict: dict) -> None:
+        # syntax sugar for easily loading state dict of the model.
+        self.model.load_state_dict(state_dict)
+
     def forward(self, *args, **kwargs):
         """Calls the forward method of the wrapped BEMB model, please refer to the documentation of the BEMB class
             for detailed definitions of the arguments.
