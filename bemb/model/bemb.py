@@ -571,6 +571,8 @@ class BEMBFlex(nn.Module):
             'item_index', 'all_items'], "return_scope must be either 'item_index' or 'all_items'."
         assert deterministic in [True, False]
         if (not deterministic) and (sample_dict is None):
+            if num_seeds is None:
+                raise ValueError("A positive integer `num_seeds` is required if `deterministic` is False and no `sample_dict` is provided.")
             assert num_seeds >= 1, "A positive integer `num_seeds` is required if `deterministic` is False and no `sample_dict` is provided."
 
         # when pred_item is true, the model is predicting which item is bought (specified by item_index).
@@ -960,7 +962,6 @@ class BEMBFlex(nn.Module):
         # ==============================================================================================================
         # Mask Out Unavailable Items in Each Session.
         # ==============================================================================================================
-
         if batch.item_availability is not None:
             # expand to the Monte Carlo sample dimension.
             # (S, I) -> (P, I) -> (1, P, I) -> (R, P, I)

@@ -84,6 +84,11 @@ class LitBEMBFlex(pl.LightningModule):
             log_p = self.model(batch, return_type='log_prob',
                                return_scope='all_items', deterministic=True).cpu().numpy()
             num_classes = log_p.shape[1]
+            # y_pred = self.model(batch, return_type='utility', return_scope='all_items', deterministic=True).cpu().numpy().argmax(axis=1)
+            # y = self.model(batch, return_type='log_prob', return_scope='all_items', deterministic=True)
+
+
+
             y_pred = np.argmax(log_p, axis=1)
             y_true = batch.item_index.cpu().numpy()
             performance = {'acc': metrics.accuracy_score(y_true=y_true, y_pred=y_pred),
@@ -138,7 +143,7 @@ class LitBEMBFlex(pl.LightningModule):
     def configure_optimizers(self):
         return getattr(torch.optim, self.optimizer_class_string)(self.parameters(), lr=self.learning_rate)
 
-    def fit_model(self, dataset_list: List[ChoiceDataset], batch_size: int=-1, num_epochs: int=10, num_workers: int=8, **kwargs) -> "LitBEMBFlex":
+    def fit_model(self, dataset_list: List[ChoiceDataset], batch_size: int=-1, num_epochs: int=10, num_workers: int=8, device: str="cpu", **kwargs) -> "LitBEMBFlex":
         """A standard pipeline of model training and evaluation.
 
         Args:
@@ -173,7 +178,9 @@ class LitBEMBFlex(pl.LightningModule):
 
         section_print('train the model')
         # TODO: need to change this.
-        trainer = pl.Trainer(gpus=1 if ('cuda' in str(self)) else 0,  # use GPU if the model is currently on the GPU.
+        trainer = pl.Trainer(# gpus=1 if ('cuda' in str(self)) else 0,  # use GPU if the model is currently on the GPU.
+                            accelerator="cuda" if "cuda" in device else device,  # note: "cuda:0" is not a accelerator name.
+                            devices="auto",
                             max_epochs=num_epochs,
                             check_val_every_n_epoch=1,
                             log_every_n_steps=1,
