@@ -309,9 +309,6 @@ class BEMBFlex(nn.Module):
             'user': num_user_obs,
             'item': num_item_obs,
             'category' : 0,
-            'session': num_session_obs,
-            'price': num_price_obs,
-            'taste': num_taste_obs,
             'constant': 1  # not really used, for dummy variables.
         }
 
