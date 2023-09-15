@@ -57,7 +57,18 @@ def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]
     """
     # split additive terms
     coefficient_suffix = ('_item', '_user', '_constant', '_category')
-    observable_prefix = ('item_', 'user_', 'session_', 'price_', 'taste_')
+    observable_prefix = ('item_', 'user_', 'session_',
+                         # (user, item)-specific.
+                         'useritem_', 'itemuser_', 'taste_',
+                         # (user, session)-specific.
+                         'usersession', 'sessionuser',
+                         # (session, item)-specific.
+                         'itemsession_', 'sessionitem_', 'price_',
+                         # (user, session, item)-specific.
+                         'usersessionitem_', 'useritemsession_',
+                         'sessionuseritem_', 'sessionitemuser_',
+                         'itemusersession_', 'itemsessionuser_',
+                         )
 
     def is_coefficient(name: str) -> bool:
         return any(name.endswith(suffix) for suffix in coefficient_suffix)
@@ -71,18 +82,13 @@ def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]
         atom = {'coefficient': [], 'observable': None}
         # split multiplicative terms.
         for x in term.split(' * '):
-            # Programmers can specify itemsession for price observables, this brings better intuition.
-            if x.startswith('itemsession_'):
-                # case 1: special observable name.
-                atom['observable'] = 'price_' + x[len('itemsession_'):]
-            elif is_observable(x):
-                # case 2: normal observable name.
+            assert not (is_observable(x) and is_coefficient(x)), f"The element {x} is ambiguous, it follows naming convention of both an observable and a coefficient."
+            if is_observable(x):
                 atom['observable'] = x
             elif is_coefficient(x):
-                # case 3: normal coefficient name.
                 atom['coefficient'].append(x)
             else:
-                # case 4: special coefficient name.
+                # case 3: special coefficient name.
                 # the _constant coefficient suffix is not intuitive enough, we allow none coefficient suffix for
                 # coefficient with constant value. For example, `lambda` is the same as `lambda_constant`.
                 warnings.warn(f'{x} term has no appropriate coefficient suffix or observable prefix, it is assumed to be a coefficient constant across all items, users, and sessions. If this is the desired behavior, you can also specify `{x}_constant` in the utility formula to avoid this warning message. The utility parser has replaced {x} term with `{x}_constant`.')
@@ -853,25 +859,35 @@ class BEMBFlex(nn.Module):
             # samples of coefficients.
             O = obs.shape[-1]  # number of observables.
             assert O == positive_integer
-            if name.startswith('item_'):
+            if batch._is_item_attribute(name):
                 assert obs.shape == (I, O)
                 obs = obs.view(1, 1, I, O).expand(R, P, -1, -1)
-            elif name.startswith('user_'):
+            elif batch._is_user_attribute(name):
                 assert obs.shape == (U, O)
                 obs = obs[user_index, :]  # (P, O)
                 obs = obs.view(1, P, 1, O).expand(R, -1, I, -1)
-            elif name.startswith('session_'):
+            elif batch._is_session_attribute(name):
                 assert obs.shape == (S, O)
                 obs = obs[session_index, :]  # (P, O)
-                return obs.view(1, P, 1, O).expand(R, -1, I, -1)
-            elif name.startswith('price_'):
+                obs = obs.view(1, P, 1, O).expand(R, -1, I, -1)
+            elif batch._is_price_attribute(name):
                 assert obs.shape == (S, I, O)
                 obs = obs[session_index, :, :]  # (P, I, O)
-                return obs.view(1, P, I, O).expand(R, -1, -1, -1)
-            elif name.startswith('taste_'):
+                obs = obs.view(1, P, I, O).expand(R, -1, -1, -1)
+            elif batch._is_useritem_attribute(name):
                 assert obs.shape == (U, I, O)
                 obs = obs[user_index, :, :]  # (P, I, O)
-                return obs.view(1, P, I, O).expand(R, -1, -1, -1)
+                obs = obs.view(1, P, I, O).expand(R, -1, -1, -1)
+            elif batch._is_usersession_attribute(name):
+                assert obs.shape == (U, S, O)
+                obs = obs[user_index, session_index, :]  # (P, O)
+                assert obs.shape == (P, O)
+                obs = obs.view(1, P, 1, O).expand(R, -1, I, -1)
+            elif batch._is_usersessionitem_attribute(name):
+                assert obs.shape == (U, S, I, O)
+                obs = obs[user_index, session_index, :, :]  # (P, I, O)
+                assert obs.shape == (P, I, O)
+                obs = obs.view(1, P, I, O).expand(R, -1, -1, -1)
             else:
                 raise ValueError
             assert obs.shape == (R, P, I, O)
@@ -1056,6 +1072,8 @@ class BEMBFlex(nn.Module):
         U = self.num_users
         I = self.num_items
         NC = self.num_categories
+
+        assert len(user_index) == len(session_index) == len(relevant_item_index) == total_computation
         # ==========================================================================================
         # Helper Functions for Reshaping.
         # ==========================================================================================
@@ -1082,21 +1100,27 @@ class BEMBFlex(nn.Module):
             # samples of coefficients.
             O = obs.shape[-1]  # number of observables.
             assert O == positive_integer
-            if name.startswith('item_'):
+            if batch._is_item_attribute(name):
                 assert obs.shape == (I, O)
                 obs = obs[relevant_item_index, :]
-            elif name.startswith('user_'):
+            elif batch._is_user_attribute(name):
                 assert obs.shape == (U, O)
                 obs = obs[user_index, :]
-            elif name.startswith('session_'):
+            elif batch._is_session_attribute(name):
                 assert obs.shape == (S, O)
                 obs = obs[session_index, :]
-            elif name.startswith('price_'):
+            elif batch._is_price_attribute(name):
                 assert obs.shape == (S, I, O)
                 obs = obs[session_index, relevant_item_index, :]
-            elif name.startswith('taste_'):
+            elif batch._is_useritem_attribute(name):
                 assert obs.shape == (U, I, O)
                 obs = obs[user_index, relevant_item_index, :]
+            elif batch._is_usersession_attribute(name):
+                assert obs.shape == (U, S, O)
+                obs = obs[user_index, session_index, :]  # (total_computation, O)
+            elif batch._is_usersessionitem_attribute(name):
+                assert obs.shape == (U, S, I, O)
+                obs = obs[user_index, session_index, relevant_item_index, :]
             else:
                 raise ValueError
             assert obs.shape == (total_computation, O)
