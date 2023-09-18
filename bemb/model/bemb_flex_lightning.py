@@ -47,7 +47,8 @@ class LitBEMBFlex(pl.LightningModule):
         self.optimizer_class_string = model_optimizer
 
     def __str__(self) -> str:
-        return str(self.model) + '\nOptimizer: ' + str(self.optimizer_class_string) + ', Learning rate: ' + str(self.learning_rate)
+        return str(self.model) + '\nOptimizer: ' + str(self.optimizer_class_string) + \
+            ', Learning rate: ' + str(self.learning_rate)
 
     def __repr__(self) -> str:
         return str(self)
@@ -81,20 +82,28 @@ class LitBEMBFlex(pl.LightningModule):
 
     def _get_performance_dict(self, batch):
         if self.model.pred_item:
-            log_p = self.model(batch, return_type='log_prob',
-                               return_scope='all_items', deterministic=True).cpu().numpy()
+            log_p = self.model(
+                batch,
+                return_type='log_prob',
+                return_scope='all_items',
+                deterministic=True).cpu().numpy()
             num_classes = log_p.shape[1]
             # y_pred = self.model(batch, return_type='utility', return_scope='all_items', deterministic=True).cpu().numpy().argmax(axis=1)
             # y = self.model(batch, return_type='log_prob', return_scope='all_items', deterministic=True)
 
-
-
             y_pred = np.argmax(log_p, axis=1)
             y_true = batch.item_index.cpu().numpy()
-            performance = {'acc': metrics.accuracy_score(y_true=y_true, y_pred=y_pred),
-                           'll': - metrics.log_loss(y_true=y_true, y_pred=np.exp(log_p), labels=np.arange(num_classes))}
+            performance = {
+                'acc': metrics.accuracy_score(
+                    y_true=y_true,
+                    y_pred=y_pred),
+                'll': - metrics.log_loss(
+                    y_true=y_true,
+                    y_pred=np.exp(log_p),
+                    labels=np.arange(num_classes))}
         else:
-            # making binary station, more performance metrics will be reported in this case.
+            # making binary station, more performance metrics will be reported
+            # in this case.
             pred = self.model(batch, return_type='utility',
                               return_scope='item_index', deterministic=True)
             y_pred = torch.sigmoid(pred).cpu().numpy()
@@ -141,9 +150,20 @@ class LitBEMBFlex(pl.LightningModule):
             self.log('test_' + key, val, prog_bar=True, batch_size=len(batch))
 
     def configure_optimizers(self):
-        return getattr(torch.optim, self.optimizer_class_string)(self.parameters(), lr=self.learning_rate)
+        return getattr(
+            torch.optim,
+            self.optimizer_class_string)(
+            self.parameters(),
+            lr=self.learning_rate)
 
-    def fit_model(self, dataset_list: List[ChoiceDataset], batch_size: int=-1, num_epochs: int=10, num_workers: int=8, device: str="cpu", **kwargs) -> "LitBEMBFlex":
+    def fit_model(
+            self,
+            dataset_list: List[ChoiceDataset],
+            batch_size: int = -1,
+            num_epochs: int = 10,
+            num_workers: int = 8,
+            device: str = "cpu",
+            **kwargs) -> "LitBEMBFlex":
         """A standard pipeline of model training and evaluation.
 
         Args:
@@ -170,21 +190,34 @@ class LitBEMBFlex(pl.LightningModule):
         print('[Testing dataset]', dataset_list[2])
 
         # create pytorch dataloader objects.
-        train = create_data_loader(dataset_list[0], batch_size=batch_size, shuffle=True, num_workers=num_workers)
-        validation = create_data_loader(dataset_list[1], batch_size=batch_size, shuffle=False, num_workers=num_workers)
+        train = create_data_loader(
+            dataset_list[0],
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers)
+        validation = create_data_loader(
+            dataset_list[1],
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=num_workers)
         # WARNING: the test step takes extensive memory cost since it computes likelihood for all items.
         # we run the test step with a much smaller batch_size.
-        test = create_data_loader(dataset_list[2], batch_size=batch_size // 10, shuffle=False, num_workers=num_workers)
+        test = create_data_loader(
+            dataset_list[2],
+            batch_size=batch_size // 10,
+            shuffle=False,
+            num_workers=num_workers)
 
         section_print('train the model')
         # TODO: need to change this.
-        trainer = pl.Trainer(# gpus=1 if ('cuda' in str(self)) else 0,  # use GPU if the model is currently on the GPU.
-                            accelerator="cuda" if "cuda" in device else device,  # note: "cuda:0" is not a accelerator name.
-                            devices="auto",
-                            max_epochs=num_epochs,
-                            check_val_every_n_epoch=1,
-                            log_every_n_steps=1,
-                            **kwargs)
+        trainer = pl.Trainer(  # gpus=1 if ('cuda' in str(self)) else 0,  # use GPU if the model is currently on the GPU.
+            # note: "cuda:0" is not a accelerator name.
+            accelerator="cuda" if "cuda" in device else device,
+            devices="auto",
+            max_epochs=num_epochs,
+            check_val_every_n_epoch=1,
+            log_every_n_steps=1,
+            **kwargs)
         start_time = time.time()
         trainer.fit(self, train_dataloaders=train, val_dataloaders=validation)
         print(f'time taken: {time.time() - start_time}')

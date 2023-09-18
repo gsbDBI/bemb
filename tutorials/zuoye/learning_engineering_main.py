@@ -29,9 +29,19 @@ def main(dataset):
     # ==============================================================================================
     # pytorch-lightning training
     # ==============================================================================================
-    obs2prior_dict = {'lambda_user': False, 'lambda_item': False, 'theta_user': False, 'alpha_item': False, 'eta_user': False}
+    obs2prior_dict = {
+        'lambda_user': False,
+        'lambda_item': False,
+        'theta_user': False,
+        'alpha_item': False,
+        'eta_user': False}
     LATENT_DIM = 20
-    coef_dim_dict = {'lambda_user': 1, 'lambda_item': 1, 'theta_user': LATENT_DIM, 'alpha_item': LATENT_DIM, 'eta_user': num_item_obs}
+    coef_dim_dict = {
+        'lambda_user': 1,
+        'lambda_item': 1,
+        'theta_user': LATENT_DIM,
+        'alpha_item': LATENT_DIM,
+        'eta_user': num_item_obs}
 
     bemb = LitBEMBFlex(
         # trainings args.
@@ -52,7 +62,12 @@ def main(dataset):
     )
 
     bemb = bemb.to('cuda')
-    bemb = run(bemb, dataset_list, batch_size=len(dataset) // 20, num_epochs=10)
+    bemb = run(
+        bemb,
+        dataset_list,
+        batch_size=len(dataset) //
+        20,
+        num_epochs=10)
     return bemb
 
 

@@ -37,7 +37,8 @@ def simulate_dense_dataset():
 
 
 def simulate_overlap_data_with_missings():
-    # Following section "3.5.2 Simulated overlap data with missings." of Henry's paper.
+    # Following section "3.5.2 Simulated overlap data with missings." of
+    # Henry's paper.
     NUM_STUDENTS = 100  # i
     NUM_QUESTIONS = 50  # j
 
@@ -59,8 +60,10 @@ def simulate_overlap_data_with_missings():
     question_idx = np.empty(NUM_RESPONSES)
     group_1_mask = (student_idx <= 50)
     # different students are answering different questions.
-    question_idx[group_1_mask] = np.random.choice(np.arange(NUM_QUESTIONS // 2), size=np.sum(group_1_mask))
-    question_idx[~group_1_mask] = np.random.choice(np.arange(NUM_QUESTIONS // 2, NUM_QUESTIONS), size=np.sum(~group_1_mask))
+    question_idx[group_1_mask] = np.random.choice(
+        np.arange(NUM_QUESTIONS // 2), size=np.sum(group_1_mask))
+    question_idx[~group_1_mask] = np.random.choice(np.arange(
+        NUM_QUESTIONS // 2, NUM_QUESTIONS), size=np.sum(~group_1_mask))
     question_idx = question_idx.astype(int)
 
     p_correct = P[student_idx, question_idx]
@@ -90,7 +93,6 @@ def simulate_dataset():
                                    user_index=torch.LongTensor(student_idx),
                                    label=torch.LongTensor(y),
                                    item_obs=item_obs)
-
 
     return choice_dataset
 

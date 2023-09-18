@@ -34,7 +34,8 @@ class PositiveInteger(object):
 positive_integer = PositiveInteger()
 
 
-def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]]:
+def parse_utility(
+        utility_string: str) -> List[Dict[str, Union[List[str], None]]]:
     """
     A helper function parse utility string into a list of additive terms.
 
@@ -82,7 +83,8 @@ def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]
         atom = {'coefficient': [], 'observable': None}
         # split multiplicative terms.
         for x in term.split(' * '):
-            assert not (is_observable(x) and is_coefficient(x)), f"The element {x} is ambiguous, it follows naming convention of both an observable and a coefficient."
+            assert not (is_observable(x) and is_coefficient(
+                x)), f"The element {x} is ambiguous, it follows naming convention of both an observable and a coefficient."
             if is_observable(x):
                 atom['observable'] = x
             elif is_coefficient(x):
@@ -90,7 +92,8 @@ def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]
             else:
                 # case 3: special coefficient name.
                 # the _constant coefficient suffix is not intuitive enough, we allow none coefficient suffix for
-                # coefficient with constant value. For example, `lambda` is the same as `lambda_constant`.
+                # coefficient with constant value. For example, `lambda` is the
+                # same as `lambda_constant`.
                 warnings.warn(f'{x} term has no appropriate coefficient suffix or observable prefix, it is assumed to be a coefficient constant across all items, users, and sessions. If this is the desired behavior, you can also specify `{x}_constant` in the utility formula to avoid this warning message. The utility parser has replaced {x} term with `{x}_constant`.')
                 atom['coefficient'].append(f'{x}_constant')
 
@@ -113,7 +116,8 @@ class BEMBFlex(nn.Module):
                  num_items: int,
                  pred_item: bool,
                  num_classes: int = 2,
-                 H_zero_mask_dict: Optional[Dict[str, torch.BoolTensor]] = None,
+                 H_zero_mask_dict: Optional[Dict[str,
+                                                 torch.BoolTensor]] = None,
                  prior_mean: Union[float, Dict[str, float]] = 0.0,
                  prior_variance: Union[float, Dict[str, float]] = 1.0,
                  num_users: Optional[int] = None,
@@ -245,8 +249,10 @@ class BEMBFlex(nn.Module):
                 f"With pred_item being False, the num_classes should be a positive integer, received {num_classes} instead."
             self.num_classes = num_classes
             if self.num_classes != 2:
-                raise NotImplementedError('Multi-class classification is not supported yet.')
-            # we don't set the num_classes attribute when pred_item == False to avoid calling it accidentally.
+                raise NotImplementedError(
+                    'Multi-class classification is not supported yet.')
+            # we don't set the num_classes attribute when pred_item == False to
+            # avoid calling it accidentally.
 
         self.num_items = num_items
         self.num_users = num_users
@@ -308,17 +314,18 @@ class BEMBFlex(nn.Module):
         self.num_obs_dict = {
             'user': num_user_obs,
             'item': num_item_obs,
-            'category' : 0,
+            'category': 0,
             'constant': 1  # not really used, for dummy variables.
         }
 
         # how many classes for the variational distribution.
-        # for example, beta_item would be `num_items` 10-dimensional gaussian if latent dim = 10.
+        # for example, beta_item would be `num_items` 10-dimensional gaussian
+        # if latent dim = 10.
         variation_to_num_classes = {
             'user': self.num_users,
             'item': self.num_items,
             'constant': 1,
-            'category' : self.num_categories,
+            'category': self.num_categories,
         }
 
         coef_dict = dict()
@@ -328,24 +335,29 @@ class BEMBFlex(nn.Module):
                 if isinstance(self.prior_mean, dict):
                     # the user didn't specify prior mean for this coefficient.
                     if coef_name not in self.prior_mean.keys():
-                        # the user may specify 'default' prior variance through the prior_variance dictionary.
+                        # the user may specify 'default' prior variance through
+                        # the prior_variance dictionary.
                         if 'default' in self.prior_mean.keys():
                             self.prior_mean[coef_name] = self.prior_mean['default']
                         else:
-                            warnings.warn(f"You provided a dictionary of prior mean, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the prior_mean dictionary to use that as default value (e.g., prior_mean['default'] = 0.1); now using mean=0.0 since this is not supplied.")
+                            warnings.warn(
+                                f"You provided a dictionary of prior mean, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the prior_mean dictionary to use that as default value (e.g., prior_mean['default'] = 0.1); now using mean=0.0 since this is not supplied.")
                             self.prior_mean[coef_name] = 0.0
 
                 mean = self.prior_mean[coef_name] if isinstance(
                     self.prior_mean, dict) else self.prior_mean
 
                 if isinstance(self.prior_variance, dict):
-                    # the user didn't specify prior variance for this coefficient.
+                    # the user didn't specify prior variance for this
+                    # coefficient.
                     if coef_name not in self.prior_variance.keys():
-                        # the user may specify 'default' prior variance through the prior_variance dictionary.
+                        # the user may specify 'default' prior variance through
+                        # the prior_variance dictionary.
                         if 'default' in self.prior_variance.keys():
                             self.prior_variance[coef_name] = self.prior_variance['default']
                         else:
-                            warnings.warn(f"You provided a dictionary of prior variance, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the prior_variance dictionary to use that as default value (e.g., prior_variance['default'] = 0.3); now using variance=1.0 since this is not supplied.")
+                            warnings.warn(
+                                f"You provided a dictionary of prior variance, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the prior_variance dictionary to use that as default value (e.g., prior_variance['default'] = 0.3); now using variance=1.0 since this is not supplied.")
                             self.prior_variance[coef_name] = 1.0
 
                 s2 = self.prior_variance[coef_name] if isinstance(
@@ -356,18 +368,21 @@ class BEMBFlex(nn.Module):
                 else:
                     H_zero_mask = None
 
-                if (not self.obs2prior_dict[coef_name]) and (H_zero_mask is not None):
-                    raise ValueError(f'You specified H_zero_mask for {coef_name}, but obs2prior is False for this coefficient.')
+                if (not self.obs2prior_dict[coef_name]) and (
+                        H_zero_mask is not None):
+                    raise ValueError(
+                        f'You specified H_zero_mask for {coef_name}, but obs2prior is False for this coefficient.')
 
-                coef_dict[coef_name] = BayesianCoefficient(variation=variation,
-                                                           num_classes=variation_to_num_classes[variation],
-                                                           obs2prior=self.obs2prior_dict[coef_name],
-                                                           num_obs=self.num_obs_dict[variation],
-                                                           dim=self.coef_dim_dict[coef_name],
-                                                           prior_mean=mean,
-                                                           prior_variance=s2,
-                                                           H_zero_mask=H_zero_mask,
-                                                           is_H=False)
+                coef_dict[coef_name] = BayesianCoefficient(
+                    variation=variation,
+                    num_classes=variation_to_num_classes[variation],
+                    obs2prior=self.obs2prior_dict[coef_name],
+                    num_obs=self.num_obs_dict[variation],
+                    dim=self.coef_dim_dict[coef_name],
+                    prior_mean=mean,
+                    prior_variance=s2,
+                    H_zero_mask=H_zero_mask,
+                    is_H=False)
         self.coef_dict = nn.ModuleDict(coef_dict)
 
         # ==============================================================================================================
@@ -399,9 +414,12 @@ class BEMBFlex(nn.Module):
         if coef_name in self.coef_dict.keys():
             return self.coef_dict[coef_name].variational_mean
         else:
-            raise KeyError(f'{coef_name} is not a valid coefficient name in {self.utility_formula}.')
+            raise KeyError(
+                f'{coef_name} is not a valid coefficient name in {self.utility_formula}.')
 
-    def posterior_distribution(self, coef_name: str) -> torch.distributions.lowrank_multivariate_normal.LowRankMultivariateNormal:
+    def posterior_distribution(
+            self,
+            coef_name: str) -> torch.distributions.lowrank_multivariate_normal.LowRankMultivariateNormal:
         """Returns the posterior distribution of coefficient `coef_name`.
 
         Args:
@@ -413,7 +431,8 @@ class BEMBFlex(nn.Module):
         if coef_name in self.coef_dict.keys():
             return self.coef_dict[coef_name].variational_distribution
         else:
-            raise KeyError(f'{coef_name} is not a valid coefficient name in {self.utility_formula}.')
+            raise KeyError(
+                f'{coef_name} is not a valid coefficient name in {self.utility_formula}.')
 
     def ivs(self, batch) -> torch.Tensor:
         """The combined method of computing utilities and log probability.
@@ -427,17 +446,23 @@ class BEMBFlex(nn.Module):
         # Use the means of variational distributions as the sole MC sample.
         sample_dict = dict()
         for coef_name, coef in self.coef_dict.items():
-            sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+            sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(
+                dim=0)  # (1, num_*, dim)
 
         # there is 1 random seed in this case.
         # (num_seeds=1, len(batch), num_items)
-        out = self.log_likelihood_all_items(batch, return_logit=True, sample_dict=sample_dict)
+        out = self.log_likelihood_all_items(
+            batch, return_logit=True, sample_dict=sample_dict)
         out = out.squeeze(0)
         # import pdb; pdb.set_trace()
         ivs = scatter_logsumexp(out, self.item_to_category_tensor, dim=-1)
-        return ivs # (len(batch), num_categories)
+        return ivs  # (len(batch), num_categories)
 
-    def sample_choices(self, batch:ChoiceDataset, debug: bool = False, num_seeds: int = 1, **kwargs) -> Tuple[torch.Tensor]:
+    def sample_choices(self,
+                       batch: ChoiceDataset,
+                       debug: bool = False,
+                       num_seeds: int = 1,
+                       **kwargs) -> Tuple[torch.Tensor]:
         """Samples choices given model paramaters and trips
 
         Args:
@@ -450,12 +475,17 @@ class BEMBFlex(nn.Module):
         # Use the means of variational distributions as the sole MC sample.
         sample_dict = dict()
         for coef_name, coef in self.coef_dict.items():
-            sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+            sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(
+                dim=0)  # (1, num_*, dim)
         # sample_dict = self.sample_coefficient_dictionary(num_seeds)
         maxes, out = self.sample_log_likelihoods(batch, sample_dict)
         return maxes.squeeze(), out.squeeze()
 
-    def sample_log_likelihoods(self, batch:ChoiceDataset, sample_dict: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
+    def sample_log_likelihoods(self,
+                               batch: ChoiceDataset,
+                               sample_dict: Dict[str,
+                                                 torch.Tensor]) -> Tuple[torch.Tensor,
+                                                                         torch.Tensor]:
         """Samples log likelihoods given model parameters and trips
 
         Args:
@@ -466,19 +496,26 @@ class BEMBFlex(nn.Module):
         Tuple[torch.Tensor]: sampled log likelihoods; shape: (batch_size, num_categories)
         """
         # get the log likelihoods for all items for all categories
-        utility = self.log_likelihood_all_items(batch, return_logit=True, sample_dict=sample_dict)
+        utility = self.log_likelihood_all_items(
+            batch, return_logit=True, sample_dict=sample_dict)
         mu_gumbel = 0.0
         beta_gumbel = 1.0
         EUL_MAS_CONST = 0.5772156649
-        mean_gumbel = torch.tensor([mu_gumbel + beta_gumbel * EUL_MAS_CONST], device=self.device)
-        m = torch.distributions.gumbel.Gumbel(torch.tensor([0.0], device=self.device), torch.tensor([1.0], device=self.device))
+        mean_gumbel = torch.tensor(
+            [mu_gumbel + beta_gumbel * EUL_MAS_CONST], device=self.device)
+        m = torch.distributions.gumbel.Gumbel(
+            torch.tensor(
+                [0.0], device=self.device), torch.tensor(
+                [1.0], device=self.device))
         # m = torch.distributions.gumbel.Gumbel(0.0, 1.0)
         gumbel_samples = m.sample(utility.shape).squeeze(-1)
         gumbel_samples -= mean_gumbel
         utility += gumbel_samples
-        max_by_category, argmax_by_category = scatter_max(utility, self.item_to_category_tensor, dim=-1)
+        max_by_category, argmax_by_category = scatter_max(
+            utility, self.item_to_category_tensor, dim=-1)
         return max_by_category, argmax_by_category
-        log_likelihoods = self.sample_log_likelihoods_per_category(batch, sample_dict)
+        log_likelihoods = self.sample_log_likelihoods_per_category(
+            batch, sample_dict)
 
         # sum over all categories.
         log_likelihoods = log_likelihoods.sum(dim=1)
@@ -502,14 +539,24 @@ class BEMBFlex(nn.Module):
         """
         if self.pred_item:
             # (len(batch), num_items)
-            log_p = self.forward(batch, return_type='log_prob', return_scope='all_items', deterministic=True)
+            log_p = self.forward(
+                batch,
+                return_type='log_prob',
+                return_scope='all_items',
+                deterministic=True)
             p = log_p.exp()
         else:
             # (len(batch), num_items)
             # probability of getting label = 1.
-            p_1 = torch.nn.functional.sigmoid(self.forward(batch, return_type='utility', return_scope='all_items', deterministic=True))
+            p_1 = torch.nn.functional.sigmoid(
+                self.forward(
+                    batch,
+                    return_type='utility',
+                    return_scope='all_items',
+                    deterministic=True))
             # (len(batch), 1)
-            p_1 = p_1[torch.arange(len(batch)), batch.item_index].view(len(batch), 1)
+            p_1 = p_1[torch.arange(len(batch)), batch.item_index].view(
+                len(batch), 1)
             p_0 = 1 - p_1
             # (len(batch), 2)
             p = torch.cat([p_0, p_1], dim=1)
@@ -575,10 +622,12 @@ class BEMBFlex(nn.Module):
         assert deterministic in [True, False]
         if (not deterministic) and (sample_dict is None):
             if num_seeds is None:
-                raise ValueError("A positive integer `num_seeds` is required if `deterministic` is False and no `sample_dict` is provided.")
+                raise ValueError(
+                    "A positive integer `num_seeds` is required if `deterministic` is False and no `sample_dict` is provided.")
             assert num_seeds >= 1, "A positive integer `num_seeds` is required if `deterministic` is False and no `sample_dict` is provided."
 
-        # when pred_item is true, the model is predicting which item is bought (specified by item_index).
+        # when pred_item is true, the model is predicting which item is bought
+        # (specified by item_index).
         if self.pred_item:
             batch.label = batch.item_index
 
@@ -590,7 +639,8 @@ class BEMBFlex(nn.Module):
             # Use the means of variational distributions as the sole deterministic MC sample.
             # NOTE: here we don't need to sample the obs2prior weight H since we only compute the log-likelihood.
             # TODO: is this correct?
-            sample_dict = self.sample_coefficient_dictionary(num_seeds, deterministic=True)
+            sample_dict = self.sample_coefficient_dictionary(
+                num_seeds, deterministic=True)
         else:
             if sample_dict is None:
                 # sample stochastic parameters.
@@ -639,7 +689,8 @@ class BEMBFlex(nn.Module):
     # ==================================================================================================================
     # helper functions.
     # ==================================================================================================================
-    def sample_coefficient_dictionary(self, num_seeds: int, deterministic: bool = False) -> Dict[str, torch.Tensor]:
+    def sample_coefficient_dictionary(
+            self, num_seeds: int, deterministic: bool = False) -> Dict[str, torch.Tensor]:
         """A helper function to sample parameters from coefficients.
 
         Args:
@@ -654,9 +705,12 @@ class BEMBFlex(nn.Module):
         sample_dict = dict()
         for coef_name, coef in self.coef_dict.items():
             if deterministic:
-                sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+                sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(
+                    dim=0)  # (1, num_*, dim)
                 if coef.obs2prior:
-                    sample_dict[coef_name + '.H'] = coef.prior_H.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+                    # (1, num_*, dim)
+                    sample_dict[coef_name +
+                                '.H'] = coef.prior_H.variational_distribution.mean.unsqueeze(dim=0)
             else:
                 s = coef.rsample(num_seeds)
                 if coef.obs2prior:
@@ -671,7 +725,10 @@ class BEMBFlex(nn.Module):
         return sample_dict
 
     @torch.no_grad()
-    def get_within_category_accuracy(self, log_p_all_items: torch.Tensor, label: torch.LongTensor) -> Dict[str, float]:
+    def get_within_category_accuracy(self,
+                                     log_p_all_items: torch.Tensor,
+                                     label: torch.LongTensor) -> Dict[str,
+                                                                      float]:
         """A helper function for computing prediction accuracy (i.e., all non-differential metrics)
         within category.
         In particular, this method calculates the accuracy, precision, recall and F1 score.
@@ -702,7 +759,8 @@ class BEMBFlex(nn.Module):
             [Dict[str, float]]: A dictionary containing performance metrics.
         """
         # argmax: (num_sessions, num_categories), within category argmax.
-        # item IDs are consecutive, thus argmax is the same as IDs of the item with highest P.
+        # item IDs are consecutive, thus argmax is the same as IDs of the item
+        # with highest P.
         _, argmax_by_category = scatter_max(
             log_p_all_items, self.item_to_category_tensor, dim=-1)
 
@@ -724,7 +782,9 @@ class BEMBFlex(nn.Module):
         recall = list()
         for i in range(self.num_items):
             correct_i = torch.sum(
-                (torch.logical_and(pred_from_category == i, label == i)).float())
+                (torch.logical_and(
+                    pred_from_category == i,
+                    label == i)).float())
             precision_i = correct_i / \
                 torch.sum((pred_from_category == i).float())
             recall_i = correct_i / torch.sum((label == i).float())
@@ -751,7 +811,11 @@ class BEMBFlex(nn.Module):
     # ==================================================================================================================
     # Methods for terms in the ELBO: prior, likelihood, and variational.
     # ==================================================================================================================
-    def log_likelihood_all_items(self, batch: ChoiceDataset, return_logit: bool, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def log_likelihood_all_items(self,
+                                 batch: ChoiceDataset,
+                                 return_logit: bool,
+                                 sample_dict: Dict[str,
+                                                   torch.Tensor]) -> torch.Tensor:
         """
         NOTE to developers:
         NOTE (akanodia to tianyudu): Is this really slow; even with log_likelihood you need log_prob which depends on logits of all items?
@@ -784,7 +848,8 @@ class BEMBFlex(nn.Module):
         """
         num_seeds = next(iter(sample_dict.values())).shape[0]
 
-        # avoid repeated work when user purchased several items in the same session.
+        # avoid repeated work when user purchased several items in the same
+        # session.
         user_session_index = torch.stack(
             [batch.user_index, batch.session_index])
         assert user_session_index.shape == (2, len(batch))
@@ -923,7 +988,8 @@ class BEMBFlex(nn.Module):
 
                 additive_term = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
-            # Type III: single coefficient multiplied by observable, e.g., theta_user * x_obs_item.
+            # Type III: single coefficient multiplied by observable, e.g.,
+            # theta_user * x_obs_item.
             elif len(term['coefficient']) == 1 and term['observable'] is not None:
                 coef_name = term['coefficient'][0]
                 coef_sample = reshape_coef_sample(
@@ -999,16 +1065,25 @@ class BEMBFlex(nn.Module):
             # compute log softmax separately within each category.
             if self.pred_item:
                 # output shape: (num_seeds, len(batch), num_items)
-                log_p = scatter_log_softmax(utility, self.item_to_category_tensor, dim=-1)
+                log_p = scatter_log_softmax(
+                    utility, self.item_to_category_tensor, dim=-1)
             else:
-                label_expanded = batch.label.to(torch.float32).view(1, len(batch), 1).expand(num_seeds, -1, self.num_items)
-                assert label_expanded.shape == (num_seeds, len(batch), self.num_items)
+                label_expanded = batch.label.to(
+                    torch.float32).view(
+                    1, len(batch), 1).expand(
+                    num_seeds, -1, self.num_items)
+                assert label_expanded.shape == (
+                    num_seeds, len(batch), self.num_items)
                 bce = nn.BCELoss(reduction='none')
                 log_p = - bce(torch.sigmoid(utility), label_expanded)
             assert log_p.shape == (num_seeds, len(batch), self.num_items)
             return log_p
 
-    def log_likelihood_item_index(self, batch: ChoiceDataset, return_logit: bool, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def log_likelihood_item_index(self,
+                                  batch: ChoiceDataset,
+                                  return_logit: bool,
+                                  sample_dict: Dict[str,
+                                                    torch.Tensor]) -> torch.Tensor:
         """
         NOTE for developers:
         This method is more efficient and only computes log-likelihood/logit(utility) for item in item_index[i] for each
@@ -1048,9 +1123,11 @@ class BEMBFlex(nn.Module):
         # index were padded with -1's, drop those dummy entries.
         relevant_item_index = relevant_item_index[relevant_item_index != -1]
 
-        # the first repeats[0] entries in relevant_item_index are for the category of item_index[0]
+        # the first repeats[0] entries in relevant_item_index are for the
+        # category of item_index[0]
         repeats = self.category_to_size_tensor[cate_index]
-        # argwhere(reverse_indices == k) are positions in relevant_item_index for the category of item_index[k].
+        # argwhere(reverse_indices == k) are positions in relevant_item_index
+        # for the category of item_index[k].
         reverse_indices = torch.repeat_interleave(
             torch.arange(len(batch), device=self.device), repeats)
         # expand the user_index and session_index.
@@ -1070,7 +1147,8 @@ class BEMBFlex(nn.Module):
         I = self.num_items
         NC = self.num_categories
 
-        assert len(user_index) == len(session_index) == len(relevant_item_index) == total_computation
+        assert len(user_index) == len(session_index) == len(
+            relevant_item_index) == total_computation
         # ==========================================================================================
         # Helper Functions for Reshaping.
         # ==========================================================================================
@@ -1114,7 +1192,8 @@ class BEMBFlex(nn.Module):
                 obs = obs[user_index, relevant_item_index, :]
             elif batch._is_usersession_attribute(name):
                 assert obs.shape == (U, S, O)
-                obs = obs[user_index, session_index, :]  # (total_computation, O)
+                # (total_computation, O)
+                obs = obs[user_index, session_index, :]
             elif batch._is_usersessionitem_attribute(name):
                 assert obs.shape == (U, S, I, O)
                 obs = obs[user_index, session_index, relevant_item_index, :]
@@ -1154,7 +1233,8 @@ class BEMBFlex(nn.Module):
 
                 additive_term = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
-            # Type III: single coefficient multiplied by observable, e.g., theta_user * x_obs_item.
+            # Type III: single coefficient multiplied by observable, e.g.,
+            # theta_user * x_obs_item.
             elif len(term['coefficient']) == 1 and term['observable'] is not None:
                 coef_name = term['coefficient'][0]
                 coef_sample = reshape_coef_sample(
@@ -1220,7 +1300,8 @@ class BEMBFlex(nn.Module):
                 R, len(batch)) or additive_term.shape == (R, len(batch), 1)
             if additive_term.shape == (R, len(batch), 1):
                 # TODO: need to make this consistent with log_likelihood_all.
-                # be tolerant for some customized module with BayesianLinear that returns (R, len(batch), 1).
+                # be tolerant for some customized module with BayesianLinear
+                # that returns (R, len(batch), 1).
                 additive_term = additive_term.view(R, len(batch))
             # expand to total number of computation, query by reverse_indices.
             # reverse_indices has length total_computation, and reverse_indices[i] correspond to the row-id that this
@@ -1244,18 +1325,25 @@ class BEMBFlex(nn.Module):
             assert log_p.shape == (R, len(batch))
             return log_p
         else:
-            # This is the binomial choice situation in which case we just report sigmoid log likelihood
+            # This is the binomial choice situation in which case we just
+            # report sigmoid log likelihood
             utility = utility[:, item_index_expanded == relevant_item_index]
             assert utility.shape == (R, len(batch))
             bce = nn.BCELoss(reduction='none')
             # make num_seeds copies of the label, expand to (R, len(batch))
-            label_expanded = batch.label.to(torch.float32).view(1, len(batch)).expand(R, -1)
+            label_expanded = batch.label.to(
+                torch.float32).view(
+                1, len(batch)).expand(
+                R, -1)
             assert label_expanded.shape == (R, len(batch))
             log_p = - bce(torch.sigmoid(utility), label_expanded)
             assert log_p.shape == (R, len(batch))
             return log_p
 
-    def log_prior(self, batch: ChoiceDataset, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def log_prior(self,
+                  batch: ChoiceDataset,
+                  sample_dict: Dict[str,
+                                    torch.Tensor]) -> torch.Tensor:
         """Calculates the log-likelihood of Monte Carlo samples of Bayesian coefficients under their
         prior distribution. This method assume coefficients are statistically independent.
 
@@ -1290,9 +1378,13 @@ class BEMBFlex(nn.Module):
                                         H_sample=sample_dict[coef_name + '.H'],
                                         x_obs=x_obs).sum(dim=-1)
             else:
-                # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
+                # log_prob outputs (num_seeds, num_{items, users}), sum to
+                # (num_seeds).
                 total += coef.log_prior(
-                    sample=sample_dict[coef_name], H_sample=None, x_obs=None).sum(dim=-1)
+                    sample=sample_dict[coef_name],
+                    H_sample=None,
+                    x_obs=None).sum(
+                    dim=-1)
 
         for module in self.additional_modules:
             raise NotImplementedError()
@@ -1300,7 +1392,9 @@ class BEMBFlex(nn.Module):
 
         return total
 
-    def log_variational(self, sample_dict: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def log_variational(self,
+                        sample_dict: Dict[str,
+                                          torch.Tensor]) -> torch.Tensor:
         """Calculate the log-likelihood of samples in sample_dict under the current variational
         distribution.
 
@@ -1316,7 +1410,8 @@ class BEMBFlex(nn.Module):
         total = torch.zeros(num_seeds, device=self.device)
 
         for coef_name, coef in self.coef_dict.items():
-            # log_prob outputs (num_seeds, num_{items, users}), sum to (num_seeds).
+            # log_prob outputs (num_seeds, num_{items, users}), sum to
+            # (num_seeds).
             total += coef.log_variational(sample_dict[coef_name]).sum(dim=-1)
 
         for module in self.additional_modules:
@@ -1341,7 +1436,8 @@ class BEMBFlex(nn.Module):
         # ==============================================================================================================
         # 1. sample latent variables from their variational distributions.
         # ==============================================================================================================
-        sample_dict = self.sample_coefficient_dictionary(num_seeds, self.deterministic_variational)
+        sample_dict = self.sample_coefficient_dictionary(
+            num_seeds, self.deterministic_variational)
 
         # ==============================================================================================================
         # 2. compute log p(latent) prior.
@@ -1364,11 +1460,12 @@ class BEMBFlex(nn.Module):
         else:
             # the prediction target is binary.
             # TODO: update the prediction function.
-            utility = self.forward(batch,
-                                   return_type='utility',
-                                   return_scope='item_index',
-                                   deterministic=False,
-                                   sample_dict=sample_dict)  # (num_seeds, len(batch))
+            utility = self.forward(
+                batch,
+                return_type='utility',
+                return_scope='item_index',
+                deterministic=False,
+                sample_dict=sample_dict)  # (num_seeds, len(batch))
 
             # compute the log-likelihood for binary label.
             # (num_seeds, len(batch))

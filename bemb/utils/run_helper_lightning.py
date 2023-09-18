@@ -21,13 +21,13 @@ def section_print(input_text):
 
 def run(model: "LitBEMBFlex",
         dataset_train: ChoiceDataset,
-        dataset_val: Optional[ChoiceDataset]=None,
-        dataset_test: Optional[ChoiceDataset]=None,
-        batch_size: int=-1,
-        num_epochs: int=10,
-        num_workers: int=0,
-        device: Optional[str]=None,
-        check_val_every_n_epoch: Optional[int]=None,
+        dataset_val: Optional[ChoiceDataset] = None,
+        dataset_test: Optional[ChoiceDataset] = None,
+        batch_size: int = -1,
+        num_epochs: int = 10,
+        num_workers: int = 0,
+        device: Optional[str] = None,
+        check_val_every_n_epoch: Optional[int] = None,
         **kwargs) -> "LitBEMBFlex":
     """_summary_
 
@@ -71,15 +71,27 @@ def run(model: "LitBEMBFlex",
     print('[Test dataset]', dataset_test)
 
     # create pytorch dataloader objects.
-    train_dataloader = create_data_loader(dataset_train.to(device), batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    train_dataloader = create_data_loader(
+        dataset_train.to(device),
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers)
 
     if dataset_val is not None:
-        val_dataloader = create_data_loader(dataset_val.to(device), batch_size=batch_size, shuffle=False, num_workers=num_workers)
+        val_dataloader = create_data_loader(
+            dataset_val.to(device),
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=num_workers)
     else:
         val_dataloader = None
 
     if dataset_test is not None:
-        test_dataloader = create_data_loader(dataset_test.to(device), batch_size=batch_size, shuffle=False, num_workers=num_workers)
+        test_dataloader = create_data_loader(
+            dataset_test.to(device),
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=num_workers)
     else:
         test_dataloader = None
 
@@ -97,7 +109,10 @@ def run(model: "LitBEMBFlex",
                          callbacks=callbacks,
                          **kwargs)
     start_time = time.time()
-    trainer.fit(lightning_model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
+    trainer.fit(
+        lightning_model,
+        train_dataloaders=train_dataloader,
+        val_dataloaders=val_dataloader)
     print(f'Time taken for training: {time.time() - start_time}')
     if test_dataloader is not None:
         trainer.test(lightning_model, test_dataloader)
