@@ -113,6 +113,7 @@ class BEMBFlex(nn.Module):
                  num_items: int,
                  pred_item: bool,
                  num_classes: int = 2,
+                 coef_dist_dict: Dict[str, str] = {'default' : 'gaussian'},
                  H_zero_mask_dict: Optional[Dict[str, torch.BoolTensor]] = None,
                  prior_mean: Union[float, Dict[str, float]] = 0.0,
                  prior_variance: Union[float, Dict[str, float]] = 1.0,
@@ -139,6 +140,13 @@ class BEMBFlex(nn.Module):
                     lambda_item + theta_user * alpha_item + zeta_user * item_obs
                     lambda_item + theta_user * alpha_item + gamma_user * beta_item * price_obs
                 See the doc-string of parse_utility for an example.
+
+            coef_dist_dict (Dict[str, str]): a dictionary mapping coefficient name to coefficient distribution name.
+                The coefficient distribution name can be one of the following:
+                1. 'gaussian'
+                2. 'gamma' - obs2prior is not supported for gamma coefficients
+                If a coefficient does not appear in the dictionary, it will be assigned the distribution specified
+                by the 'default' key. By default, the default distribution is 'gaussian'.
 
             obs2prior_dict (Dict[str, bool]): a dictionary maps coefficient name (e.g., 'lambda_item')
                 to a boolean indicating if observable (e.g., item_obs) enters the prior of the coefficient.
@@ -233,6 +241,7 @@ class BEMBFlex(nn.Module):
         self.utility_formula = utility_formula
         self.obs2prior_dict = obs2prior_dict
         self.coef_dim_dict = coef_dim_dict
+        self.coef_dist_dict = coef_dist_dict
         if H_zero_mask_dict is not None:
             self.H_zero_mask_dict = H_zero_mask_dict
         else:
@@ -348,6 +357,13 @@ class BEMBFlex(nn.Module):
                             warnings.warn(f"You provided a dictionary of prior variance, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the prior_variance dictionary to use that as default value (e.g., prior_variance['default'] = 0.3); now using variance=1.0 since this is not supplied.")
                             self.prior_variance[coef_name] = 1.0
 
+                if coef_name not in self.coef_dist_dict.keys():
+                    if 'default' in self.coef_dist_dict.keys():
+                        self.coef_dist_dict[coef_name] = self.coef_dist_dict['default']
+                    else:
+                        warnings.warn(f"You provided a dictionary of coef_dist_dict, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the coef_dist_dict dictionary to use that as default value (e.g., coef_dist_dict['default'] = 'gaussian'); now using distribution='gaussian' since this is not supplied.")
+                        self.coef_dist_dict[coef_name] = 'gaussian'
+
                 s2 = self.prior_variance[coef_name] if isinstance(
                     self.prior_variance, dict) else self.prior_variance
 
@@ -367,7 +383,8 @@ class BEMBFlex(nn.Module):
                                                            prior_mean=mean,
                                                            prior_variance=s2,
                                                            H_zero_mask=H_zero_mask,
-                                                           is_H=False)
+                                                           is_H=False,
+                                                           distribution=self.coef_dist_dict[coef_name])
         self.coef_dict = nn.ModuleDict(coef_dict)
 
         # ==============================================================================================================
@@ -653,6 +670,9 @@ class BEMBFlex(nn.Module):
         """
         sample_dict = dict()
         for coef_name, coef in self.coef_dict.items():
+            '''
+            print(coef_name)
+            '''
             if deterministic:
                 sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
                 if coef.obs2prior:
@@ -935,6 +955,8 @@ class BEMBFlex(nn.Module):
                 assert obs.shape == (R, P, I, positive_integer)
 
                 additive_term = (coef_sample * obs).sum(dim=-1)
+                if obs_name == 'price_obs':
+                    additive_term *= -1.0
 
             # Type IV: factorized coefficient multiplied by observable.
             # e.g., gamma_user * beta_item * price_obs.
@@ -965,6 +987,8 @@ class BEMBFlex(nn.Module):
                 coef = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
                 additive_term = (coef * obs).sum(dim=-1)
+                if obs_name == 'price_obs':
+                    additive_term *= -1.0
 
             else:
                 raise ValueError(f'Undefined term type: {term}')
@@ -1167,6 +1191,8 @@ class BEMBFlex(nn.Module):
                 assert obs.shape == (R, total_computation, positive_integer)
 
                 additive_term = (coef_sample * obs).sum(dim=-1)
+                if obs_name == 'price_obs':
+                    additive_term *= -1.0
 
             # Type IV: factorized coefficient multiplied by observable.
             # e.g., gamma_user * beta_item * price_obs.
@@ -1196,6 +1222,8 @@ class BEMBFlex(nn.Module):
                 coef = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
                 additive_term = (coef * obs).sum(dim=-1)
+                if obs_name == 'price_obs':
+                    additive_term *= -1.0
 
             else:
                 raise ValueError(f'Undefined term type: {term}')

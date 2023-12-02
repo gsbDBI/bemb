@@ -197,6 +197,7 @@ if __name__ == '__main__':
     bemb = LitBEMBFlex(
         # trainings args.
         pred_item = configs.pred_item,
+        coef_dist_dict=configs.coef_dist_dict,
         learning_rate=configs.learning_rate,
         num_seeds=configs.num_mc_seeds,
         # model args, will be passed to BEMB constructor.
@@ -216,6 +217,12 @@ if __name__ == '__main__':
 
     bemb = bemb.to(configs.device)
     bemb = run(bemb, dataset_list, batch_size=configs.batch_size, num_epochs=configs.num_epochs)
+
+    coeffs = bemb.model.coef_dict['gamma_user'].variational_mean.detach().cpu().numpy()
+    coeffs = coeffs**2
+    # give distribution statistics
+    print('Coefficients statistics:')
+    print(pd.DataFrame(coeffs).describe())
 
     # ==============================================================================================
     # inference example
