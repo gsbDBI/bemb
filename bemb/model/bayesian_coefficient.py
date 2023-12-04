@@ -270,8 +270,8 @@ class BayesianCoefficient(nn.Module):
             '''
             out = Gamma(concentration=concentration,
                         rate=rate).log_prob(sample)
-            # drop the last dim, take the first element over the last dim
-            out = out[:, :, 0]
+            # sum over the last dimension
+            out = torch.sum(out, dim=-1)
 
 
         # DEBUG_MARKER
