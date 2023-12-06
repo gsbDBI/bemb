@@ -77,12 +77,14 @@ class BayesianCoefficient(nn.Module):
         assert distribution in ['gaussian', 'gamma'], f'Unsupported distribution {distribution}'
         if distribution == 'gamma':
             assert not obs2prior, 'Gamma distribution is not supported for obs2prior at present.'
-            mean = 1
-            variance = 10
+            mean = 1.0
+            variance = 10.0
             assert mean > 0, 'Gamma distribution requires mean > 0'
             assert variance > 0, 'Gamma distribution requires variance > 0'
-            prior_mean = mean**2 / variance
-            prior_variance = mean / variance
+            shape = mean ** 2 / variance
+            rate = mean / variance
+            prior_mean = shape
+            prior_variance = rate
 
         self.distribution = distribution
 
@@ -132,21 +134,21 @@ class BayesianCoefficient(nn.Module):
             num_classes, dim) * self.prior_variance)
 
         # create variational distribution.
-        self.variational_mean_flexible = nn.Parameter(
-            torch.randn(num_classes, dim), requires_grad=True)
-
+        if self.distribution == 'gaussian':
+            self.variational_mean_flexible = nn.Parameter(
+                torch.randn(num_classes, dim), requires_grad=True)
         # TOOD(kanodiaayush): initialize the gamma distribution variational mean in a more principled way.
-        '''
-        if self.distribution == 'gamma':
-            # take absolute value of the variational mean.
-            self.variational_mean_flexible.data = torch.abs(
-                self.variational_mean_flexible.data)
-        '''
+        elif self.distribution == 'gamma':
+            # initialize using uniform distribution between 0.5 and 1.5
+            # for a gamma distribution, we store the concentration as log(concentration) = variational_mean_flexible
+            self.variational_mean_flexible = nn.Parameter(
+                torch.rand(num_classes, dim) + 0.5, requires_grad=True)
 
         if self.is_H and self.H_zero_mask is not None:
             assert self.H_zero_mask.shape == self.variational_mean_flexible.shape, \
                 f"The H_zero_mask should have exactly the shape as the H variable, `H_zero_mask`.shape is {self.H_zero_mask.shape}, `H`.shape is {self.variational_mean_flexible.shape} "
 
+        # for gamma distribution, we store the rate as log(rate) = variational_logstd
         self.variational_logstd = nn.Parameter(
             torch.randn(num_classes, dim), requires_grad=True)
 
@@ -190,7 +192,8 @@ class BayesianCoefficient(nn.Module):
             M = self.variational_mean_fixed + self.variational_mean_flexible
 
         if self.distribution == 'gamma':
-            M = torch.pow(M, 2) + 0.000001
+            # M = torch.pow(M, 2) + 0.000001
+            M = M.exp() / self.variational_logstd.exp()
 
         if self.is_H and (self.H_zero_mask is not None):
             # a H-variable with zero-entry restriction.
@@ -246,44 +249,17 @@ class BayesianCoefficient(nn.Module):
             mu = self.prior_zero_mean
 
         if self.distribution == 'gaussian':
-            # DEBUG_MARKER
-            '''
-            print('sample.shape', sample.shape)
-            print('gaussian')
-            print("mu.shape, self.prior_cov_diag.shape")
-            print(mu.shape, self.prior_cov_diag.shape)
-            '''
             out = LowRankMultivariateNormal(loc=mu,
                                             cov_factor=self.prior_cov_factor,
                                             cov_diag=self.prior_cov_diag).log_prob(sample)
         elif self.distribution == 'gamma':
-            concentration = torch.pow(mu, 2)/self.prior_cov_diag
-            rate = mu/self.prior_cov_diag
-            # DEBUG_MARKER
-            '''
-            print('sample.shape', sample.shape)
-            print('gamma')
-            print("mu.shape, self.prior_cov_diag.shape")
-            print(mu.shape, self.prior_cov_diag.shape)
-            print("concentration.shape, rate.shape")
-            print(concentration.shape, rate.shape)
-            '''
+            concentration = mu
+            rate = self.prior_variance
             out = Gamma(concentration=concentration,
                         rate=rate).log_prob(sample)
             # sum over the last dimension
             out = torch.sum(out, dim=-1)
 
-
-        # DEBUG_MARKER
-        '''
-        print("sample.shape")
-        print(sample.shape)
-        print("out.shape")
-        print(out.shape)
-        print("num_seeds, num_classes")
-        print(num_seeds, num_classes)
-        breakpoint()
-        '''
         assert out.shape == (num_seeds, num_classes)
         return out
 
@@ -321,14 +297,6 @@ class BayesianCoefficient(nn.Module):
         value_sample = self.variational_distribution.rsample(
             torch.Size([num_seeds]))
         # DEBUG_MARKER
-        '''
-        print("rsample")
-        print(self.distribution)
-        print("value_sample.shape")
-        print(value_sample.shape)
-        breakpoint()
-        '''
-        # DEBUG_MARKER
         if self.obs2prior:
             # sample obs2prior H as well.
             H_sample = self.prior_H.rsample(num_seeds=num_seeds)
@@ -345,18 +313,11 @@ class BayesianCoefficient(nn.Module):
                                              cov_factor=self.variational_cov_factor,
                                              cov_diag=torch.exp(self.variational_logstd))
         elif self.distribution == 'gamma':
-            # concentration is mean**2 / var (std**2)
-            concentration = torch.pow(self.variational_mean, 2)/torch.pow(torch.exp(self.variational_logstd), 2)
-            # rate is mean / var (std**2)
-            rate = self.variational_mean/torch.pow(torch.exp(self.variational_logstd), 2)
-            # DEBUG_MARKER
-            '''
-            print("self.variational_mean, self.variational_logstd")
-            print(self.variational_mean, self.variational_logstd)
-            print("concentration, rate")
-            print(concentration, rate)
-            '''
-            # DEBUG_MARKER
+            # for a gamma distribution, we store the concentration as log(concentration) = variational_mean_flexible
+            assert self.variational_mean_fixed == None, 'Gamma distribution does not support fixed mean'
+            concentration = self.variational_mean_flexible.exp()
+            # for gamma distribution, we store the rate as log(rate) = variational_logstd
+            rate = torch.exp(self.variational_logstd)
             return Gamma(concentration=concentration, rate=rate)
         else:
             raise NotImplementedError("Unknown variational distribution type.")

@@ -39,21 +39,26 @@ def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]
     A helper function parse utility string into a list of additive terms.
 
     Example:
-        utility_string = 'lambda_item + theta_user * alpha_item + gamma_user * beta_item * price_obs'
+        utility_string = 'lambda_item + theta_user * alpha_item - gamma_user * beta_item * price_obs'
         output = [
             {
                 'coefficient': ['lambda_item'],
-                'observable': None
+                'observable': None,
+                'sign': 1.0,
+
             },
             {
                 'coefficient': ['theta_user', 'alpha_item'],
                 'observable': None
+                'sign': 1.0,
             },
             {
                 'coefficient': ['gamma_user', 'beta_item'],
                 'observable': 'price_obs'
+                'sign': -1.0,
             }
             ]
+         Note that 'minus' is allowed in the utility string. If the first term is negative, the minus should be without a space.
     """
     # split additive terms
     coefficient_suffix = ('_item', '_user', '_constant', '_category')
@@ -76,10 +81,16 @@ def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]
     def is_observable(name: str) -> bool:
         return any(name.startswith(prefix) for prefix in observable_prefix)
 
+    utility_string = utility_string.replace(' - ', ' + -')
     additive_terms = utility_string.split(' + ')
     additive_decomposition = list()
     for term in additive_terms:
-        atom = {'coefficient': [], 'observable': None}
+        if term.startswith('-'):
+            sign = -1.0
+            term = term[1:]
+        else:
+            sign = 1.0
+        atom = {'coefficient': [], 'observable': None, 'sign': sign}
         # split multiplicative terms.
         for x in term.split(' * '):
             assert not (is_observable(x) and is_coefficient(x)), f"The element {x} is ambiguous, it follows naming convention of both an observable and a coefficient."
@@ -927,6 +938,7 @@ class BEMBFlex(nn.Module):
                     sample_dict[coef_name], coef_name)
                 assert coef_sample.shape == (R, P, I, 1)
                 additive_term = coef_sample.view(R, P, I)
+                additive_term *= term['sign']
 
             # Type II: factorized coefficient, e.g., <theta_user, lambda_item>.
             elif len(term['coefficient']) == 2 and term['observable'] is None:
@@ -942,6 +954,7 @@ class BEMBFlex(nn.Module):
                     R, P, I, positive_integer)
 
                 additive_term = (coef_sample_0 * coef_sample_1).sum(dim=-1)
+                additive_term *= term['sign']
 
             # Type III: single coefficient multiplied by observable, e.g., theta_user * x_obs_item.
             elif len(term['coefficient']) == 1 and term['observable'] is not None:
@@ -955,8 +968,7 @@ class BEMBFlex(nn.Module):
                 assert obs.shape == (R, P, I, positive_integer)
 
                 additive_term = (coef_sample * obs).sum(dim=-1)
-                if obs_name == 'price_obs':
-                    additive_term *= -1.0
+                additive_term *= term['sign']
 
             # Type IV: factorized coefficient multiplied by observable.
             # e.g., gamma_user * beta_item * price_obs.
@@ -987,8 +999,7 @@ class BEMBFlex(nn.Module):
                 coef = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
                 additive_term = (coef * obs).sum(dim=-1)
-                if obs_name == 'price_obs':
-                    additive_term *= -1.0
+                additive_term *= term['sign']
 
             else:
                 raise ValueError(f'Undefined term type: {term}')
@@ -1162,6 +1173,7 @@ class BEMBFlex(nn.Module):
                     sample_dict[coef_name], coef_name)
                 assert coef_sample.shape == (R, total_computation, 1)
                 additive_term = coef_sample.view(R, total_computation)
+                additive_term *= term['sign']
 
             # Type II: factorized coefficient, e.g., <theta_user, lambda_item>.
             elif len(term['coefficient']) == 2 and term['observable'] is None:
@@ -1177,6 +1189,7 @@ class BEMBFlex(nn.Module):
                     R, total_computation, positive_integer)
 
                 additive_term = (coef_sample_0 * coef_sample_1).sum(dim=-1)
+                additive_term *= term['sign']
 
             # Type III: single coefficient multiplied by observable, e.g., theta_user * x_obs_item.
             elif len(term['coefficient']) == 1 and term['observable'] is not None:
@@ -1191,8 +1204,7 @@ class BEMBFlex(nn.Module):
                 assert obs.shape == (R, total_computation, positive_integer)
 
                 additive_term = (coef_sample * obs).sum(dim=-1)
-                if obs_name == 'price_obs':
-                    additive_term *= -1.0
+                additive_term *= term['sign']
 
             # Type IV: factorized coefficient multiplied by observable.
             # e.g., gamma_user * beta_item * price_obs.
@@ -1222,8 +1234,7 @@ class BEMBFlex(nn.Module):
                 coef = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
                 additive_term = (coef * obs).sum(dim=-1)
-                if obs_name == 'price_obs':
-                    additive_term *= -1.0
+                additive_term *= term['sign']
 
             else:
                 raise ValueError(f'Undefined term type: {term}')

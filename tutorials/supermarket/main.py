@@ -232,11 +232,16 @@ if __name__ == '__main__':
     bemb = run(bemb, dataset_list, batch_size=configs.batch_size, num_epochs=configs.num_epochs, run_test=False)
 
     # '''
-    coeffs = bemb.model.coef_dict['gamma_user'].variational_mean.detach().cpu().numpy()
     # coeffs = coeffs**2
     # give distribution statistics
-    print('Coefficients statistics:')
-    print(pd.DataFrame(coeffs).describe())
+    if 'gamma_user' in configs.utility:
+        coeffs_gamma = bemb.model.coef_dict['gamma_user'].variational_mean.detach().cpu().numpy()
+        print('Coefficients statistics Gamma:')
+        print(pd.DataFrame(coeffs_gamma).describe())
+    if 'nfact_category' in configs.utility:
+        coeffs_nfact = bemb.model.coef_dict['nfact_category'].variational_mean.detach().cpu().numpy()
+        print('Coefficients statistics nfact_category:')
+        print(pd.DataFrame(coeffs_nfact).describe())
     # '''
 
     # ==============================================================================================
