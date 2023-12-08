@@ -17,7 +17,7 @@ def section_print(input_text):
     print('=' * 20, input_text, '=' * 20)
 
 
-def run(model: LitBEMBFlex, dataset_list: List[ChoiceDataset], batch_size: int=-1, num_epochs: int=10, num_workers: int=8, **kwargs) -> LitBEMBFlex:
+def run(model: LitBEMBFlex, dataset_list: List[ChoiceDataset], batch_size: int=-1, num_epochs: int=10, num_workers: int=8, run_test=True, **kwargs) -> LitBEMBFlex:
     """A standard pipeline of model training and evaluation.
 
     Args:
@@ -25,6 +25,7 @@ def run(model: LitBEMBFlex, dataset_list: List[ChoiceDataset], batch_size: int=-
         dataset_list (List[ChoiceDataset]): train_dataset, validation_test, and test_dataset in a list of length 3.
         batch_size (int, optional): batch_size for training and evaluation. Defaults to -1, which indicates full-batch training.
         num_epochs (int, optional): number of epochs for training. Defaults to 10.
+        run_test (bool, optional): whether to run evaluation on test set. Defaults to True.
         **kwargs: additional keyword argument for the pytorch-lightning Trainer.
 
     Returns:
@@ -57,6 +58,7 @@ def run(model: LitBEMBFlex, dataset_list: List[ChoiceDataset], batch_size: int=-
     trainer.fit(model, train_dataloaders=train, val_dataloaders=validation)
     print(f'time taken: {time.time() - start_time}')
 
-    section_print('test performance')
-    trainer.test(model, dataloaders=test)
+    if run_test:
+        section_print('test performance')
+        trainer.test(model, dataloaders=test)
     return model

@@ -79,6 +79,14 @@ class LitBEMBFlex(pl.LightningModule):
         loss = - elbo
         return loss
 
+    # DEBUG_MARKER
+    '''
+    def on_train_batch_end(self, outputs, batch, batch_idx, dataloader_idx):
+        print(f"Epoch {self.current_epoch} has ended")
+        breakpoint()
+    '''
+    # DEBUG_MARKER
+
     def _get_performance_dict(self, batch):
         if self.model.pred_item:
             log_p = self.model(batch, return_type='log_prob',
