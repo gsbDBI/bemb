@@ -39,25 +39,41 @@ def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]
     A helper function parse utility string into a list of additive terms.
 
     Example:
-        utility_string = 'lambda_item + theta_user * alpha_item + gamma_user * beta_item * price_obs'
+        utility_string = 'lambda_item + theta_user * alpha_item - gamma_user * beta_item * price_obs'
         output = [
             {
                 'coefficient': ['lambda_item'],
-                'observable': None
+                'observable': None,
+                'sign': 1.0,
+
             },
             {
                 'coefficient': ['theta_user', 'alpha_item'],
                 'observable': None
+                'sign': 1.0,
             },
             {
                 'coefficient': ['gamma_user', 'beta_item'],
                 'observable': 'price_obs'
+                'sign': -1.0,
             }
             ]
+         Note that 'minus' is allowed in the utility string. If the first term is negative, the minus should be without a space.
     """
     # split additive terms
     coefficient_suffix = ('_item', '_user', '_constant', '_category')
-    observable_prefix = ('item_', 'user_', 'session_', 'price_', 'taste_')
+    observable_prefix = ('item_', 'user_', 'session_',
+                         # (user, item)-specific.
+                         'useritem_', 'itemuser_', 'taste_',
+                         # (user, session)-specific.
+                         'usersession', 'sessionuser',
+                         # (session, item)-specific.
+                         'itemsession_', 'sessionitem_', 'price_',
+                         # (user, session, item)-specific.
+                         'usersessionitem_', 'useritemsession_',
+                         'sessionuseritem_', 'sessionitemuser_',
+                         'itemusersession_', 'itemsessionuser_',
+                         )
 
     def is_coefficient(name: str) -> bool:
         return any(name.endswith(suffix) for suffix in coefficient_suffix)
@@ -65,24 +81,25 @@ def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]
     def is_observable(name: str) -> bool:
         return any(name.startswith(prefix) for prefix in observable_prefix)
 
+    utility_string = utility_string.replace(' - ', ' + -')
     additive_terms = utility_string.split(' + ')
     additive_decomposition = list()
     for term in additive_terms:
-        atom = {'coefficient': [], 'observable': None}
+        if term.startswith('-'):
+            sign = -1.0
+            term = term[1:]
+        else:
+            sign = 1.0
+        atom = {'coefficient': [], 'observable': None, 'sign': sign}
         # split multiplicative terms.
         for x in term.split(' * '):
-            # Programmers can specify itemsession for price observables, this brings better intuition.
-            if x.startswith('itemsession_'):
-                # case 1: special observable name.
-                atom['observable'] = 'price_' + x[len('itemsession_'):]
-            elif is_observable(x):
-                # case 2: normal observable name.
+            assert not (is_observable(x) and is_coefficient(x)), f"The element {x} is ambiguous, it follows naming convention of both an observable and a coefficient."
+            if is_observable(x):
                 atom['observable'] = x
             elif is_coefficient(x):
-                # case 3: normal coefficient name.
                 atom['coefficient'].append(x)
             else:
-                # case 4: special coefficient name.
+                # case 3: special coefficient name.
                 # the _constant coefficient suffix is not intuitive enough, we allow none coefficient suffix for
                 # coefficient with constant value. For example, `lambda` is the same as `lambda_constant`.
                 warnings.warn(f'{x} term has no appropriate coefficient suffix or observable prefix, it is assumed to be a coefficient constant across all items, users, and sessions. If this is the desired behavior, you can also specify `{x}_constant` in the utility formula to avoid this warning message. The utility parser has replaced {x} term with `{x}_constant`.')
@@ -107,6 +124,7 @@ class BEMBFlex(nn.Module):
                  num_items: int,
                  pred_item: bool,
                  num_classes: int = 2,
+                 coef_dist_dict: Dict[str, str] = {'default' : 'gaussian'},
                  H_zero_mask_dict: Optional[Dict[str, torch.BoolTensor]] = None,
                  prior_mean: Union[float, Dict[str, float]] = 0.0,
                  prior_variance: Union[float, Dict[str, float]] = 1.0,
@@ -133,6 +151,14 @@ class BEMBFlex(nn.Module):
                     lambda_item + theta_user * alpha_item + zeta_user * item_obs
                     lambda_item + theta_user * alpha_item + gamma_user * beta_item * price_obs
                 See the doc-string of parse_utility for an example.
+
+            coef_dist_dict (Dict[str, str]): a dictionary mapping coefficient name to coefficient distribution name.
+                The coefficient distribution name can be one of the following:
+                1. 'gaussian'
+                2. 'gamma' - obs2prior is not supported for gamma coefficients
+                If a coefficient does not appear in the dictionary, it will be assigned the distribution specified
+                by the 'default' key. By default, the default distribution is 'gaussian'.
+                For coefficients which have gamma distributions, prior mean and variance MUST be specified in the prior_mean and prior_variance arguments if obs2prior is False for this coefficient. If obs2prior is True, prior_variance is still required
 
             obs2prior_dict (Dict[str, bool]): a dictionary maps coefficient name (e.g., 'lambda_item')
                 to a boolean indicating if observable (e.g., item_obs) enters the prior of the coefficient.
@@ -178,6 +204,8 @@ class BEMBFlex(nn.Module):
                 If no `prior_mean['default']` is provided, the default prior mean will be 0.0 for those coefficients
                 not in the prior_mean.keys().
 
+                For coefficients with gamma distributions, prior_mean specifies the shape parameter of the gamma prior.
+
                 Defaults to 0.0.
 
             prior_variance (Union[float, Dict[str, float]], Dict[str, torch. Tensor]): the variance of prior distribution
@@ -196,6 +224,8 @@ class BEMBFlex(nn.Module):
                 user can add a `prior_variance['default']` value to specify the variance for those coefficients.
                 If no `prior_variance['default']` is provided, the default prior variance will be 1.0 for those coefficients
                 not in the prior_variance.keys().
+
+                For coefficients with gamma distributions, prior_variance specifies the concentration parameter of the gamma prior.
 
                 Defaults to 1.0, which means all priors have identity matrix as the covariance matrix.
 
@@ -219,12 +249,15 @@ class BEMBFlex(nn.Module):
                 user and item observables can enter the prior of coefficient. Hence session, price,
                 and taste observables are never required, we include it here for completeness.
 
-            deterministic_variational (bool, optional): if True, the variational posterior is equivalent to frequentist MLE estimates of parameters
+            deterministic_variational (bool, optional): if True, the variational posterior is equivalent to frequentist MLE estimates of parameters.
+                Note that this is equivalent to having a point mass with zero variance for the variational posterior.
+                Defaults to False.
         """
         super(BEMBFlex, self).__init__()
         self.utility_formula = utility_formula
         self.obs2prior_dict = obs2prior_dict
         self.coef_dim_dict = coef_dim_dict
+        self.coef_dist_dict = coef_dist_dict
         if H_zero_mask_dict is not None:
             self.H_zero_mask_dict = H_zero_mask_dict
         else:
@@ -301,9 +334,6 @@ class BEMBFlex(nn.Module):
             'user': num_user_obs,
             'item': num_item_obs,
             'category' : 0,
-            'session': num_session_obs,
-            'price': num_price_obs,
-            'taste': num_taste_obs,
             'constant': 1  # not really used, for dummy variables.
         }
 
@@ -320,16 +350,30 @@ class BEMBFlex(nn.Module):
         for additive_term in self.formula:
             for coef_name in additive_term['coefficient']:
                 variation = coef_name.split('_')[-1]
+
+                if coef_name not in self.coef_dist_dict.keys():
+                    if 'default' in self.coef_dist_dict.keys():
+                        self.coef_dist_dict[coef_name] = self.coef_dist_dict['default']
+                    else:
+                        warnings.warn(f"You provided a dictionary of coef_dist_dict, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the coef_dist_dict dictionary to use that as default value (e.g., coef_dist_dict['default'] = 'gaussian'); now using distribution='gaussian' since this is not supplied.")
+                        self.coef_dist_dict[coef_name] = 'gaussian'
+
+                elif self.coef_dist_dict[coef_name] == 'gamma':
+                    if not self.obs2prior_dict[coef_name]:
+                        assert isinstance(self.prior_mean, dict) and coef_name in self.prior_mean.keys(), \
+                            f"Prior mean for {coef_name} needs to be provided because it's posterior is estimated as a gamma distribution."
+                        assert isinstance(self.prior_variance, dict) and coef_name in self.prior_variance.keys(), \
+                            f"Prior variance for {coef_name} needs to be provided because it's posterior is estimated as a gamma distribution."
+
                 if isinstance(self.prior_mean, dict):
                     # the user didn't specify prior mean for this coefficient.
                     if coef_name not in self.prior_mean.keys():
                         # the user may specify 'default' prior variance through the prior_variance dictionary.
                         if 'default' in self.prior_mean.keys():
-                            # warnings.warn(f"You provided a dictionary of prior mean, but coefficient {coef_name} is not a key in it. We found a key 'default' in the dictionary, so we use the value of 'default' as the prior mean for coefficient {coef_name}.")
                             self.prior_mean[coef_name] = self.prior_mean['default']
                         else:
-                            # warnings.warn(f"You provided a dictionary of prior mean, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the prior_mean dictionary to use that as default value (e.g., prior_mean['default'] = 0.1); now using mean=0.0 since this is not supplied.")
-                            self.prior_variance[coef_name] = 0.0
+                            warnings.warn(f"You provided a dictionary of prior mean, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the prior_mean dictionary to use that as default value (e.g., prior_mean['default'] = 0.1); now using mean=0.0 since this is not supplied.")
+                            self.prior_mean[coef_name] = 0.0
 
                 mean = self.prior_mean[coef_name] if isinstance(
                     self.prior_mean, dict) else self.prior_mean
@@ -339,7 +383,6 @@ class BEMBFlex(nn.Module):
                     if coef_name not in self.prior_variance.keys():
                         # the user may specify 'default' prior variance through the prior_variance dictionary.
                         if 'default' in self.prior_variance.keys():
-                            # warnings.warn(f"You provided a dictionary of prior variance, but coefficient {coef_name} is not a key in it. We found a key 'default' in the dictionary, so we use the value of 'default' as the prior variance for coefficient {coef_name}.")
                             self.prior_variance[coef_name] = self.prior_variance['default']
                         else:
                             # warnings.warn(f"You provided a dictionary of prior variance, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the prior_variance dictionary to use that as default value (e.g., prior_variance['default'] = 0.3); now using variance=1.0 since this is not supplied.")
@@ -364,7 +407,8 @@ class BEMBFlex(nn.Module):
                                                            prior_mean=mean,
                                                            prior_variance=s2,
                                                            H_zero_mask=H_zero_mask,
-                                                           is_H=False)
+                                                           is_H=False,
+                                                           distribution=self.coef_dist_dict[coef_name])
         self.coef_dict = nn.ModuleDict(coef_dict)
 
         # ==============================================================================================================
@@ -571,7 +615,9 @@ class BEMBFlex(nn.Module):
             'item_index', 'all_items'], "return_scope must be either 'item_index' or 'all_items'."
         assert deterministic in [True, False]
         if (not deterministic) and (sample_dict is None):
-            assert num_seeds >= 1, "A positive interger `num_seeds` is required if `deterministic` is False and no `sample_dict` is provided."
+            if num_seeds is None:
+                raise ValueError("A positive integer `num_seeds` is required if `deterministic` is False and no `sample_dict` is provided.")
+            assert num_seeds >= 1, "A positive integer `num_seeds` is required if `deterministic` is False and no `sample_dict` is provided."
 
         # when pred_item is true, the model is predicting which item is bought (specified by item_index).
         if self.pred_item:
@@ -585,10 +631,7 @@ class BEMBFlex(nn.Module):
             # Use the means of variational distributions as the sole deterministic MC sample.
             # NOTE: here we don't need to sample the obs2prior weight H since we only compute the log-likelihood.
             # TODO: is this correct?
-            sample_dict = dict()
-            for coef_name, coef in self.coef_dict.items():
-                sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(
-                    dim=0)  # (1, num_*, dim)
+            sample_dict = self.sample_coefficient_dictionary(num_seeds, deterministic=True)
         else:
             if sample_dict is None:
                 # sample stochastic parameters.
@@ -637,11 +680,12 @@ class BEMBFlex(nn.Module):
     # ==================================================================================================================
     # helper functions.
     # ==================================================================================================================
-    def sample_coefficient_dictionary(self, num_seeds: int) -> Dict[str, torch.Tensor]:
+    def sample_coefficient_dictionary(self, num_seeds: int, deterministic: bool = False) -> Dict[str, torch.Tensor]:
         """A helper function to sample parameters from coefficients.
 
         Args:
             num_seeds (int): number of random samples.
+            deterministic (bool, optional): whether to use the mean of variational distributions as the sole sample.
 
         Returns:
             Dict[str, torch.Tensor]: a dictionary maps coefficient names to tensor of sampled coefficient parameters,
@@ -650,16 +694,21 @@ class BEMBFlex(nn.Module):
         """
         sample_dict = dict()
         for coef_name, coef in self.coef_dict.items():
-            s = coef.rsample(num_seeds)
-            if coef.obs2prior:
-                # sample both obs2prior weight and realization of variable.
-                assert isinstance(s, tuple) and len(s) == 2
-                sample_dict[coef_name] = s[0]
-                sample_dict[coef_name + '.H'] = s[1]
+            if deterministic:
+                sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+                if coef.obs2prior:
+                    sample_dict[coef_name + '.H'] = coef.prior_H.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
             else:
-                # only sample the realization of variable.
-                assert torch.is_tensor(s)
-                sample_dict[coef_name] = s
+                s = coef.rsample(num_seeds)
+                if coef.obs2prior:
+                    # sample both obs2prior weight and realization of variable.
+                    assert isinstance(s, tuple) and len(s) == 2
+                    sample_dict[coef_name] = s[0]
+                    sample_dict[coef_name + '.H'] = s[1]
+                else:
+                    # only sample the realization of variable.
+                    assert torch.is_tensor(s)
+                    sample_dict[coef_name] = s
         return sample_dict
 
     @torch.no_grad()
@@ -848,25 +897,35 @@ class BEMBFlex(nn.Module):
             # samples of coefficients.
             O = obs.shape[-1]  # number of observables.
             assert O == positive_integer
-            if name.startswith('item_'):
+            if batch._is_item_attribute(name):
                 assert obs.shape == (I, O)
                 obs = obs.view(1, 1, I, O).expand(R, P, -1, -1)
-            elif name.startswith('user_'):
+            elif batch._is_user_attribute(name):
                 assert obs.shape == (U, O)
                 obs = obs[user_index, :]  # (P, O)
                 obs = obs.view(1, P, 1, O).expand(R, -1, I, -1)
-            elif name.startswith('session_'):
+            elif batch._is_session_attribute(name):
                 assert obs.shape == (S, O)
                 obs = obs[session_index, :]  # (P, O)
-                return obs.view(1, P, 1, O).expand(R, -1, I, -1)
-            elif name.startswith('price_'):
+                obs = obs.view(1, P, 1, O).expand(R, -1, I, -1)
+            elif batch._is_price_attribute(name):
                 assert obs.shape == (S, I, O)
                 obs = obs[session_index, :, :]  # (P, I, O)
-                return obs.view(1, P, I, O).expand(R, -1, -1, -1)
-            elif name.startswith('taste_'):
+                obs = obs.view(1, P, I, O).expand(R, -1, -1, -1)
+            elif batch._is_useritem_attribute(name):
                 assert obs.shape == (U, I, O)
                 obs = obs[user_index, :, :]  # (P, I, O)
-                return obs.view(1, P, I, O).expand(R, -1, -1, -1)
+                obs = obs.view(1, P, I, O).expand(R, -1, -1, -1)
+            elif batch._is_usersession_attribute(name):
+                assert obs.shape == (U, S, O)
+                obs = obs[user_index, session_index, :]  # (P, O)
+                assert obs.shape == (P, O)
+                obs = obs.view(1, P, 1, O).expand(R, -1, I, -1)
+            elif batch._is_usersessionitem_attribute(name):
+                assert obs.shape == (U, S, I, O)
+                obs = obs[user_index, session_index, :, :]  # (P, I, O)
+                assert obs.shape == (P, I, O)
+                obs = obs.view(1, P, I, O).expand(R, -1, -1, -1)
             else:
                 raise ValueError
             assert obs.shape == (R, P, I, O)
@@ -889,6 +948,7 @@ class BEMBFlex(nn.Module):
                     sample_dict[coef_name], coef_name)
                 assert coef_sample.shape == (R, P, I, 1)
                 additive_term = coef_sample.view(R, P, I)
+                additive_term *= term['sign']
 
             # Type II: factorized coefficient, e.g., <theta_user, lambda_item>.
             elif len(term['coefficient']) == 2 and term['observable'] is None:
@@ -904,6 +964,7 @@ class BEMBFlex(nn.Module):
                     R, P, I, positive_integer)
 
                 additive_term = (coef_sample_0 * coef_sample_1).sum(dim=-1)
+                additive_term *= term['sign']
 
             # Type III: single coefficient multiplied by observable, e.g., theta_user * x_obs_item.
             elif len(term['coefficient']) == 1 and term['observable'] is not None:
@@ -917,6 +978,7 @@ class BEMBFlex(nn.Module):
                 assert obs.shape == (R, P, I, positive_integer)
 
                 additive_term = (coef_sample * obs).sum(dim=-1)
+                additive_term *= term['sign']
 
             # Type IV: factorized coefficient multiplied by observable.
             # e.g., gamma_user * beta_item * price_obs.
@@ -947,6 +1009,7 @@ class BEMBFlex(nn.Module):
                 coef = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
                 additive_term = (coef * obs).sum(dim=-1)
+                additive_term *= term['sign']
 
             else:
                 raise ValueError(f'Undefined term type: {term}')
@@ -957,7 +1020,6 @@ class BEMBFlex(nn.Module):
         # ==============================================================================================================
         # Mask Out Unavailable Items in Each Session.
         # ==============================================================================================================
-
         if batch.item_availability is not None:
             # expand to the Monte Carlo sample dimension.
             # (S, I) -> (P, I) -> (1, P, I) -> (R, P, I)
@@ -1052,6 +1114,8 @@ class BEMBFlex(nn.Module):
         U = self.num_users
         I = self.num_items
         NC = self.num_categories
+
+        assert len(user_index) == len(session_index) == len(relevant_item_index) == total_computation
         # ==========================================================================================
         # Helper Functions for Reshaping.
         # ==========================================================================================
@@ -1078,21 +1142,27 @@ class BEMBFlex(nn.Module):
             # samples of coefficients.
             O = obs.shape[-1]  # number of observables.
             assert O == positive_integer
-            if name.startswith('item_'):
+            if batch._is_item_attribute(name):
                 assert obs.shape == (I, O)
                 obs = obs[relevant_item_index, :]
-            elif name.startswith('user_'):
+            elif batch._is_user_attribute(name):
                 assert obs.shape == (U, O)
                 obs = obs[user_index, :]
-            elif name.startswith('session_'):
+            elif batch._is_session_attribute(name):
                 assert obs.shape == (S, O)
                 obs = obs[session_index, :]
-            elif name.startswith('price_'):
+            elif batch._is_price_attribute(name):
                 assert obs.shape == (S, I, O)
                 obs = obs[session_index, relevant_item_index, :]
-            elif name.startswith('taste_'):
+            elif batch._is_useritem_attribute(name):
                 assert obs.shape == (U, I, O)
                 obs = obs[user_index, relevant_item_index, :]
+            elif batch._is_usersession_attribute(name):
+                assert obs.shape == (U, S, O)
+                obs = obs[user_index, session_index, :]  # (total_computation, O)
+            elif batch._is_usersessionitem_attribute(name):
+                assert obs.shape == (U, S, I, O)
+                obs = obs[user_index, session_index, relevant_item_index, :]
             else:
                 raise ValueError
             assert obs.shape == (total_computation, O)
@@ -1113,6 +1183,7 @@ class BEMBFlex(nn.Module):
                     sample_dict[coef_name], coef_name)
                 assert coef_sample.shape == (R, total_computation, 1)
                 additive_term = coef_sample.view(R, total_computation)
+                additive_term *= term['sign']
 
             # Type II: factorized coefficient, e.g., <theta_user, lambda_item>.
             elif len(term['coefficient']) == 2 and term['observable'] is None:
@@ -1128,6 +1199,7 @@ class BEMBFlex(nn.Module):
                     R, total_computation, positive_integer)
 
                 additive_term = (coef_sample_0 * coef_sample_1).sum(dim=-1)
+                additive_term *= term['sign']
 
             # Type III: single coefficient multiplied by observable, e.g., theta_user * x_obs_item.
             elif len(term['coefficient']) == 1 and term['observable'] is not None:
@@ -1142,6 +1214,7 @@ class BEMBFlex(nn.Module):
                 assert obs.shape == (R, total_computation, positive_integer)
 
                 additive_term = (coef_sample * obs).sum(dim=-1)
+                additive_term *= term['sign']
 
             # Type IV: factorized coefficient multiplied by observable.
             # e.g., gamma_user * beta_item * price_obs.
@@ -1171,6 +1244,7 @@ class BEMBFlex(nn.Module):
                 coef = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
                 additive_term = (coef * obs).sum(dim=-1)
+                additive_term *= term['sign']
 
             else:
                 raise ValueError(f'Undefined term type: {term}')
@@ -1302,7 +1376,7 @@ class BEMBFlex(nn.Module):
         return total
 
     def elbo(self, batch: ChoiceDataset, num_seeds: int = 1) -> torch.Tensor:
-        """A combined method to computes the current ELBO given a batch, this method is used for training the model.
+        """A combined method to compute the current ELBO given a batch, this method is used for training the model.
 
         Args:
             batch (ChoiceDataset): a ChoiceDataset containing necessary information.
@@ -1316,17 +1390,7 @@ class BEMBFlex(nn.Module):
         # ==============================================================================================================
         # 1. sample latent variables from their variational distributions.
         # ==============================================================================================================
-        if self.deterministic_variational:
-            num_seeds = 1
-            # Use the means of variational distributions as the sole deterministic MC sample.
-            # NOTE: here we don't need to sample the obs2prior weight H since we only compute the log-likelihood.
-            # TODO: is this correct?
-            sample_dict = dict()
-            for coef_name, coef in self.coef_dict.items():
-                sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(
-                    dim=0)  # (1, num_*, dim)
-        else:
-            sample_dict = self.sample_coefficient_dictionary(num_seeds)
+        sample_dict = self.sample_coefficient_dictionary(num_seeds, self.deterministic_variational)
 
         # ==============================================================================================================
         # 2. compute log p(latent) prior.
@@ -1341,21 +1405,18 @@ class BEMBFlex(nn.Module):
         # ==============================================================================================================
         if self.pred_item:
             # the prediction target is item_index.
-            elbo_expanded = self.forward(batch,
+            elbo += self.forward(batch,
                                  return_type='log_prob',
                                  return_scope='item_index',
-                                 deterministic=self.deterministic_variational,
-                                 sample_dict=sample_dict)
-            if self.deterministic_variational:
-                elbo_expanded = elbo_expanded.unsqueeze(dim=0)
-            elbo += elbo_expanded.sum(dim=1).mean(dim=0)  # (num_seeds, len(batch)) --> scalar.
+                                 deterministic=False,
+                                 sample_dict=sample_dict).sum(dim=1).mean(dim=0)
         else:
             # the prediction target is binary.
             # TODO: update the prediction function.
             utility = self.forward(batch,
                                    return_type='utility',
                                    return_scope='item_index',
-                                   deterministic=self.deterministic_variational,
+                                   deterministic=False,
                                    sample_dict=sample_dict)  # (num_seeds, len(batch))
 
             # compute the log-likelihood for binary label.

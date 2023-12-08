@@ -25,13 +25,18 @@ from sklearn import metrics
 
 class LitBEMBFlex(pl.LightningModule):
 
-    def __init__(self, learning_rate: float = 0.3, num_seeds: int = 1, **kwargs):
+    def __init__(self,
+                 learning_rate: float = 0.3,
+                 num_seeds: int = 1,
+                 model_optimizer: str = "Adam",
+                 **kwargs):
         """The initialization method of the wrapper model.
 
         Args:
             learning_rate (float, optional): the learning rate of optimization. Defaults to 0.3.
             num_seeds (int, optional): number of random seeds for the Monte Carlo estimation in the variational inference.
                 Defaults to 1.
+            model_optimizer (str, optional): the optimizer used for training the model. Defaults to "Adam".
             **kwargs: all keyword arguments used for constructing the wrapped BEMB model.
         """
         # use kwargs to pass parameter to BEMB Torch.
@@ -39,9 +44,21 @@ class LitBEMBFlex(pl.LightningModule):
         self.model = BEMBFlex(**kwargs)
         self.num_seeds = num_seeds
         self.learning_rate = learning_rate
+        self.optimizer_class_string = model_optimizer
 
     def __str__(self) -> str:
-        return str(self.model)
+        return str(self.model) + '\nOptimizer: ' + str(self.optimizer_class_string) + ', Learning rate: ' + str(self.learning_rate)
+
+    def __repr__(self) -> str:
+        return str(self)
+
+    def state_dict(self) -> dict:
+        # syntax sugar for easily assessing state dict of the model.
+        return self.model.state_dict()
+
+    def load_state_dict(self, state_dict: dict) -> None:
+        # syntax sugar for easily loading state dict of the model.
+        self.model.load_state_dict(state_dict)
 
     def forward(self, *args, **kwargs):
         """Calls the forward method of the wrapped BEMB model, please refer to the documentation of the BEMB class
@@ -62,11 +79,24 @@ class LitBEMBFlex(pl.LightningModule):
         loss = - elbo
         return loss
 
+    # DEBUG_MARKER
+    '''
+    def on_train_batch_end(self, outputs, batch, batch_idx, dataloader_idx):
+        print(f"Epoch {self.current_epoch} has ended")
+        breakpoint()
+    '''
+    # DEBUG_MARKER
+
     def _get_performance_dict(self, batch):
         if self.model.pred_item:
             log_p = self.model(batch, return_type='log_prob',
                                return_scope='all_items', deterministic=True).cpu().numpy()
             num_classes = log_p.shape[1]
+            # y_pred = self.model(batch, return_type='utility', return_scope='all_items', deterministic=True).cpu().numpy().argmax(axis=1)
+            # y = self.model(batch, return_type='log_prob', return_scope='all_items', deterministic=True)
+
+
+
             y_pred = np.argmax(log_p, axis=1)
             y_true = batch.item_index.cpu().numpy()
             performance = {'acc': metrics.accuracy_score(y_true=y_true, y_pred=y_pred),
@@ -119,10 +149,9 @@ class LitBEMBFlex(pl.LightningModule):
             self.log('test_' + key, val, prog_bar=True, batch_size=len(batch))
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-        return optimizer
+        return getattr(torch.optim, self.optimizer_class_string)(self.parameters(), lr=self.learning_rate)
 
-    def fit_model(self, dataset_list: List[ChoiceDataset], batch_size: int=-1, num_epochs: int=10, num_workers: int=8, **kwargs) -> "LitBEMBFlex":
+    def fit_model(self, dataset_list: List[ChoiceDataset], batch_size: int=-1, num_epochs: int=10, num_workers: int=8, device: str="cpu", **kwargs) -> "LitBEMBFlex":
         """A standard pipeline of model training and evaluation.
 
         Args:
@@ -156,7 +185,10 @@ class LitBEMBFlex(pl.LightningModule):
         test = create_data_loader(dataset_list[2], batch_size=batch_size // 10, shuffle=False, num_workers=num_workers)
 
         section_print('train the model')
-        trainer = pl.Trainer(gpus=1 if ('cuda' in str(self)) else 0,  # use GPU if the model is currently on the GPU.
+        # TODO: need to change this.
+        trainer = pl.Trainer(# gpus=1 if ('cuda' in str(self)) else 0,  # use GPU if the model is currently on the GPU.
+                            accelerator="cuda" if "cuda" in device else device,  # note: "cuda:0" is not a accelerator name.
+                            devices="auto",
                             max_epochs=num_epochs,
                             check_val_every_n_epoch=1,
                             log_every_n_steps=1,
