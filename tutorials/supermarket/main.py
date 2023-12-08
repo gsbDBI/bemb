@@ -205,6 +205,15 @@ if __name__ == '__main__':
     # ==============================================================================================
     # pytorch-lightning training
     # ==============================================================================================
+    # if prior_mean is in the configs namespace set it to the prior mean
+    if hasattr(configs, 'prior_mean'):
+        prior_mean = configs.prior_mean
+    else:
+        prior_mean = 0.0
+    if hasattr(configs, 'prior_variance'):
+        prior_variance = configs.prior_variance
+    else:
+        prior_variance = 1.0
     bemb = LitBEMBFlex(
         # trainings args.
         pred_item = configs.pred_item,
@@ -222,7 +231,8 @@ if __name__ == '__main__':
         category_to_item=category_to_item,
         num_user_obs=configs.num_user_obs if configs.obs_user else None,
         num_item_obs=configs.num_item_obs if configs.obs_item else None,
-        prior_variance=configs.prior_variance,
+        prior_mean = prior_mean,
+        prior_variance= prior_variance,
         num_price_obs=configs.num_price_obs,
         preprocess=False,
         # additional_modules=[ExampleCustomizedModule()]

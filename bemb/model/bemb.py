@@ -158,6 +158,7 @@ class BEMBFlex(nn.Module):
                 2. 'gamma' - obs2prior is not supported for gamma coefficients
                 If a coefficient does not appear in the dictionary, it will be assigned the distribution specified
                 by the 'default' key. By default, the default distribution is 'gaussian'.
+                For coefficients which have gamma distributions, prior mean and variance MUST be specified in the prior_mean and prior_variance arguments if obs2prior is False for this coefficient. If obs2prior is True, prior_variance is still required
 
             obs2prior_dict (Dict[str, bool]): a dictionary maps coefficient name (e.g., 'lambda_item')
                 to a boolean indicating if observable (e.g., item_obs) enters the prior of the coefficient.
@@ -203,6 +204,8 @@ class BEMBFlex(nn.Module):
                 If no `prior_mean['default']` is provided, the default prior mean will be 0.0 for those coefficients
                 not in the prior_mean.keys().
 
+                For coefficients with gamma distributions, prior_mean specifies the shape parameter of the gamma prior.
+
                 Defaults to 0.0.
 
             prior_variance (Union[float, Dict[str, float]], Dict[str, torch. Tensor]): the variance of prior distribution
@@ -221,6 +224,8 @@ class BEMBFlex(nn.Module):
                 user can add a `prior_variance['default']` value to specify the variance for those coefficients.
                 If no `prior_variance['default']` is provided, the default prior variance will be 1.0 for those coefficients
                 not in the prior_variance.keys().
+
+                For coefficients with gamma distributions, prior_variance specifies the concentration parameter of the gamma prior.
 
                 Defaults to 1.0, which means all priors have identity matrix as the covariance matrix.
 
@@ -345,6 +350,21 @@ class BEMBFlex(nn.Module):
         for additive_term in self.formula:
             for coef_name in additive_term['coefficient']:
                 variation = coef_name.split('_')[-1]
+
+                if coef_name not in self.coef_dist_dict.keys():
+                    if 'default' in self.coef_dist_dict.keys():
+                        self.coef_dist_dict[coef_name] = self.coef_dist_dict['default']
+                    else:
+                        warnings.warn(f"You provided a dictionary of coef_dist_dict, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the coef_dist_dict dictionary to use that as default value (e.g., coef_dist_dict['default'] = 'gaussian'); now using distribution='gaussian' since this is not supplied.")
+                        self.coef_dist_dict[coef_name] = 'gaussian'
+
+                elif self.coef_dist_dict[coef_name] == 'gamma':
+                    if not self.obs2prior_dict[coef_name]:
+                        assert isinstance(self.prior_mean, dict) and coef_name in self.prior_mean.keys(), \
+                            f"Prior mean for {coef_name} needs to be provided because it's posterior is estimated as a gamma distribution."
+                        assert isinstance(self.prior_variance, dict) and coef_name in self.prior_variance.keys(), \
+                            f"Prior variance for {coef_name} needs to be provided because it's posterior is estimated as a gamma distribution."
+
                 if isinstance(self.prior_mean, dict):
                     # the user didn't specify prior mean for this coefficient.
                     if coef_name not in self.prior_mean.keys():
@@ -367,13 +387,6 @@ class BEMBFlex(nn.Module):
                         else:
                             warnings.warn(f"You provided a dictionary of prior variance, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the prior_variance dictionary to use that as default value (e.g., prior_variance['default'] = 0.3); now using variance=1.0 since this is not supplied.")
                             self.prior_variance[coef_name] = 1.0
-
-                if coef_name not in self.coef_dist_dict.keys():
-                    if 'default' in self.coef_dist_dict.keys():
-                        self.coef_dist_dict[coef_name] = self.coef_dist_dict['default']
-                    else:
-                        warnings.warn(f"You provided a dictionary of coef_dist_dict, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the coef_dist_dict dictionary to use that as default value (e.g., coef_dist_dict['default'] = 'gaussian'); now using distribution='gaussian' since this is not supplied.")
-                        self.coef_dist_dict[coef_name] = 'gaussian'
 
                 s2 = self.prior_variance[coef_name] if isinstance(
                     self.prior_variance, dict) else self.prior_variance
@@ -681,9 +694,6 @@ class BEMBFlex(nn.Module):
         """
         sample_dict = dict()
         for coef_name, coef in self.coef_dict.items():
-            '''
-            print(coef_name)
-            '''
             if deterministic:
                 sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
                 if coef.obs2prior:

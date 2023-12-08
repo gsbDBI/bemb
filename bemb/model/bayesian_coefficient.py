@@ -6,6 +6,7 @@ Update: Apr. 28, 2022
 """
 from typing import Optional, Tuple, Union
 
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.distributions.lowrank_multivariate_normal import LowRankMultivariateNormal
@@ -76,15 +77,20 @@ class BayesianCoefficient(nn.Module):
 
         assert distribution in ['gaussian', 'gamma'], f'Unsupported distribution {distribution}'
         if distribution == 'gamma':
+            '''
             assert not obs2prior, 'Gamma distribution is not supported for obs2prior at present.'
             mean = 1.0
             variance = 10.0
             assert mean > 0, 'Gamma distribution requires mean > 0'
             assert variance > 0, 'Gamma distribution requires variance > 0'
-            shape = mean ** 2 / variance
-            rate = mean / variance
-            prior_mean = shape
+            # shape (concentration) is mean^2/variance, rate is variance/mean for Gamma distribution.
+            shape = prior_mean ** 2 / prior_variance
+            rate = prior_mean / prior_variance
+            prior_mean = np.log(shape)
             prior_variance = rate
+            '''
+            prior_mean = np.log(prior_mean)
+            prior_variance = prior_variance
 
         self.distribution = distribution
 
@@ -108,6 +114,7 @@ class BayesianCoefficient(nn.Module):
         if self.obs2prior:
             # the mean of prior distribution depends on observables.
             # initiate a Bayesian Coefficient with shape (dim, num_obs) standard Gaussian.
+            prior_H_dist = 'gaussian'
             self.prior_H = BayesianCoefficient(variation='constant',
                                                num_classes=dim,
                                                obs2prior=False,
@@ -115,7 +122,7 @@ class BayesianCoefficient(nn.Module):
                                                prior_variance=1.0,
                                                H_zero_mask=self.H_zero_mask,
                                                is_H=True,
-                                               distribution=self.distribution)  # this is a distribution responsible for the obs2prior H term.
+                                               distribution=prior_H_dist)  # this is a distribution responsible for the obs2prior H term.
 
         else:
             self.register_buffer(
@@ -253,7 +260,7 @@ class BayesianCoefficient(nn.Module):
                                             cov_factor=self.prior_cov_factor,
                                             cov_diag=self.prior_cov_diag).log_prob(sample)
         elif self.distribution == 'gamma':
-            concentration = mu
+            concentration = torch.exp(mu)
             rate = self.prior_variance
             out = Gamma(concentration=concentration,
                         rate=rate).log_prob(sample)
