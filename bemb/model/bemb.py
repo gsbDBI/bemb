@@ -697,17 +697,19 @@ class BEMBFlex(nn.Module):
         for coef_name, coef in self.coef_dict.items():
             if deterministic:
                 s = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
-                if coef.distribution == 'lognormal':
-                    s = torch.exp(s)
+                # if coef.distribution == 'lognormal':
+                #     s = torch.exp(s)
                 sample_dict[coef_name] = s
                 if coef.obs2prior:
                     sample_dict[coef_name + '.H'] = coef.prior_H.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
             else:
+                print(coef_name)
                 s = coef.rsample(num_seeds)
                 if coef.obs2prior:
                     # sample both obs2prior weight and realization of variable.
                     assert isinstance(s, tuple) and len(s) == 2
-                    if coef.distribution == 'lognormal':
+                    # if coef.distribution == 'lognormal':
+                    if False:
                         ss = torch.exp(s[0])
                     else:
                         ss = s[0]
@@ -716,8 +718,8 @@ class BEMBFlex(nn.Module):
                 else:
                     # only sample the realization of variable.
                     assert torch.is_tensor(s)
-                    if coef.distribution == 'lognormal':
-                        s = torch.exp(s)
+                    # if coef.distribution == 'lognormal':
+                    #     s = torch.exp(s)
                     sample_dict[coef_name] = s
         return sample_dict
 

@@ -11,6 +11,7 @@ import torch
 import torch.nn as nn
 from torch.distributions.lowrank_multivariate_normal import LowRankMultivariateNormal
 from torch.distributions.gamma import Gamma
+from torch.distributions.log_normal import LogNormal
 
 
 class BayesianCoefficient(nn.Module):
@@ -195,14 +196,20 @@ class BayesianCoefficient(nn.Module):
         Returns:
             torch.Tensor: the current mean of the variational distribution with shape (num_classes, dim).
         """
-        if self.variational_mean_fixed is None:
-            M = self.variational_mean_flexible
-        else:
-            M = self.variational_mean_fixed + self.variational_mean_flexible
+        assert self.variational_mean_fixed is None, "not supported"
+
+        # if self.variational_mean_fixed is None:
+        # else:
+        #     M = self.variational_mean_fixed + self.variational_mean_flexible
+
+        M = self.variational_mean_flexible
 
         if self.distribution == 'gamma':
             # M = torch.pow(M, 2) + 0.000001
             M = (torch.minimum((M.exp() + 0.000001), torch.tensor(1e3))) / self.variational_logstd.exp()
+
+        elif self.distribution == 'lognormal':
+            M = (torch.minimum((M.exp() + 0.000001), torch.tensor(1e3)))
 
         if self.is_H and (self.H_zero_mask is not None):
             # a H-variable with zero-entry restriction.
@@ -257,10 +264,14 @@ class BayesianCoefficient(nn.Module):
         else:
             mu = self.prior_zero_mean
 
-        if self.distribution == 'gaussian' or self.distribution == 'lognormal':
+        if self.distribution == 'gaussian':# or self.distribution == 'lognormal':
             out = LowRankMultivariateNormal(loc=mu,
                                             cov_factor=self.prior_cov_factor,
                                             cov_diag=self.prior_cov_diag).log_prob(sample)
+        elif self.distribution == 'lognormal':
+            # out = LogNormal(loc=mu, scale=np.sqrt(self.prior_variance)).log_prob(sample)
+            # out = torch.sum(out, dim=-1)
+            out = torch.zeros((num_seeds, num_classes), device=sample.device)
         elif self.distribution == 'gamma':
             concentration = torch.exp(mu)
             rate = self.prior_variance
@@ -275,6 +286,7 @@ class BayesianCoefficient(nn.Module):
             # sum over the last dimension
             out = torch.sum(out, dim=-1)
 
+        out = torch.zeros((num_seeds, num_classes), device=sample.device)
         assert out.shape == (num_seeds, num_classes)
         return out
 
@@ -311,6 +323,9 @@ class BayesianCoefficient(nn.Module):
         """
         value_sample = self.variational_distribution.rsample(
             torch.Size([num_seeds]))
+        if self.distribution == 'lognormal':
+            print(torch.min(value_sample))
+            print(torch.max(value_sample))
         # DEBUG_MARKER
         if self.obs2prior:
             # sample obs2prior H as well.
@@ -323,10 +338,22 @@ class BayesianCoefficient(nn.Module):
     def variational_distribution(self) -> Union[LowRankMultivariateNormal, Gamma]:
         """Constructs the current variational distribution of the coefficient from current variational mean and covariance.
         """
-        if self.distribution == 'gaussian' or self.distribution == 'lognormal':
-            return LowRankMultivariateNormal(loc=self.variational_mean,
+        if self.distribution == 'gaussian':# or self.distribution == 'lognormal':
+            # print(torch.max(self.variational_mean), torch.min(self.variational_mean))
+            # print(torch.max(self.variational_logstd), torch.min(self.variational_logstd))
+            return LowRankMultivariateNormal(loc=self.variational_mean_flexible,
                                              cov_factor=self.variational_cov_factor,
                                              cov_diag=torch.exp(self.variational_logstd))
+        elif self.distribution == 'lognormal':
+            # print(self.variational_mean_flexible)
+            # print(self.variational_logstd)
+            print(torch.max(self.variational_logstd), torch.min(self.variational_logstd))
+            print(torch.max(self.variational_mean_flexible), torch.min(self.variational_mean_flexible))
+            print(self.variational_mean_flexible.shape, self.variational_logstd.shape)
+            # return LowRankMultivariateNormal(loc=self.variational_mean_flexible,
+                                             # cov_factor=self.variational_cov_factor,
+                                             # cov_diag=torch.exp(self.variational_logstd))
+            return LogNormal(loc=self.variational_mean_flexible, scale=torch.exp(self.variational_logstd))
         elif self.distribution == 'gamma':
             # for a gamma distribution, we store the concentration as log(concentration) = variational_mean_flexible
             assert self.variational_mean_fixed == None, 'Gamma distribution does not support fixed mean'

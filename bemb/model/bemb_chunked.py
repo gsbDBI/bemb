@@ -689,8 +689,8 @@ class BEMBFlexChunked(nn.Module):
                     # inner_list = []
                     for jj, coef in enumerate(bayesian_coeffs_inner):
                         s = coef.variational_distribution.mean.unsqueeze(dim=0) # (1, num_*, dim)
-                        if coef.distribution == 'lognormal':
-                            s = s.exp()
+                        # if coef.distribution == 'lognormal':
+                        #     s = s.exp()
                         this_sample[:, :, :, ii, jj] = s
                         # inner_list.append(coef.variational_distribution.mean.unsqueeze(dim=0)) # (1, num_*, dim)
                         # inner_list.append(coef.variational_distribution.mean.unsqueeze(dim=0)) # (1, num_*, dim)
@@ -716,7 +716,8 @@ class BEMBFlexChunked(nn.Module):
                         if coef.obs2prior:
                             # sample both obs2prior weight and realization of variable.
                             assert isinstance(s, tuple) and len(s) == 2
-                            if coef.distribution == 'lognormal':
+                            # if coef.distribution == 'lognormal':
+                            if False:
                                 ss = torch.exp(s[0])
                             else:
                                 ss = s[0]
@@ -727,8 +728,8 @@ class BEMBFlexChunked(nn.Module):
                         else:
                             # only sample the realization of variable.
                             assert torch.is_tensor(s)
-                            if coef.distribution == 'lognormal':
-                                s = torch.exp(s)
+                            # if coef.distribution == 'lognormal':
+                            #     s = torch.exp(s)
                             this_sample[:, :, :, ii, jj] = s
                             # inner_list.append(s)
                     # outer_list.append(inner_list)

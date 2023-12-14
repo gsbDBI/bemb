@@ -257,8 +257,8 @@ if __name__ == '__main__':
         os.makedirs(out_dir)
     if 'gamma_user' in configs.utility:
         coeffs_gamma = bemb.model.coef_dict['gamma_user'].variational_mean.detach().cpu().numpy()
-        if configs.coef_dist_dict['gamma_user'] == 'lognormal':
-            coeffs_gamma = np.exp(coeffs_gamma)
+        # if configs.coef_dist_dict['gamma_user'] == 'lognormal':
+        #     coeffs_gamma = np.exp(coeffs_gamma)
         print('Coefficients statistics Gamma:')
         print(pd.DataFrame(coeffs_gamma).describe())
         # write to file
@@ -266,8 +266,8 @@ if __name__ == '__main__':
         np.savetxt(f'{out_dir}/gammas_{sys.argv[1]}.txt', coeffs_gamma, delimiter=',')
     if 'nfact_category' in configs.utility:
         coeffs_nfact = bemb.model.coef_dict['nfact_category'].variational_mean.detach().cpu().numpy()
-        if configs.coef_dist_dict['nfact_category'] == 'lognormal':
-            coeffs_nfact = np.exp(coeffs_nfact)
+        # if configs.coef_dist_dict['nfact_category'] == 'lognormal':
+        #     coeffs_nfact = np.exp(coeffs_nfact)
         print('Coefficients statistics nfact_category:')
         print(pd.DataFrame(coeffs_nfact).describe())
         # write to file
