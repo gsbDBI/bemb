@@ -6,6 +6,7 @@ function and modify it to fully leverage the potential of pytorch lightning (e.g
 import time
 
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from torch_choice.data.utils import create_data_loader
 from typing import List
 from torch_choice.data import ChoiceDataset
@@ -17,7 +18,7 @@ def section_print(input_text):
     print('=' * 20, input_text, '=' * 20)
 
 
-def run(model: LitBEMBFlex, dataset_list: List[ChoiceDataset], batch_size: int=-1, num_epochs: int=10, num_workers: int=8, run_test=True, **kwargs) -> LitBEMBFlex:
+def run(model: LitBEMBFlex, dataset_list: List[ChoiceDataset], batch_size: int=-1, num_epochs: int=10, num_workers: int=8, run_test=True, patience=100, **kwargs) -> LitBEMBFlex:
     """A standard pipeline of model training and evaluation.
 
     Args:
@@ -53,6 +54,7 @@ def run(model: LitBEMBFlex, dataset_list: List[ChoiceDataset], batch_size: int=-
                          max_epochs=num_epochs,
                          check_val_every_n_epoch=1,
                          log_every_n_steps=1,
+                         callbacks=[EarlyStopping(monitor='val_log_likelihood', patience=patience, mode='max')],
                          **kwargs)
     start_time = time.time()
     trainer.fit(model, train_dataloaders=train, val_dataloaders=validation)

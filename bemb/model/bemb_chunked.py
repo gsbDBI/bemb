@@ -47,6 +47,7 @@ class BEMBFlexChunked(nn.Module):
                  num_items: int,
                  pred_item: bool,
                  num_classes: int = 2,
+                 coef_dist_dict: Dict[str, str] = {'default' : 'gaussian'},
                  H_zero_mask_dict: Optional[Dict[str, torch.BoolTensor]] = None,
                  prior_mean: Union[float, Dict[str, float]] = 0.0,
                  prior_variance: Union[float, Dict[str, float]] = 1.0,
@@ -74,6 +75,14 @@ class BEMBFlexChunked(nn.Module):
                     lambda_item + theta_user * alpha_item + zeta_user * item_obs
                     lambda_item + theta_user * alpha_item + gamma_user * beta_item * price_obs
                 See the doc-string of parse_utility for an example.
+
+            coef_dist_dict (Dict[str, str]): a dictionary mapping coefficient name to coefficient distribution name.
+                The coefficient distribution name can be one of the following:
+                1. 'gaussian'
+                2. 'gamma' - obs2prior is not supported for gamma coefficients
+                If a coefficient does not appear in the dictionary, it will be assigned the distribution specified
+                by the 'default' key. By default, the default distribution is 'gaussian'.
+                For coefficients which have gamma distributions, prior mean and variance MUST be specified in the prior_mean and prior_variance arguments if obs2prior is False for this coefficient. If obs2prior is True, prior_variance is still required
 
             obs2prior_dict (Dict[str, bool]): a dictionary maps coefficient name (e.g., 'lambda_item')
                 to a boolean indicating if observable (e.g., item_obs) enters the prior of the coefficient.
@@ -119,6 +128,8 @@ class BEMBFlexChunked(nn.Module):
                 If no `prior_mean['default']` is provided, the default prior mean will be 0.0 for those coefficients
                 not in the prior_mean.keys().
 
+                For coefficients with gamma distributions, prior_mean specifies the shape parameter of the gamma prior.
+
                 Defaults to 0.0.
 
             prior_variance (Union[float, Dict[str, float]], Dict[str, torch. Tensor]): the variance of prior distribution
@@ -137,6 +148,8 @@ class BEMBFlexChunked(nn.Module):
                 user can add a `prior_variance['default']` value to specify the variance for those coefficients.
                 If no `prior_variance['default']` is provided, the default prior variance will be 1.0 for those coefficients
                 not in the prior_variance.keys().
+
+                For coefficients with gamma distributions, prior_variance specifies the concentration parameter of the gamma prior.
 
                 Defaults to 1.0, which means all priors have identity matrix as the covariance matrix.
 
@@ -172,6 +185,7 @@ class BEMBFlexChunked(nn.Module):
         self.utility_formula = utility_formula
         self.obs2prior_dict = obs2prior_dict
         self.coef_dim_dict = coef_dim_dict
+        self.coef_dist_dict = coef_dist_dict
         if H_zero_mask_dict is not None:
             self.H_zero_mask_dict = H_zero_mask_dict
         else:
@@ -285,6 +299,23 @@ class BEMBFlexChunked(nn.Module):
         for additive_term in self.formula:
             for coef_name in additive_term['coefficient']:
                 variation = coef_name.split('_')[-1]
+
+                if coef_name not in self.coef_dist_dict.keys():
+                    if 'default' in self.coef_dist_dict.keys():
+                        self.coef_dist_dict[coef_name] = self.coef_dist_dict['default']
+                    else:
+                        warnings.warn(f"You provided a dictionary of coef_dist_dict, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the coef_dist_dict dictionary to use that as default value (e.g., coef_dist_dict['default'] = 'gaussian'); now using distribution='gaussian' since this is not supplied.")
+                        self.coef_dist_dict[coef_name] = 'gaussian'
+
+                '''
+                elif self.coef_dist_dict[coef_name] == 'gamma':
+                    if not self.obs2prior_dict[coef_name]:
+                        assert isinstance(self.prior_mean, dict) and coef_name in self.prior_mean.keys(), \
+                            f"Prior mean for {coef_name} needs to be provided because it's posterior is estimated as a gamma distribution."
+                    assert isinstance(self.prior_variance, dict) and coef_name in self.prior_variance.keys(), \
+                        f"Prior variance for {coef_name} needs to be provided because it's posterior is estimated as a gamma distribution."
+                '''
+
                 if isinstance(self.prior_mean, dict):
                     # the user didn't specify prior mean for this coefficient.
                     if coef_name not in self.prior_mean.keys():
@@ -326,6 +357,8 @@ class BEMBFlexChunked(nn.Module):
                 for ii in range(chunk_sizes[0]):
                     bayesian_coefs_inner = []
                     for jj in range(chunk_sizes[1]):
+                        if self.coef_dist_dict[coef_name] == 'gamma' and not self.obs2prior_dict[coef_name]:
+                            assert mean > 0, 'shape of gamma distribution specifieid as prior_mean needs to be > 0'
                         bayesian_coefs_inner.append(BayesianCoefficient(variation=variation,
                                                                         num_classes=variation_to_num_classes[variation],
                                                                         obs2prior=self.obs2prior_dict[coef_name],
@@ -334,8 +367,8 @@ class BEMBFlexChunked(nn.Module):
                                                                         prior_mean=mean,
                                                                         prior_variance=s2,
                                                                         H_zero_mask=H_zero_mask,
-                                                                        is_H=False
-                                                                        )
+                                                                        is_H=False,
+                                                                        distribution=self.coef_dist_dict[coef_name]),
                                                     )
                     bayesian_coefs_inner = nn.ModuleList(bayesian_coefs_inner)
                     bayesian_coefs.append(bayesian_coefs_inner)
@@ -655,7 +688,10 @@ class BEMBFlexChunked(nn.Module):
                 for ii, bayesian_coeffs_inner in enumerate(bayesian_coeffs):
                     # inner_list = []
                     for jj, coef in enumerate(bayesian_coeffs_inner):
-                        this_sample[:, :, :, ii, jj] = coef.variational_distribution.mean.unsqueeze(dim=0) # (1, num_*, dim)
+                        s = coef.variational_distribution.mean.unsqueeze(dim=0) # (1, num_*, dim)
+                        if coef.distribution == 'lognormal':
+                            s = s.exp()
+                        this_sample[:, :, :, ii, jj] = s
                         # inner_list.append(coef.variational_distribution.mean.unsqueeze(dim=0)) # (1, num_*, dim)
                         # inner_list.append(coef.variational_distribution.mean.unsqueeze(dim=0)) # (1, num_*, dim)
                     # outer_list.append(inner_list)
@@ -680,6 +716,10 @@ class BEMBFlexChunked(nn.Module):
                         if coef.obs2prior:
                             # sample both obs2prior weight and realization of variable.
                             assert isinstance(s, tuple) and len(s) == 2
+                            if coef.distribution == 'lognormal':
+                                ss = torch.exp(s[0])
+                            else:
+                                ss = s[0]
                             this_sample[:, :, :, ii, jj] = s[0]
                             this_sample_H[:, :, :, ii, jj] = s[1]
                             # inner_list.append(s[0])
@@ -687,6 +727,8 @@ class BEMBFlexChunked(nn.Module):
                         else:
                             # only sample the realization of variable.
                             assert torch.is_tensor(s)
+                            if coef.distribution == 'lognormal':
+                                s = torch.exp(s)
                             this_sample[:, :, :, ii, jj] = s
                             # inner_list.append(s)
                     # outer_list.append(inner_list)
@@ -1004,6 +1046,7 @@ class BEMBFlexChunked(nn.Module):
                     sample_dict[coef_name], coef_name)
                 assert coef_sample.shape == (R, total_computation, 1)
                 additive_term = coef_sample.view(R, total_computation)
+                additive_term *= term['sign']
 
             # Type II: factorized coefficient, e.g., <theta_user, lambda_item>.
             elif len(term['coefficient']) == 2 and term['observable'] is None:
@@ -1019,6 +1062,7 @@ class BEMBFlexChunked(nn.Module):
                     R, total_computation, positive_integer)
 
                 additive_term = (coef_sample_0 * coef_sample_1).sum(dim=-1)
+                additive_term *= term['sign']
 
             # Type III: single coefficient multiplied by observable, e.g., theta_user * x_obs_item.
             elif len(term['coefficient']) == 1 and term['observable'] is not None:
@@ -1038,6 +1082,7 @@ class BEMBFlexChunked(nn.Module):
                     price_coeffs = obs_coeff
 
                 additive_term = (coef_sample * obs).sum(dim=-1)
+                additive_term *= term['sign']
 
             # Type IV: factorized coefficient multiplied by observable.
             # e.g., gamma_user * beta_item * price_obs.
@@ -1071,6 +1116,7 @@ class BEMBFlexChunked(nn.Module):
                     price_coeffs = obs_coeff
 
                 additive_term = (coef * obs).sum(dim=-1)
+                additive_term *= term['sign']
 
             else:
                 raise ValueError(f'Undefined term type: {term}')

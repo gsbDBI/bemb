@@ -66,7 +66,7 @@ class BayesianCoefficient(nn.Module):
                 If a tensor with shape (num_classes, dim) is supplied, supplying a (num_classes, dim) tensor is amount
                 to specifying a different prior variance for each entry in the coefficient.
                 Defaults to 1.0.
-            distribution (str, optional): the distribution of the coefficient. Currently we support 'gaussian' and 'gamma'.
+            distribution (str, optional): the distribution of the coefficient. Currently we support 'gaussian', 'gamma' and 'lognormal'.
                 Defaults to 'gaussian'.
         """
         super(BayesianCoefficient, self).__init__()
@@ -75,7 +75,7 @@ class BayesianCoefficient(nn.Module):
 
         self.variation = variation
 
-        assert distribution in ['gaussian', 'gamma'], f'Unsupported distribution {distribution}'
+        assert distribution in ['gaussian', 'gamma', 'lognormal'], f'Unsupported distribution {distribution}'
         if distribution == 'gamma':
             '''
             assert not obs2prior, 'Gamma distribution is not supported for obs2prior at present.'
@@ -84,13 +84,15 @@ class BayesianCoefficient(nn.Module):
             assert mean > 0, 'Gamma distribution requires mean > 0'
             assert variance > 0, 'Gamma distribution requires variance > 0'
             # shape (concentration) is mean^2/variance, rate is variance/mean for Gamma distribution.
+            '''
             shape = prior_mean ** 2 / prior_variance
             rate = prior_mean / prior_variance
+            # prior_mean stores ln(shape) for gamma
             prior_mean = np.log(shape)
+            # prior_variance stores rate for gamma
             prior_variance = rate
-            '''
-            prior_mean = np.log(prior_mean)
-            prior_variance = prior_variance
+            # prior_mean = np.log(prior_mean)
+            # prior_variance = prior_variance
 
         self.distribution = distribution
 
@@ -141,13 +143,13 @@ class BayesianCoefficient(nn.Module):
             num_classes, dim) * self.prior_variance)
 
         # create variational distribution.
-        if self.distribution == 'gaussian':
+        if self.distribution == 'gaussian' or self.distribution == 'lognormal':
             self.variational_mean_flexible = nn.Parameter(
                 torch.randn(num_classes, dim), requires_grad=True)
         # TOOD(kanodiaayush): initialize the gamma distribution variational mean in a more principled way.
         elif self.distribution == 'gamma':
             # initialize using uniform distribution between 0.5 and 1.5
-            # for a gamma distribution, we store the concentration as log(concentration) = variational_mean_flexible
+            # for a gamma distribution, we store the concentration (shape) as log(concentration) = variational_mean_flexible
             self.variational_mean_flexible = nn.Parameter(
                 torch.rand(num_classes, dim) + 0.5, requires_grad=True)
 
@@ -200,7 +202,7 @@ class BayesianCoefficient(nn.Module):
 
         if self.distribution == 'gamma':
             # M = torch.pow(M, 2) + 0.000001
-            M = M.exp() / self.variational_logstd.exp()
+            M = (torch.minimum((M.exp() + 0.000001), torch.tensor(1e3))) / self.variational_logstd.exp()
 
         if self.is_H and (self.H_zero_mask is not None):
             # a H-variable with zero-entry restriction.
@@ -255,13 +257,19 @@ class BayesianCoefficient(nn.Module):
         else:
             mu = self.prior_zero_mean
 
-        if self.distribution == 'gaussian':
+        if self.distribution == 'gaussian' or self.distribution == 'lognormal':
             out = LowRankMultivariateNormal(loc=mu,
                                             cov_factor=self.prior_cov_factor,
                                             cov_diag=self.prior_cov_diag).log_prob(sample)
         elif self.distribution == 'gamma':
             concentration = torch.exp(mu)
             rate = self.prior_variance
+            '''
+            print(concentration)
+            print('concentration')
+            print(rate)
+            print('rate')
+            '''
             out = Gamma(concentration=concentration,
                         rate=rate).log_prob(sample)
             # sum over the last dimension
@@ -315,14 +323,15 @@ class BayesianCoefficient(nn.Module):
     def variational_distribution(self) -> Union[LowRankMultivariateNormal, Gamma]:
         """Constructs the current variational distribution of the coefficient from current variational mean and covariance.
         """
-        if self.distribution == 'gaussian':
+        if self.distribution == 'gaussian' or self.distribution == 'lognormal':
             return LowRankMultivariateNormal(loc=self.variational_mean,
                                              cov_factor=self.variational_cov_factor,
                                              cov_diag=torch.exp(self.variational_logstd))
         elif self.distribution == 'gamma':
             # for a gamma distribution, we store the concentration as log(concentration) = variational_mean_flexible
             assert self.variational_mean_fixed == None, 'Gamma distribution does not support fixed mean'
-            concentration = self.variational_mean_flexible.exp()
+            concentration = self.variational_mean_flexible.exp() + 0.000001
+            concentration = torch.minimum(concentration, torch.tensor(1e3))
             # for gamma distribution, we store the rate as log(rate) = variational_logstd
             rate = torch.exp(self.variational_logstd)
             return Gamma(concentration=concentration, rate=rate)

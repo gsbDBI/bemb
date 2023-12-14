@@ -399,6 +399,7 @@ class BEMBFlex(nn.Module):
                 if (not self.obs2prior_dict[coef_name]) and (H_zero_mask is not None):
                     raise ValueError(f'You specified H_zero_mask for {coef_name}, but obs2prior is False for this coefficient.')
 
+                print(coef_name)
                 coef_dict[coef_name] = BayesianCoefficient(variation=variation,
                                                            num_classes=variation_to_num_classes[variation],
                                                            obs2prior=self.obs2prior_dict[coef_name],
@@ -695,7 +696,10 @@ class BEMBFlex(nn.Module):
         sample_dict = dict()
         for coef_name, coef in self.coef_dict.items():
             if deterministic:
-                sample_dict[coef_name] = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+                s = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+                if coef.distribution == 'lognormal':
+                    s = torch.exp(s)
+                sample_dict[coef_name] = s
                 if coef.obs2prior:
                     sample_dict[coef_name + '.H'] = coef.prior_H.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
             else:
@@ -703,11 +707,17 @@ class BEMBFlex(nn.Module):
                 if coef.obs2prior:
                     # sample both obs2prior weight and realization of variable.
                     assert isinstance(s, tuple) and len(s) == 2
-                    sample_dict[coef_name] = s[0]
+                    if coef.distribution == 'lognormal':
+                        ss = torch.exp(s[0])
+                    else:
+                        ss = s[0]
+                    sample_dict[coef_name] = ss
                     sample_dict[coef_name + '.H'] = s[1]
                 else:
                     # only sample the realization of variable.
                     assert torch.is_tensor(s)
+                    if coef.distribution == 'lognormal':
+                        s = torch.exp(s)
                     sample_dict[coef_name] = s
         return sample_dict
 
@@ -1005,6 +1015,8 @@ class BEMBFlex(nn.Module):
                     R, P, I, num_obs, latent_dim)
                 coef_sample_1 = coef_sample_1.view(
                     R, P, I, num_obs, latent_dim)
+                # coef_sample_0 = torch.exp(coef_sample_0)
+                # coef_sample_1 = torch.exp(coef_sample_1)
                 # compute the factorized coefficient with shape (R, P, I, O).
                 coef = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
