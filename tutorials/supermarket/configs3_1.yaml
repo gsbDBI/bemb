@@ -1,0 +1,69 @@
+device: cuda
+# data_dir: /home/tianyudu/Data/MoreSupermarket/tsv/
+# data_dir: /home/tianyudu/Data/MoreSupermarket/20180101-20191231_13/tsv/
+# data_dir: /oak/stanford/groups/athey/MoreSupermarkets/csv/new_data/nf_runs/m_9999/20180101-20191231_42/tsv
+# data_dir: /oak/stanford/groups/athey/MoreSupermarkets/csv/new_data/nf_runs/m_9999/2
+data_dir: /oak/stanford/groups/athey/MoreSupermarkets/csv/new_data/nf_runs/m_1904-1887-1974-2012-1992/20180101-20191231_44/tsv/
+# data_dir: /oak/stanford/groups/athey/MoreSupermarkets/csv/new_data/nf_runs/m_1887/chunked_1
+# data_dir: /oak/stanford/groups/athey/MoreSupermarkets/csv/new_data/nf_runs/sims34/1
+# utility: lambda_item
+# utility: lambda_item + theta_user * alpha_item
+# utility: lambda_item + theta_user * alpha_item + zeta_user * item_obs
+# utility: lambda_item + theta_user * alpha_item + gamma_user * beta_item * price_obs
+# utility: lambda_item + theta_user * alpha_item + gamma_user * price_obs
+# utility: lambda_item + theta_user * alpha_item - nfact_category * gamma_user * price_obs
+utility: theta_user * alpha_item - nfact_category * gamma_user * price_obs
+# utility: -nfact_category * gamma_user * price_obs
+# utility: -nfact_category * gamma_user * price_obs
+# utility: -gamma_user * price_obs
+# utility: lambda_item
+out_dir: ./output/
+# model configuration.
+obs2prior_dict:
+  lambda_item: False
+  theta_user: False
+  alpha_item: False
+  zeta_user: True
+  lota_item: True
+  gamma_user: False
+  nfact_category: False
+  beta_item: True
+coef_dim_dict:
+  lambda_item: 1
+  theta_user: 50
+  alpha_item: 50
+  gamma_user: 1
+  nfact_category: 1
+  beta_item: 10
+coef_dist_dict:
+  default: 'gaussian'
+  # gamma_user: 'gamma'
+  # nfact_category: 'gamma'
+  gamma_user: 'gaussian'
+  nfact_category: 'lognormal'
+prior_mean:
+  default: 0.0
+  # mean is shape for gamma variable
+  # shape is mean^sq / var
+  # we want mean 1, var 100 for these two vars
+  # gamma_user: 0.01
+  gamma_user: 1.0
+  nfact_category: 1.0
+prior_variance:
+  default: 100000.0
+  # variance is rate for gamma variable
+  # shape is mean / var
+  gamma_user: 10.0
+  nfact_category: 10.0
+#### optimization.
+trace_log_q: False
+shuffle: False
+batch_size: 50000
+num_epochs: 200
+learning_rate: 0.03
+num_mc_seeds: 1
+num_price_obs: 1
+obs_user: True
+obs_item: False
+patience: 10
+complete_availability: True
