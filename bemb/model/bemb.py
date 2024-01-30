@@ -422,6 +422,10 @@ class BEMBFlex(nn.Module):
                 'Additional modules are temporarily disabled for further development.')
             self.additional_modules = nn.ModuleList(additional_modules)
 
+    def clamp_coefs(self):
+        for coef_name in self.coef_dict.keys():
+            self.coef_dict[coef_name].clamp_params()
+
     def __str__(self):
         return f'Bayesian EMBedding Model with U[user, item, session] = {self.raw_formula}\n' \
                + f'Total number of parameters: {self.num_params}.\n' \
@@ -697,13 +701,14 @@ class BEMBFlex(nn.Module):
         for coef_name, coef in self.coef_dict.items():
             if deterministic:
                 s = coef.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
+                # print(torch.min(s), torch.max(s))
+                # breakpoint()
                 # if coef.distribution == 'lognormal':
                 #     s = torch.exp(s)
                 sample_dict[coef_name] = s
                 if coef.obs2prior:
                     sample_dict[coef_name + '.H'] = coef.prior_H.variational_distribution.mean.unsqueeze(dim=0)  # (1, num_*, dim)
             else:
-                print(coef_name)
                 s = coef.rsample(num_seeds)
                 if coef.obs2prior:
                     # sample both obs2prior weight and realization of variable.

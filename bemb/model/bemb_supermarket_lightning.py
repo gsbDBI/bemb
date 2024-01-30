@@ -150,6 +150,12 @@ class LitBEMBFlex(pl.LightningModule):
                                             num_workers=self.num_workers)
         return test_dataloader
 
+    # def optimizer_step(self, epoch, batch_idx, optimizer, optimizer_closure, ):
+    def optimizer_step(self, epoch, batch_idx, optimizer, optimizer_idx, optimizer_closure, on_tpu, using_native_amp, using_lbfgs):
+        optimizer.step(closure=optimizer_closure)
+        with torch.no_grad():
+            self.model.clamp_coefs()
+
 
     def write_bemb_cpp_format(self):
         model = self.model

@@ -358,7 +358,7 @@ class BEMBFlexChunked(nn.Module):
                     bayesian_coefs_inner = []
                     for jj in range(chunk_sizes[1]):
                         if self.coef_dist_dict[coef_name] == 'gamma' and not self.obs2prior_dict[coef_name]:
-                            assert mean > 0, 'shape of gamma distribution specifieid as prior_mean needs to be > 0'
+                            assert mean > 0, 'shape of gamma distribution specified as prior_mean needs to be > 0'
                         bayesian_coefs_inner.append(BayesianCoefficient(variation=variation,
                                                                         num_classes=variation_to_num_classes[variation],
                                                                         obs2prior=self.obs2prior_dict[coef_name],
@@ -385,6 +385,13 @@ class BEMBFlexChunked(nn.Module):
             raise NotImplementedError(
                 'Additional modules are temporarily disabled for further development.')
             self.additional_modules = nn.ModuleList(additional_modules)
+
+
+    def clamp_coefs(self):
+        for coef_name in self.coef_dict.keys():
+            for ii in range(len(self.coef_dict[coef_name])):
+                for jj in range(len(self.coef_dict[coef_name][ii])):
+                    self.coef_dict[coef_name][ii][jj].clamp_params()
 
     def __str__(self):
         return f'Bayesian EMBedding Model with U[user, item, session] = {self.raw_formula}\n' \
@@ -1081,6 +1088,7 @@ class BEMBFlexChunked(nn.Module):
                 if return_price_coeff and term['observable'] is not None and term['observable'].startswith('price_'):
                     obs_coeff = coef_sample.sum(dim=-1)
                     price_coeffs = obs_coeff
+                    price_coeffs *= term['sign']
 
                 additive_term = (coef_sample * obs).sum(dim=-1)
                 additive_term *= term['sign']
@@ -1115,6 +1123,7 @@ class BEMBFlexChunked(nn.Module):
                 if return_price_coeff and term['observable'] is not None and term['observable'].startswith('price_'):
                     obs_coeff = coef.sum(dim=-1)
                     price_coeffs = obs_coeff
+                    price_coeffs *= term['sign']
 
                 additive_term = (coef * obs).sum(dim=-1)
                 additive_term *= term['sign']
