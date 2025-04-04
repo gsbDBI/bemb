@@ -10,7 +10,8 @@ from sklearn.preprocessing import LabelEncoder
 from termcolor import cprint
 from example_customized_module import ExampleCustomizedModule
 from torch_choice.data import ChoiceDataset
-from bemb.model import LitBEMBFlex
+# from bemb.model import LitBEMBFlex
+from bemb.model.bemb_supermarket_lightning import LitBEMBFlex
 from bemb.utils.run_helper import run
 
 
@@ -70,54 +71,36 @@ if __name__ == '__main__':
     # ==============================================================================================
     # user observables
     # ==============================================================================================
-    user_obs = pd.read_csv(os.path.join(configs.data_dir, 'obsUser.tsv'),
-                           sep='\t',
-                           index_col=0,
-                           header=None)
-    # TODO(Tianyu): there could be duplicate information for each user.
-    # do we need to catch it in some check process?
-    user_obs = user_obs.groupby(user_obs.index).first().sort_index()
-    user_obs = torch.Tensor(user_obs.values)
-    configs.num_user_obs = user_obs.shape[1]
-    configs.coef_dim_dict['obsuser_item'] = configs.num_user_obs
+    if configs.obs_user:
+        user_obs = pd.read_csv(os.path.join(configs.data_dir, 'obsUser.tsv'),
+                               sep='\t',
+                               index_col=0,
+                               header=None)
+        # TODO(Tianyu): there could be duplicate information for each user.
+        # do we need to catch it in some check process?
+        user_obs = user_obs.groupby(user_obs.index).first().sort_index()
+        user_obs = torch.Tensor(user_obs.values)
+        configs.num_user_obs = user_obs.shape[1]
+        configs.coef_dim_dict['obsuser_item'] = configs.num_user_obs
 
     # ==============================================================================================
     # item observables
     # ==============================================================================================
-    item_obs = pd.read_csv(os.path.join(configs.data_dir, 'obsItem.tsv'),
-                           sep='\t',
-                           index_col=0,
-                           header=None)
-    item_obs = item_obs.groupby(item_obs.index).first().sort_index()
-    item_obs = torch.Tensor(item_obs.values)
-    configs.num_item_obs = item_obs.shape[1]
-    configs.coef_dim_dict['obsitem_user'] = configs.num_item_obs
+    if configs.obs_item:
+        item_obs = pd.read_csv(os.path.join(configs.data_dir, 'obsItem.tsv'),
+                               sep='\t',
+                               index_col=0,
+                               header=None)
+        item_obs = item_obs.groupby(item_obs.index).first().sort_index()
+        item_obs = torch.Tensor(item_obs.values)
+        configs.num_item_obs = item_obs.shape[1]
+        configs.coef_dim_dict['obsitem_user'] = configs.num_item_obs
 
     # ==============================================================================================
     # item availability
     # ==============================================================================================
     # parse item availability.
     # Try and catch? Optionally specify full availability?
-    a_tsv = pd.read_csv(os.path.join(configs.data_dir, 'availabilityList.tsv'),
-                        sep='\t',
-                        index_col=None,
-                        header=None,
-                        names=['session_id', 'item_id'])
-
-    # availability ties session as well.
-    session_encoder = LabelEncoder().fit(a_tsv['session_id'].values)
-    configs.num_sessions = len(session_encoder.classes_)
-    assert is_sorted(session_encoder.classes_)
-    # this loop could be slow, depends on # sessions.
-    item_availability = torch.zeros(configs.num_sessions, configs.num_items).bool()
-
-    a_tsv['item_id'] = item_encoder.transform(a_tsv['item_id'].values)
-    a_tsv['session_id'] = session_encoder.transform(a_tsv['session_id'].values)
-
-    for session_id, df_group in a_tsv.groupby('session_id'):
-        # get IDs of items available at this date.
-        a_item_ids = df_group['item_id'].unique()  # this unique is not necessary if the dataset is well-prepared.
-        item_availability[session_id, a_item_ids] = True
 
     # ==============================================================================================
     # price observables
@@ -125,6 +108,10 @@ if __name__ == '__main__':
     df_price = pd.read_csv(os.path.join(configs.data_dir, 'item_sess_price.tsv'),
                            sep='\t',
                            names=['item_id', 'session_id', 'price'])
+    # availability ties session as well.
+    session_encoder = LabelEncoder().fit(df_price['session_id'].values)
+    configs.num_sessions = len(session_encoder.classes_)
+    assert is_sorted(session_encoder.classes_)
 
     # only keep prices of relevant items.
     mask = df_price['item_id'].isin(item_encoder.classes_)
@@ -137,6 +124,26 @@ if __name__ == '__main__':
     df_price.fillna(0.0, inplace=True)
     price_obs = torch.Tensor(df_price.values).view(configs.num_sessions, configs.num_items, 1)
     configs.num_price_obs = 1
+
+    if not(hasattr(configs, 'complete_availability') and configs.complete_availability):
+        a_tsv = pd.read_csv(os.path.join(configs.data_dir, 'availabilityList.tsv'),
+                            sep='\t',
+                            index_col=None,
+                            header=None,
+                            names=['session_id', 'item_id'])
+
+        item_availability = torch.zeros(configs.num_sessions, configs.num_items).bool()
+
+        a_tsv['item_id'] = item_encoder.transform(a_tsv['item_id'].values)
+        a_tsv['session_id'] = session_encoder.transform(a_tsv['session_id'].values)
+
+    # this loop could be slow, depends on # sessions.
+        for session_id, df_group in a_tsv.groupby('session_id'):
+            # get IDs of items available at this date.
+            a_item_ids = df_group['item_id'].unique()  # this unique is not necessary if the dataset is well-prepared.
+            item_availability[session_id, a_item_ids] = True
+    else:
+        item_availability = torch.ones(configs.num_sessions, configs.num_items).bool()
 
     # ==============================================================================================
     # create datasets
@@ -152,14 +159,22 @@ if __name__ == '__main__':
         # example day of week, random example.
         session_day_of_week = torch.LongTensor(np.random.randint(0, 7, configs.num_sessions))
 
-        choice_dataset = ChoiceDataset(item_index=label,
-                                       user_index=user_index,
-                                       session_index=session_index,
-                                       item_availability=item_availability,
-                                       user_obs=user_obs,
-                                       item_obs=item_obs,
-                                       price_obs=price_obs,
-                                       session_day_of_week=session_day_of_week)
+        choice_dataset_args = {
+            "item_index": label,
+            "user_index": user_index,
+            "session_index": session_index,
+            "item_availability": item_availability,
+            "price_obs": price_obs,
+            "session_day_of_week": session_day_of_week
+               }
+
+        if configs.obs_user:
+            choice_dataset_args["user_obs"] = user_obs
+
+        if configs.obs_item:
+            choice_dataset_args["item_obs"] = item_obs
+
+        choice_dataset = ChoiceDataset(**choice_dataset_args)
 
         dataset_list.append(choice_dataset)
 
@@ -187,16 +202,26 @@ if __name__ == '__main__':
     item_groups['category_id'] = category_encoder.transform(
         item_groups['category_id'].values)
 
-    print('Category sizes:')
-    print(item_groups.groupby('category_id').size().describe())
+    # print('Category sizes:')
+    # print(item_groups.groupby('category_id').size().describe())
     item_groups = item_groups.groupby('category_id')['item_id'].apply(list)
     category_to_item = dict(zip(item_groups.index, item_groups.values))
     # ==============================================================================================
     # pytorch-lightning training
     # ==============================================================================================
+    # if prior_mean is in the configs namespace set it to the prior mean
+    if hasattr(configs, 'prior_mean'):
+        prior_mean = configs.prior_mean
+    else:
+        prior_mean = 0.0
+    if hasattr(configs, 'prior_variance'):
+        prior_variance = configs.prior_variance
+    else:
+        prior_variance = 1.0
     bemb = LitBEMBFlex(
         # trainings args.
         pred_item = configs.pred_item,
+        coef_dist_dict=configs.coef_dist_dict,
         learning_rate=configs.learning_rate,
         num_seeds=configs.num_mc_seeds,
         # model args, will be passed to BEMB constructor.
@@ -208,14 +233,47 @@ if __name__ == '__main__':
         coef_dim_dict=configs.coef_dim_dict,
         trace_log_q=configs.trace_log_q,
         category_to_item=category_to_item,
-        num_user_obs=configs.num_user_obs,
-        num_item_obs=configs.num_item_obs,
-        # num_price_obs=configs.num_price_obs,
+        num_user_obs=configs.num_user_obs if configs.obs_user else None,
+        num_item_obs=configs.num_item_obs if configs.obs_item else None,
+        prior_mean = prior_mean,
+        prior_variance= prior_variance,
+        num_price_obs=configs.num_price_obs,
+        preprocess=False,
         # additional_modules=[ExampleCustomizedModule()]
     )
 
+    if hasattr(configs, 'patience'):
+        patience = configs.patience
+    else:
+        patience = 100
     bemb = bemb.to(configs.device)
-    bemb = run(bemb, dataset_list, batch_size=configs.batch_size, num_epochs=configs.num_epochs)
+    bemb = run(bemb, dataset_list, batch_size=configs.batch_size, num_epochs=configs.num_epochs, run_test=False, patience=patience)
+
+    # '''
+    # coeffs = coeffs**2
+    # give distribution statistics
+    out_dir = './output'
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    if 'gamma_user' in configs.utility:
+        coeffs_gamma = bemb.model.coef_dict['gamma_user'].variational_mean.detach().cpu().numpy()
+        # if configs.coef_dist_dict['gamma_user'] == 'lognormal':
+        #     coeffs_gamma = np.exp(coeffs_gamma)
+        print('Coefficients statistics Gamma:')
+        print(pd.DataFrame(coeffs_gamma).describe())
+        # write to file
+        print("writing")
+        np.savetxt(f'{out_dir}/gammas_{sys.argv[1]}.txt', coeffs_gamma, delimiter=',')
+    if 'nfact_category' in configs.utility:
+        coeffs_nfact = bemb.model.coef_dict['nfact_category'].variational_mean.detach().cpu().numpy()
+        # if configs.coef_dist_dict['nfact_category'] == 'lognormal':
+        #     coeffs_nfact = np.exp(coeffs_nfact)
+        print('Coefficients statistics nfact_category:')
+        print(pd.DataFrame(coeffs_nfact).describe())
+        # write to file
+        print("writing")
+        np.savetxt(f'{out_dir}/nfacts_{sys.argv[1]}.txt', coeffs_nfact, delimiter=',')
+    # '''
 
     # ==============================================================================================
     # inference example
