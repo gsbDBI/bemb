@@ -1,30 +1,36 @@
 device: cuda
 # data_dir: /home/tianyudu/Data/MoreSupermarket/tsv/
-data_dir: /home/tianyudu/Data/MoreSupermarket/20180101-20191231_13/tsv/
+# data_dir: /home/tianyudu/Data/MoreSupermarket/20180101-20191231_13/tsv/
+data_dir: /oak/stanford/groups/athey/MoreSupermarkets/csv/new_data/nf_runs/1904/20180101-20191231_44/tsv
 # utility: lambda_item
 # utility: lambda_item + theta_user * alpha_item
 # utility: lambda_item + theta_user * alpha_item + zeta_user * item_obs
-utility: lambda_item + theta_user * alpha_item + gamma_user * beta_item * price_obs
+# utility: lambda_item + theta_user * alpha_item + gamma_user * beta_item * price_obs
+utility: lambda_item + theta_user * alpha_item + gamma_user * price_obs
+# utility: alpha_item * gamma_user * price_obs
 out_dir: ./output/
 # model configuration.
+coef_dist_dict:
+  default: 'gaussian'
+  gamma_user: 'gamma'
 obs2prior_dict:
-  lambda_item: True
-  theta_user: True
-  alpha_item: True
+  lambda_item: False
+  theta_user: False
+  alpha_item: False
   zeta_user: True
   lota_item: True
-  gamma_user: True
+  gamma_user: False
   beta_item: True
 coef_dim_dict:
   lambda_item: 1
   theta_user: 10
   alpha_item: 10
-  gamma_user: 10
-  beta_item: 10
+  gamma_user: 1
+  beta_item: 1
 #### optimization.
 trace_log_q: False
 shuffle: False
 batch_size: 100000
-num_epochs: 3
+num_epochs: 100
 learning_rate: 0.03
-num_mc_seeds: 1
+num_mc_seeds: 2

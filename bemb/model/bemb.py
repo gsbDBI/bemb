@@ -39,21 +39,26 @@ def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]
     A helper function parse utility string into a list of additive terms.
 
     Example:
-        utility_string = 'lambda_item + theta_user * alpha_item + gamma_user * beta_item * price_obs'
+        utility_string = 'lambda_item + theta_user * alpha_item - gamma_user * beta_item * price_obs'
         output = [
             {
                 'coefficient': ['lambda_item'],
-                'observable': None
+                'observable': None,
+                'sign': 1.0,
+
             },
             {
                 'coefficient': ['theta_user', 'alpha_item'],
                 'observable': None
+                'sign': 1.0,
             },
             {
                 'coefficient': ['gamma_user', 'beta_item'],
                 'observable': 'price_obs'
+                'sign': -1.0,
             }
             ]
+         Note that 'minus' is allowed in the utility string. If the first term is negative, the minus should be without a space.
     """
     # split additive terms
     coefficient_suffix = ('_item', '_user', '_constant', '_category')
@@ -76,10 +81,16 @@ def parse_utility(utility_string: str) -> List[Dict[str, Union[List[str], None]]
     def is_observable(name: str) -> bool:
         return any(name.startswith(prefix) for prefix in observable_prefix)
 
+    utility_string = utility_string.replace(' - ', ' + -')
     additive_terms = utility_string.split(' + ')
     additive_decomposition = list()
     for term in additive_terms:
-        atom = {'coefficient': [], 'observable': None}
+        if term.startswith('-'):
+            sign = -1.0
+            term = term[1:]
+        else:
+            sign = 1.0
+        atom = {'coefficient': [], 'observable': None, 'sign': sign}
         # split multiplicative terms.
         for x in term.split(' * '):
             assert not (is_observable(x) and is_coefficient(x)), f"The element {x} is ambiguous, it follows naming convention of both an observable and a coefficient."
@@ -113,6 +124,7 @@ class BEMBFlex(nn.Module):
                  num_items: int,
                  pred_item: bool,
                  num_classes: int = 2,
+                 coef_dist_dict: Dict[str, str] = {'default' : 'gaussian'},
                  H_zero_mask_dict: Optional[Dict[str, torch.BoolTensor]] = None,
                  prior_mean: Union[float, Dict[str, float]] = 0.0,
                  prior_variance: Union[float, Dict[str, float]] = 1.0,
@@ -139,6 +151,14 @@ class BEMBFlex(nn.Module):
                     lambda_item + theta_user * alpha_item + zeta_user * item_obs
                     lambda_item + theta_user * alpha_item + gamma_user * beta_item * price_obs
                 See the doc-string of parse_utility for an example.
+
+            coef_dist_dict (Dict[str, str]): a dictionary mapping coefficient name to coefficient distribution name.
+                The coefficient distribution name can be one of the following:
+                1. 'gaussian'
+                2. 'gamma' - obs2prior is not supported for gamma coefficients
+                If a coefficient does not appear in the dictionary, it will be assigned the distribution specified
+                by the 'default' key. By default, the default distribution is 'gaussian'.
+                For coefficients which have gamma distributions, prior mean and variance MUST be specified in the prior_mean and prior_variance arguments if obs2prior is False for this coefficient. If obs2prior is True, prior_variance is still required
 
             obs2prior_dict (Dict[str, bool]): a dictionary maps coefficient name (e.g., 'lambda_item')
                 to a boolean indicating if observable (e.g., item_obs) enters the prior of the coefficient.
@@ -184,6 +204,8 @@ class BEMBFlex(nn.Module):
                 If no `prior_mean['default']` is provided, the default prior mean will be 0.0 for those coefficients
                 not in the prior_mean.keys().
 
+                For coefficients with gamma distributions, prior_mean specifies the shape parameter of the gamma prior.
+
                 Defaults to 0.0.
 
             prior_variance (Union[float, Dict[str, float]], Dict[str, torch. Tensor]): the variance of prior distribution
@@ -202,6 +224,8 @@ class BEMBFlex(nn.Module):
                 user can add a `prior_variance['default']` value to specify the variance for those coefficients.
                 If no `prior_variance['default']` is provided, the default prior variance will be 1.0 for those coefficients
                 not in the prior_variance.keys().
+
+                For coefficients with gamma distributions, prior_variance specifies the concentration parameter of the gamma prior.
 
                 Defaults to 1.0, which means all priors have identity matrix as the covariance matrix.
 
@@ -233,6 +257,7 @@ class BEMBFlex(nn.Module):
         self.utility_formula = utility_formula
         self.obs2prior_dict = obs2prior_dict
         self.coef_dim_dict = coef_dim_dict
+        self.coef_dist_dict = coef_dist_dict
         if H_zero_mask_dict is not None:
             self.H_zero_mask_dict = H_zero_mask_dict
         else:
@@ -325,6 +350,21 @@ class BEMBFlex(nn.Module):
         for additive_term in self.formula:
             for coef_name in additive_term['coefficient']:
                 variation = coef_name.split('_')[-1]
+
+                if coef_name not in self.coef_dist_dict.keys():
+                    if 'default' in self.coef_dist_dict.keys():
+                        self.coef_dist_dict[coef_name] = self.coef_dist_dict['default']
+                    else:
+                        warnings.warn(f"You provided a dictionary of coef_dist_dict, but coefficient {coef_name} is not a key in it. Supply a value for 'default' in the coef_dist_dict dictionary to use that as default value (e.g., coef_dist_dict['default'] = 'gaussian'); now using distribution='gaussian' since this is not supplied.")
+                        self.coef_dist_dict[coef_name] = 'gaussian'
+
+                elif self.coef_dist_dict[coef_name] == 'gamma':
+                    if not self.obs2prior_dict[coef_name]:
+                        assert isinstance(self.prior_mean, dict) and coef_name in self.prior_mean.keys(), \
+                            f"Prior mean for {coef_name} needs to be provided because it's posterior is estimated as a gamma distribution."
+                        assert isinstance(self.prior_variance, dict) and coef_name in self.prior_variance.keys(), \
+                            f"Prior variance for {coef_name} needs to be provided because it's posterior is estimated as a gamma distribution."
+
                 if isinstance(self.prior_mean, dict):
                     # the user didn't specify prior mean for this coefficient.
                     if coef_name not in self.prior_mean.keys():
@@ -367,7 +407,8 @@ class BEMBFlex(nn.Module):
                                                            prior_mean=mean,
                                                            prior_variance=s2,
                                                            H_zero_mask=H_zero_mask,
-                                                           is_H=False)
+                                                           is_H=False,
+                                                           distribution=self.coef_dist_dict[coef_name])
         self.coef_dict = nn.ModuleDict(coef_dict)
 
         # ==============================================================================================================
@@ -907,6 +948,7 @@ class BEMBFlex(nn.Module):
                     sample_dict[coef_name], coef_name)
                 assert coef_sample.shape == (R, P, I, 1)
                 additive_term = coef_sample.view(R, P, I)
+                additive_term *= term['sign']
 
             # Type II: factorized coefficient, e.g., <theta_user, lambda_item>.
             elif len(term['coefficient']) == 2 and term['observable'] is None:
@@ -922,6 +964,7 @@ class BEMBFlex(nn.Module):
                     R, P, I, positive_integer)
 
                 additive_term = (coef_sample_0 * coef_sample_1).sum(dim=-1)
+                additive_term *= term['sign']
 
             # Type III: single coefficient multiplied by observable, e.g., theta_user * x_obs_item.
             elif len(term['coefficient']) == 1 and term['observable'] is not None:
@@ -935,6 +978,7 @@ class BEMBFlex(nn.Module):
                 assert obs.shape == (R, P, I, positive_integer)
 
                 additive_term = (coef_sample * obs).sum(dim=-1)
+                additive_term *= term['sign']
 
             # Type IV: factorized coefficient multiplied by observable.
             # e.g., gamma_user * beta_item * price_obs.
@@ -965,6 +1009,7 @@ class BEMBFlex(nn.Module):
                 coef = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
                 additive_term = (coef * obs).sum(dim=-1)
+                additive_term *= term['sign']
 
             else:
                 raise ValueError(f'Undefined term type: {term}')
@@ -1138,6 +1183,7 @@ class BEMBFlex(nn.Module):
                     sample_dict[coef_name], coef_name)
                 assert coef_sample.shape == (R, total_computation, 1)
                 additive_term = coef_sample.view(R, total_computation)
+                additive_term *= term['sign']
 
             # Type II: factorized coefficient, e.g., <theta_user, lambda_item>.
             elif len(term['coefficient']) == 2 and term['observable'] is None:
@@ -1153,6 +1199,7 @@ class BEMBFlex(nn.Module):
                     R, total_computation, positive_integer)
 
                 additive_term = (coef_sample_0 * coef_sample_1).sum(dim=-1)
+                additive_term *= term['sign']
 
             # Type III: single coefficient multiplied by observable, e.g., theta_user * x_obs_item.
             elif len(term['coefficient']) == 1 and term['observable'] is not None:
@@ -1167,6 +1214,7 @@ class BEMBFlex(nn.Module):
                 assert obs.shape == (R, total_computation, positive_integer)
 
                 additive_term = (coef_sample * obs).sum(dim=-1)
+                additive_term *= term['sign']
 
             # Type IV: factorized coefficient multiplied by observable.
             # e.g., gamma_user * beta_item * price_obs.
@@ -1196,6 +1244,7 @@ class BEMBFlex(nn.Module):
                 coef = (coef_sample_0 * coef_sample_1).sum(dim=-1)
 
                 additive_term = (coef * obs).sum(dim=-1)
+                additive_term *= term['sign']
 
             else:
                 raise ValueError(f'Undefined term type: {term}')
