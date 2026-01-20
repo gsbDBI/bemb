@@ -138,7 +138,7 @@ class BayesianCoefficient(nn.Module):
         if self.obs2prior:
             prior_str = f'prior=N(H*X_obs(H shape={self.prior_H.prior_zero_mean.shape}, X_obs shape={self.prior_H.dim}), Ix{self.prior_variance})'
         else:
-            prior_str = f'prior=N(0, I)'
+            prior_str = f'prior=N(0, Ix{self.prior_variance})'
         return f'BayesianCoefficient(num_classes={self.num_classes}, dimension={self.dim}, {prior_str})'
 
     def update_variational_mean_fixed(self, new_value: torch.Tensor) -> None:

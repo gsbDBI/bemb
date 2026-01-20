@@ -433,7 +433,6 @@ class BEMBFlex(nn.Module):
         # (num_seeds=1, len(batch), num_items)
         out = self.log_likelihood_all_items(batch, return_logit=True, sample_dict=sample_dict)
         out = out.squeeze(0)
-        # import pdb; pdb.set_trace()
         ivs = scatter_logsumexp(out, self.item_to_category_tensor, dim=-1)
         return ivs # (len(batch), num_categories)
 
@@ -1376,8 +1375,7 @@ class BEMBFlex(nn.Module):
             assert y_stacked.shape == utility.shape
             bce = nn.BCELoss(reduction='none')
             # scalar.
-            ll = - bce(torch.sigmoid(utility),
-                       y_stacked).sum(dim=1).mean(dim=0)
+            ll = - bce(torch.sigmoid(utility), y_stacked).mean(dim=1).mean(dim=0)
             elbo += ll
 
         # ==============================================================================================================
